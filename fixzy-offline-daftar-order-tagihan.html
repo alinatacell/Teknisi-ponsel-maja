@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIXZY Offline — Daftar Order & Tagihan</title>
+<style>
+:root{--y:#ffc107;--bg:#f3f4f6;--line:#e5e7eb;--muted:#6b7280;--green:#15803d;--red:#b91c1c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:#151515}
+header{height:58px;background:#000;color:#fff;display:flex;align-items:center;gap:12px;padding:0 14px;position:sticky;top:0;z-index:10}.logo{width:38px;height:38px;object-fit:contain}.brand{font-weight:800;flex:1}.brand small{display:block;color:#aaa;font-size:10px;font-weight:500}
+button{border:0;border-radius:9px;padding:9px 12px;font-weight:700;cursor:pointer}.primary{background:var(--y);color:#111}.light{background:#fff;border:1px solid var(--line)}.dark{background:#222;color:#fff}.danger{background:#fee2e2;color:#991b1b}.green{background:#16a34a;color:#fff}
+.wrap{max-width:1200px;margin:auto;padding:14px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.muted{font-size:12px;color:var(--muted)}.stat b{font-size:19px;display:block;margin-top:4px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.search{flex:1;min-width:200px;padding:10px;border:1px solid #d1d5db;border-radius:9px}.select,.input{padding:10px;border:1px solid #d1d5db;border-radius:9px;background:#fff}
+.order{border:1px solid var(--line);border-radius:12px;margin-top:10px;overflow:hidden;background:#fff}.oh{padding:11px;background:#fafafa;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.oid{font-weight:800}.grow{flex:1}.badge{padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}.paid{background:#dcfce7;color:#166534}.partial{background:#fef3c7;color:#92400e}.unpaid{background:#fee2e2;color:#991b1b}
+.body{padding:12px}.items{width:100%;border-collapse:collapse;font-size:13px}.items td{padding:7px;border-bottom:1px solid var(--line)}.right{text-align:right}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.sum{background:#f8fafc;border-radius:9px;padding:9px}.sum b{display:block;margin-top:3px}.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.empty{text-align:center;padding:35px;color:var(--muted)}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:14px;z-index:50}.modal.show{display:flex}.box{width:min(720px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:14px;padding:16px}.head{display:flex;align-items:center;justify-content:space-between}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field{margin-top:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.field input,.field textarea,.field select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:9px}.field textarea{min-height:130px}.hint{background:#fff8db;border:1px solid #f2d675;border-radius:9px;padding:10px;font-size:12px;margin-top:10px}
+@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:1fr 1fr}}@media(max-width:500px){.wrap{padding:9px}.brand small{display:none}.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr}.oh{align-items:flex-start}}
+@media print{header,.toolbar,.no-print{display:none!important}body{background:#fff}.wrap{padding:0}.card,.order{border:0}.order{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header><img class="logo" src="logo.png" onerror="this.style.display='none'"><div class="brand">FIXZY ORDER<small>Daftar Order • Tagihan Terpisah • Offline</small></div><button class="light" onclick="location.reload()">Refresh</button></header>
+<main class="wrap">
+<div class="stats">
+<div class="stat"><span class="muted">Total Order</span><b id="sOrders">0</b></div>
+<div class="stat"><span class="muted">Nilai Order</span><b id="sTotal">Rp0</b></div>
+<div class="stat"><span class="muted">Sudah Dibayar</span><b id="sPaid">Rp0</b></div>
+<div class="stat"><span class="muted">Total Tagihan</span><b id="sDue">Rp0</b></div>
+</div>
+<section class="card">
+<div class="toolbar">
+<input id="search" class="search" placeholder="Cari nomor order / pelanggan / nomor WA..." oninput="render()">
+<select id="status" class="select" onchange="render()"><option value="">Semua status</option><option value="unpaid">Belum Lunas</option><option value="partial">Sebagian</option><option value="paid">Lunas</option></select>
+<button class="primary" onclick="newOrder()">＋ Order Manual</button>
+<button class="light" onclick="exportCSV()">Backup CSV</button>
+<button class="light" onclick="printPDF()">Cetak / PDF</button>
+</div>
+<div class="hint">Setiap order mempunyai <b>tagihan sendiri</b>. Pembayaran satu order tidak mengubah tagihan order lainnya.</div>
+</section>
+<section class="card"><div id="orders"></div></section>
+</main>
+
+<div class="modal" id="payModal"><div class="box">
+<div class="head"><h3>Bayar Tagihan</h3><button class="light" onclick="closeModal('payModal')">✕</button></div>
+<div id="payInfo"></div>
+<div class="field"><label>Nominal pembayaran</label><input id="payAmount" type="number" min="0"></div>
+<div class="field"><label>Keterangan</label><input id="payNote" placeholder="Contoh: Transfer / Cash / DP"></div>
+<div class="toolbar" style="margin-top:10px"><button class="green" onclick="savePayment()">Simpan Pembayaran</button></div>
+</div></div>
+
+<div class="modal" id="editModal"><div class="box">
+<div class="head"><h3>Order Manual</h3><button class="light" onclick="closeModal('editModal')">✕</button></div>
+<div class="grid">
+<div class="field"><label>Pelanggan / Toko</label><input id="oCustomer"></div>
+<div class="field"><label>Nomor WhatsApp</label><input id="oWa"></div>
+</div>
+<div class="field"><label>Daftar barang (satu baris: Nama | Qty | Harga)</label><textarea id="oItems" placeholder="LCD iPhone 11 | 2 | 350000&#10;Baterai A12 | 1 | 90000"></textarea></div>
+<div class="toolbar" style="margin-top:10px"><button class="primary" onclick="saveManualOrder()">Simpan Order</button></div>
+</div></div>
+
+<script>
+const DB='FIXZY_OFFLINE_ORDERS_V1',STORE='orders';let db,orders=[],payId=null;
+function money(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function openDB(){return new Promise((res,rej)=>{let r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)})}
+function load(){return new Promise((res,rej)=>{let q=db.transaction(STORE,'readonly').objectStore(STORE).getAll();q.onsuccess=()=>{orders=q.result||[];res()};q.onerror=()=>rej(q.error)})}
+function put(o){return new Promise((res,rej)=>{let t=db.transaction(STORE,'readwrite');t.objectStore(STORE).put(o);t.oncomplete=res;t.onerror=()=>rej(t.error)})}
+function del(id){return new Promise((res,rej)=>{let t=db.transaction(STORE,'readwrite');t.objectStore(STORE).delete(id);t.oncomplete=res;t.onerror=()=>rej(t.error)})}
+function statusOf(o){let due=Math.max(0,(o.total||0)-(o.paid||0));return due<=0?'paid':(o.paid>0?'partial':'unpaid')}
+function badge(o){let s=statusOf(o);return s==='paid'?'<span class="badge paid">LUNAS</span>':s==='partial'?'<span class="badge partial">SEBAGIAN</span>':'<span class="badge unpaid">BELUM LUNAS</span>'}
+function render(){
+ let q=search.value.toLowerCase().trim(),st=status.value;
+ let list=orders.filter(o=>(!q||[o.number,o.customer,o.wa].join(' ').toLowerCase().includes(q))&&(!st||statusOf(o)===st)).sort((a,b)=>b.createdAt-a.createdAt);
+ ordersDiv.innerHTML=list.length?list.map(o=>{
+  let due=Math.max(0,o.total-o.paid);
+  return `<article class="order"><div class="oh"><span class="oid">${esc(o.number)}</span><span class="muted">${new Date(o.createdAt).toLocaleString('id-ID')}</span><span class="grow"></span><span>${esc(o.customer||'Tanpa nama')}</span>${badge(o)}</div>
+  <div class="body"><div class="muted">WA: ${esc(o.wa||'-')}</div>
+  <table class="items">${o.items.map(x=>`<tr><td>${esc(x.name)}<br><span class="muted">${x.qty} × ${money(x.price)}</span></td><td class="right"><b>${money(x.qty*x.price)}</b></td></tr>`).join('')}</table>
+  <div class="summary"><div class="sum"><span class="muted">Total Order</span><b>${money(o.total)}</b></div><div class="sum"><span class="muted">Dibayar</span><b>${money(o.paid)}</b></div><div class="sum"><span class="muted">TAGIHAN ORDER INI</span><b>${money(due)}</b></div></div>
+  <div class="actions no-print"><button class="primary" onclick="openPay('${o.id}')">💰 Bayar Tagihan</button><button class="light" onclick="sendInvoice('${o.id}')">WhatsApp Tagihan</button><button class="light" onclick="editOrder('${o.id}')">Edit</button><button class="danger" onclick="deleteOrder('${o.id}')">Hapus</button></div></div></article>`
+ }).join(''):'<div class="empty">Belum ada order.</div>';
+ let total=orders.reduce((a,o)=>a+o.total,0),paid=orders.reduce((a,o)=>a+o.paid,0);sOrders.textContent=orders.length;sTotal.textContent=money(total);sPaid.textContent=money(paid);sDue.textContent=money(Math.max(0,total-paid));
+}
+const ordersDiv=document.getElementById('orders');
+async function openPay(id){let o=orders.find(x=>x.id===id);payId=id;payInfo.innerHTML=`<b>${esc(o.number)}</b> — ${esc(o.customer||'Tanpa nama')}<br><span class="muted">Total ${money(o.total)} • Sudah bayar ${money(o.paid)} • Tagihan ${money(o.total-o.paid)}</span>`;payAmount.value='';payNote.value='';payModal.classList.add('show')}
+async function savePayment(){let o=orders.find(x=>x.id===payId),n=Number(payAmount.value)||0;if(n<=0)return alert('Nominal pembayaran harus lebih dari 0');let due=Math.max(0,o.total-o.paid);if(n>due&&!confirm('Pembayaran lebih besar dari tagihan. Tetap simpan?'))return;o.paid+=n;o.payments=o.payments||[];o.payments.push({id:uid(),amount:n,note:payNote.value.trim(),date:Date.now()});await put(o);closeModal('payModal');render()}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function normalize(n){let x=String(n||'').replace(/\D/g,'');if(x.startsWith('0'))x='62'+x.slice(1);if(x.startsWith('8'))x='62'+x;return x}
+function sendInvoice(id){let o=orders.find(x=>x.id===id);if(!o.wa)return alert('Nomor WhatsApp order ini belum diisi.');let due=Math.max(0,o.total-o.paid);let lines=[`*TAGIHAN ORDER ${o.number}*`,`Pelanggan: ${o.customer||'-'}`,`Tanggal: ${new Date(o.createdAt).toLocaleDateString('id-ID')}`,'','Daftar barang:',...o.items.map((x,i)=>`${i+1}. ${x.name} — ${x.qty} × ${money(x.price)} = ${money(x.qty*x.price)}`),'',`Total: ${money(o.total)}`,`Sudah dibayar: ${money(o.paid)}`,`*SISA TAGIHAN: ${money(due)}*`,'','Mohon pembayaran sesuai tagihan. Terima kasih.'];window.open('https://wa.me/'+normalize(o.wa)+'?text='+encodeURIComponent(lines.join('\\n')),'_blank')}
+function newOrder(){oCustomer.value='';oWa.value='';oItems.value='';editModal.classList.add('show')}
+function editOrder(id){let o=orders.find(x=>x.id===id);editModal.dataset.id=id;oCustomer.value=o.customer;oWa.value=o.wa;oItems.value=o.items.map(x=>`${x.name} | ${x.qty} | ${x.price}`).join('\\n');editModal.classList.add('show')}
+async function saveManualOrder(){let lines=oItems.value.split('\\n').map(x=>x.trim()).filter(Boolean),items=[];for(let line of lines){let a=line.split('|').map(x=>x.trim());if(a.length<3)continue;let qty=Math.max(1,Number(a[1])||1),price=Math.max(0,Number(String(a[2]).replace(/[^0-9.-]/g,''))||0);items.push({name:a[0],qty,price})}if(!items.length)return alert('Masukkan minimal satu barang dengan format Nama | Qty | Harga');let id=editModal.dataset.id,o=orders.find(x=>x.id===id);if(o){o.customer=oCustomer.value.trim();o.wa=oWa.value.trim();o.items=items;o.total=items.reduce((a,x)=>a+x.qty*x.price,0);o.paid=Math.min(o.paid,o.total);o.updatedAt=Date.now()}else{o={id:uid(),number:'ORD-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(orders.length+1).padStart(3,'0'),customer:oCustomer.value.trim(),wa:oWa.value.trim(),items,total:items.reduce((a,x)=>a+x.qty*x.price,0),paid:0,payments:[],createdAt:Date.now()}}await put(o);await load();closeModal('editModal');render()}
+async function deleteOrder(id){let o=orders.find(x=>x.id===id);if(confirm('Hapus order '+o.number+' beserta catatan pembayarannya?')){await del(id);orders=orders.filter(x=>x.id!==id);render()}}
+function exportCSV(){let rows=[['No Order','Tanggal','Pelanggan','WhatsApp','Total','Dibayar','Tagihan','Status'],...orders.map(o=>[o.number,new Date(o.createdAt).toLocaleString('id-ID'),o.customer,o.wa,o.total,o.paid,Math.max(0,o.total-o.paid),statusOf(o)])];let text='\\ufeff'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\\r\\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download='FIXZY-DAFTAR-ORDER-TAGIHAN.csv';a.click()}
+function printPDF(){window.print()}
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+(async()=>{try{await openDB();await load();render()}catch(e){alert('Database order offline gagal dibuka: '+e.message)}})();
+</script>
+</body>
+</html>
