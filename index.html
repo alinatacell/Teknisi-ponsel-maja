@@ -1,1 +1,81 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sponsor</title><style>html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}video{width:100vw;height:100vh;object-fit:contain;background:#000}</style></head><body><video id="v" autoplay muted playsinline controlslist="nodownload noplaybackrate"></video><script>const p=['1000065096.mp4','1000065069.mp4','1000063479.mp4','1000063449.mp4','1000063469.mp4'];let i=0,v=document.getElementById('v');function play(){v.src=p[i];v.play().catch(()=>{});}v.onended=()=>{i=(i+1)%p.length;play()};play();document.addEventListener('click',()=>document.documentElement.requestFullscreen?.().catch(()=>{}),{once:true});</script></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0b0b">
+<title>AI Song Maker</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0b0b;color:#fff;font-family:Arial,sans-serif}
+header{background:#111;border-bottom:2px solid #ffc107;padding:20px 16px;text-align:center}
+.logo{font-size:28px;font-weight:800;color:#ffc107}
+.sub{font-size:13px;color:#aaa;margin-top:5px}
+main{max-width:700px;margin:auto;padding:18px}
+.hero{background:linear-gradient(145deg,#1b1b1b,#101010);border:1px solid #303030;border-radius:18px;padding:22px;text-align:center;margin-bottom:16px}
+.hero-icon{font-size:55px}
+.hero h1{margin:8px 0;color:#ffc107;font-size:25px}
+.hero p{color:#aaa;line-height:1.5;margin:0}
+.card{background:#171717;border:1px solid #292929;border-radius:16px;padding:18px;margin-bottom:15px}
+h2{font-size:18px;margin:0 0 12px}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.feature{background:#101010;border-radius:12px;padding:13px;color:#ddd;font-size:13px}
+.feature b{display:block;color:#ffc107;margin-bottom:4px}
+button,.open{display:block;width:100%;border:0;border-radius:11px;padding:14px;font-weight:700;font-size:15px;text-align:center;text-decoration:none;cursor:pointer}
+.primary{background:#ffc107;color:#111;margin-top:14px}
+.secondary{background:#292929;color:#fff;margin-top:10px}
+.small{font-size:12px;color:#777;line-height:1.6}
+footer{text-align:center;color:#666;font-size:11px;padding:12px 16px 30px}
+@media(max-width:480px){.features{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎵 AI SONG MAKER</div>
+  <div class="sub">Buat lagu AI dengan musik + vokal</div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="hero-icon">🎧</div>
+  <h1>BUAT LAGU SENDIRI</h1>
+  <p>Tulis ide, pilih genre dan mood, lalu buat lagu dengan musik dan vokal AI.</p>
+  <a class="open primary" href="lagu.html">✨ MULAI BUAT LAGU</a>
+</section>
+
+<section class="card">
+  <h2>🎼 Fitur</h2>
+  <div class="features">
+    <div class="feature"><b>✍️ Ide Lagu</b>Tulis cerita atau tema lagu.</div>
+    <div class="feature"><b>🎸 Genre</b>Pop, dangdut, reggae, rock dan lainnya.</div>
+    <div class="feature"><b>🎤 Vokal</b>Pilih vokal pria atau wanita.</div>
+    <div class="feature"><b>🎧 Audio</b>Hasil dapat diputar sebagai MP3.</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🚀 Cara Menggunakan</h2>
+  <div class="small">
+    <b>1.</b> Tekan MULAI BUAT LAGU.<br>
+    <b>2.</b> Masukkan judul dan ide lagu.<br>
+    <b>3.</b> Pilih genre, mood dan vokal.<br>
+    <b>4.</b> Tekan GENERATE LAGU MP3.<br>
+    <b>5.</b> Setelah AI selesai, lagu muncul di player dan dapat di-download.
+  </div>
+</section>
+
+<section class="card">
+  <h2>🔐 Keamanan API</h2>
+  <div class="small">
+    API key tidak disimpan di halaman ini. Proses AI dilakukan melalui backend agar API key tidak terlihat oleh pengunjung.
+  </div>
+</section>
+
+</main>
+
+<footer>AI SONG MAKER • Music Generator</footer>
+
+</body>
+</html>
