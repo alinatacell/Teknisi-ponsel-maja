@@ -28,7 +28,62 @@
   font-family: "Optimistic Mono", ui-monospace, monospace;
 }
 
-.member-note{font-size:11px;color:#6b7280;padding:10px 12px;line-height:1.5}
+
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111827}
+body{overflow:hidden}
+.header{height:62px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;position:fixed;top:0;left:0;right:0;z-index:9999;box-shadow:0 2px 12px rgba(0,0,0,.10)}
+.menu-btn{width:44px;height:44px;margin-left:9px;border:0;border-radius:11px;background:#111827;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;z-index:10002;position:relative}
+.menu-btn span{width:21px;height:2px;background:#FFC107;border-radius:4px;box-shadow:0 1px 0 rgba(255,193,7,.45)}
+.header-running{flex:1;min-width:0;height:42px;margin-left:12px;margin-right:8px;overflow:hidden;display:flex;align-items:center;position:relative;border-radius:10px;background:#fff}
+.running-track{display:flex;align-items:center;width:max-content;white-space:nowrap;animation:fixzyRunning 28s linear infinite;font-size:12px;font-weight:800;color:#374151}
+.running-track span{display:inline-flex;align-items:center;margin-right:42px}
+@keyframes fixzyRunning{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+.header-account{margin-left:auto;margin-right:13px;text-align:right;line-height:1.15}
+.account-name{
+  font-size:12px;
+  font-weight:900;
+  max-width:190px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#FFC107;
+  text-shadow:
+    1px 1px 0 #111827,
+    2px 2px 2px rgba(0,0,0,.45);
+  transform:perspective(160px) rotateX(2deg);
+  transform-origin:right center;
+}
+.account-exp{font-size:9px;color:#6b7280;margin-top:3px}
+.content{position:fixed;top:62px;left:0;right:0;bottom:0;background:#f3f4f6;overflow:hidden;z-index:1}
+.content iframe{width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1}
+.overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.28);opacity:0;visibility:hidden;transition:.2s}
+.overlay.show{opacity:1;visibility:visible}
+.menu{position:fixed;z-index:10001;top:0;left:0;height:100dvh;width:min(330px,86vw);background:#fff;transform:translateX(-105%);transition:.25s ease;box-shadow:8px 0 30px rgba(0,0,0,.15);overflow:auto}
+.menu.show{transform:translateX(0)}
+.menu-head{min-height:62px;padding:10px 13px;background:#111827;color:#fff;display:flex;align-items:center;gap:10px}
+.menu-head img{width:78px;max-height:40px;object-fit:contain;background:#000;border-radius:7px}
+.menu-title{font-weight:900;font-size:15px}
+.menu-sub{font-size:9px;color:#d1d5db;margin-top:3px}
+.close{margin-left:auto;border:0;background:rgba(255,255,255,.12);color:#fff;width:34px;height:34px;border-radius:9px;font-size:20px;cursor:pointer}
+.menu-list{padding:9px}
+.menu-section{font-size:10px;font-weight:900;color:#94a3b8;margin:12px 0 4px 8px;letter-spacing:.5px}
+.menu-link{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;text-decoration:none;color:#111827;padding:11px 11px;border-radius:10px;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer}
+.menu-link:hover,.menu-link.active{background:#f3f4f6}
+.menu-link .ico{width:25px;text-align:center;font-size:15px}
+.logout-link{color:#dc2626;font-weight:900}
+.logout-link:hover{background:#fef2f2}
+@media(max-width:480px){
+  .header-running{margin-left:8px;margin-right:5px;height:38px}
+  .running-track{font-size:10px;animation-duration:24s}
+  .header-account{margin-right:9px}
+  .account-name{font-size:11px;max-width:150px}
+}
+
+
+.member-note{font-size:10px;color:#94a3b8;padding:10px 8px;line-height:1.5}
+.member-section{font-size:10px;font-weight:900;color:#94a3b8;margin:12px 0 4px 8px;letter-spacing:.5px}
+
 </style>
 </head>
 <body>
@@ -40,7 +95,7 @@
     <div class="running-track">
       <span>🤝 Kredit Antar Member FIXZY</span>
       <span>📦 Order Member</span>
-      <span>🔒 Sistem menggunakan akun FIXZY</span>
+      <span>🔒 Menggunakan akun FIXZY</span>
     </div>
   </div>
   <div class="header-account">
@@ -69,38 +124,44 @@
 
     <div class="menu-section">ORDER MEMBER</div>
 
-    <button class="menu-link" data-page="input-order-member.html" data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+    <button class="menu-link" data-page="input-order-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
       <span class="ico">📝</span>Input Pesanan Member
     </button>
 
-    <button class="menu-link" data-page="data-order-member.html" data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+    <button class="menu-link" data-page="data-order-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
       <span class="ico">📋</span>Data Order Member
     </button>
 
-    <button class="menu-link" data-page="approval-order-member.html" data-roles="owner" onclick="bukaHalaman(this)">
+    <button class="menu-link" data-page="approval-order-member.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
       <span class="ico">✅</span>Approval Order Member
     </button>
 
     <div class="menu-section">STOCK MEMBER</div>
 
-    <button class="menu-link" data-page="input-stok-member.html" data-roles="owner" onclick="bukaHalaman(this)">
+    <button class="menu-link" data-page="input-stok-member.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
       <span class="ico">📦</span>Input Stok Member
     </button>
 
-    <button class="menu-link" data-page="stock-member.html" data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+    <button class="menu-link" data-page="stock-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
       <span class="ico">📦</span>Stock Member
     </button>
 
     <div class="member-note">
       Owner FIXZY = Pengelola.<br>
-      Karyawan/employee FIXZY = Anggota.<br>
-      Login dan akun tetap menggunakan Firebase FIXZY.
+      Karyawan/employee FIXZY = Anggota.
     </div>
 
     <div class="menu-section">LAINNYA</div>
+
     <button class="menu-link" onclick="kembaliFixzy()">
       <span class="ico">↩️</span>Kembali ke FIXZY
     </button>
+
     <button class="menu-link logout-link" onclick="logoutFixzy()">
       <span class="ico">🚪</span>Logout
     </button>
@@ -118,106 +179,125 @@ const auth=getAuth(app);
 const db=getFirestore(app);
 
 let authReady=false;
-window.fixzySession={};
+let session={};
 
 function formatExp(v){
   if(!v)return "-";
   try{
     let d=null;
-    if(typeof v==="object"&&typeof v.toDate==="function")d=v.toDate();
-    else if(typeof v==="object"&&v.seconds!==undefined)d=new Date(Number(v.seconds)*1000);
+    if(typeof v==="object" && typeof v.toDate==="function") d=v.toDate();
+    else if(typeof v==="object" && v.seconds!==undefined) d=new Date(Number(v.seconds)*1000);
     else d=new Date(v);
-    return d&&!isNaN(d.getTime())?d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"}):"-";
+    return d && !isNaN(d.getTime())
+      ? d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"})
+      : "-";
   }catch(e){return "-";}
 }
 
-function normalisasiIzin(raw){
-  if(!raw)return {};
-  if(typeof raw==="object"&&!Array.isArray(raw))return raw;
-  if(Array.isArray(raw)){const o={};raw.forEach(k=>o[k]=true);return o;}
-  return {};
-}
-
-function roleDiizinkan(btn,role){
+function roleAllowed(btn, role){
   const roles=String(btn.dataset.roles||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
-  if(!roles.length)return true;
   const r=String(role||"").toLowerCase();
-  if(r==="admin"||r==="superadmin")return true;
-  if(r==="employee"&&roles.includes("karyawan"))return true;
-  if(r==="karyawan"&&roles.includes("employee"))return true;
-  return roles.includes(r);
+  if(r==="admin" || r==="superadmin") return true;
+  if(r==="employee" && roles.includes("karyawan")) return true;
+  if(r==="karyawan" && roles.includes("employee")) return true;
+  return !roles.length || roles.includes(r);
 }
 
-function terapkanHakAkses(){
-  const role=String(window.fixzySession.role||"").toLowerCase();
+function applyAccess(){
   document.querySelectorAll(".menu-link[data-page]").forEach(btn=>{
-    const ok=roleDiizinkan(btn,role);
-    btn.style.display=ok?"":"none";
+    btn.style.display=roleAllowed(btn,session.role) ? "" : "none";
   });
 }
 
-function bukaMenu(){menu.classList.add("show");overlay.classList.add("show")}
-function tutupMenu(){menu.classList.remove("show");overlay.classList.remove("show")}
-window.bukaMenu=bukaMenu;window.tutupMenu=tutupMenu;
+function bukaMenu(){
+  document.getElementById("menu").classList.add("show");
+  document.getElementById("overlay").classList.add("show");
+}
+function tutupMenu(){
+  document.getElementById("menu").classList.remove("show");
+  document.getElementById("overlay").classList.remove("show");
+}
+window.bukaMenu=bukaMenu;
+window.tutupMenu=tutupMenu;
 
-function refreshIndex(){location.reload()}
+function refreshIndex(){ location.reload(); }
 window.refreshIndex=refreshIndex;
 
-function tampilkanBeranda(){
-  contentArea.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;background:#f3f4f6">
+function beranda(){
+  document.getElementById("contentArea").innerHTML =
+  `<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;background:#f3f4f6">
     <div style="width:min(460px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;text-align:center;box-shadow:0 5px 20px #0001">
       <div style="font-size:44px">🤝</div>
       <h2 style="margin:10px 0 7px">Kredit Antar Member</h2>
-      <p style="margin:0;color:#667085;font-size:13px;line-height:1.6">Pilih menu di sebelah kiri untuk input order, melihat data order, approval, atau mengelola stock member.</p>
+      <p style="margin:0;color:#667085;font-size:13px;line-height:1.6">
+        Pilih menu di sebelah kiri untuk input order, melihat data order,
+        approval, atau stock member.
+      </p>
     </div>
   </div>`;
 }
 
 function bukaHalaman(btn){
-  if(!authReady||!auth.currentUser){location.href="../login.html";return}
-  if(!roleDiizinkan(btn,window.fixzySession.role))return;
+  if(!authReady || !auth.currentUser){ location.href="../login.html"; return; }
+  if(!roleAllowed(btn,session.role)) return;
+
   const frame=document.createElement("iframe");
-  frame.title="Halaman Kredit Antar Member";
+  frame.title="Kredit Antar Member FIXZY";
   frame.src=btn.dataset.page;
   frame.style.cssText="width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1";
-  contentArea.innerHTML="";
-  contentArea.appendChild(frame);
+
+  const area=document.getElementById("contentArea");
+  area.innerHTML="";
+  area.appendChild(frame);
+
   document.querySelectorAll(".menu-link").forEach(x=>x.classList.remove("active"));
   btn.classList.add("active");
   tutupMenu();
 }
 window.bukaHalaman=bukaHalaman;
 
-function kembaliFixzy(){location.href="../index.html"}
+function kembaliFixzy(){
+  location.href="../index.html";
+}
 window.kembaliFixzy=kembaliFixzy;
 
-function logoutFixzy(){
-  signOut(auth).finally(()=>location.href="../login.html");
+async function logoutFixzy(){
+  try{ await signOut(auth); }catch(e){}
+  location.href="../login.html";
 }
 window.logoutFixzy=logoutFixzy;
 
 async function validasi(user){
-  if(!user){location.href="../login.html";return}
+  if(!user){ location.href="../login.html"; return; }
+
   try{
     const snap=await getDoc(doc(db,"users",user.uid));
-    if(!snap.exists()){await signOut(auth);location.href="../login.html";return}
+    if(!snap.exists()){ await signOut(auth); location.href="../login.html"; return; }
+
     const data=snap.data()||{};
     const role=String(data.role||"").toLowerCase();
     const allowed=["owner","employee","karyawan","admin","superadmin"];
-    if(!allowed.includes(role)){await signOut(auth);location.href="../login.html";return}
-    if(["blocked","rejected"].includes(String(data.status||"").toLowerCase())){await signOut(auth);location.href="../login.html";return}
-    window.fixzySession={
+
+    if(!allowed.includes(role)){ await signOut(auth); location.href="../login.html"; return; }
+    if(["blocked","rejected"].includes(String(data.status||"").toLowerCase())){
+      await signOut(auth); location.href="../login.html"; return;
+    }
+
+    session={
       uid:user.uid,
-      role:role,
+      role,
       ownerUid:role==="owner"?user.uid:(data.ownerUid||data.ownerId||""),
-      profile:data,
-      permissions:normalisasiIzin(data.izin??data.permissions??data.hakAkses??data.access)
+      profile:data
     };
-    accountName.textContent=data.namaKonter||data.namaPemilik||data.nama||user.email||"Akun";
-    accountExp.textContent=formatExp(data.exp||data.expAt||data.expiredAt||data.tanggalBerakhir);
+
+    document.getElementById("accountName").textContent =
+      data.namaKonter || data.namaPemilik || data.nama || user.email || "Akun";
+    document.getElementById("accountExp").textContent =
+      formatExp(data.exp || data.expAt || data.expiredAt || data.tanggalBerakhir);
+
     authReady=true;
-    terapkanHakAkses();
-    tampilkanBeranda();
+    applyAccess();
+    beranda();
   }catch(e){
     console.error(e);
     await signOut(auth).catch(()=>{});
