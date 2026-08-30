@@ -1,14 +1,33 @@
-<!DOCTYPE html>
-<html lang="id">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Song Maker</title>
-<style>
-body{margin:0;background:#0b0b0b;color:#fff;font-family:Arial;text-align:center}.wrap{max-width:650px;margin:auto;padding:30px 18px}
-.logo{font-size:30px;font-weight:bold;color:#ffc107;margin-top:35px}.sub{color:#aaa;margin:8px 0 35px}
-.card{background:#171717;border:1px solid #292929;border-radius:18px;padding:25px}.icon{font-size:65px}
-a{display:block;text-decoration:none;background:#ffc107;color:#111;padding:15px;border-radius:12px;font-weight:bold;margin-top:20px}
-.info{color:#888;font-size:13px;line-height:1.6;margin-top:25px}
-</style></head><body><div class="wrap">
-<div class="logo">🎵 AI SONG MAKER</div><div class="sub">Buat lagu AI sendiri tanpa Firebase</div>
-<div class="card"><div class="icon">🎧</div><h1>Studio Lagu Pribadi</h1><p>Ide lagu → musik + vokal → MP3</p><a href="create.html">✨ MULAI BUAT LAGU</a></div>
-<div class="info">Versi awal menggunakan penyimpanan lokal untuk data antarmuka. Mesin AI akan dihubungkan melalui backend sendiri.</div>
-</div></body></html>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard Komunitas</title><link rel="stylesheet" href="style.css"></head><body><header><div class="wrap"><div class="logo">ORDER KOMUNITAS</div><div class="user" data-user></div></div></header>
+<nav><div class="wrap">
+<a href="index.html">Dashboard</a><a href="produk.html">Produk</a><a href="input-order.html">Input Order</a><a href="penerima-order.html">Approval</a><a href="daftar-order.html">Daftar Order</a><a href="pelanggan-approved.html">Pelanggan Approved</a><a href="data-keuangan.html">Keuangan</a>
+</div></nav><main>
+<h1>Dashboard Komunitas</h1>
+<div class="grid3">
+<div class="card"><h2>Semua Order</h2><div id="all" style="font-size:28px;font-weight:800">0</div></div>
+<div class="card"><h2>Menunggu Approval</h2><div id="wait" style="font-size:28px;font-weight:800">0</div></div>
+<div class="card"><h2>Approved</h2><div id="approved" style="font-size:28px;font-weight:800">0</div></div>
+<div class="card"><h2>Diproses</h2><div id="process" style="font-size:28px;font-weight:800">0</div></div>
+<div class="card"><h2>Selesai</h2><div id="done" style="font-size:28px;font-weight:800">0</div></div>
+<div class="card"><h2>Pelanggan Approved</h2><div id="customers" style="font-size:28px;font-weight:800">0</div></div>
+</div>
+<div class="grid3">
+<div class="card"><h2>Total PCS Approved</h2><div id="pcs" style="font-size:25px;font-weight:800">0 PCS</div></div>
+<div class="card"><h2>Hak Pengelola</h2><div id="manager" style="font-size:22px;font-weight:800">Rp0</div><div class="muted">Rp1.000 / PCS</div></div>
+<div class="card"><h2>Uang Kas</h2><div id="kas" style="font-size:22px;font-weight:800">Rp0</div><div class="muted">Rp4.000 / PCS</div></div>
+</div>
+<div class="card"><h2>Order Terbaru</h2><div class="tablewrap"><table><thead><tr><th>Nota</th><th>Pelanggan</th><th>PCS</th><th>Total</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div></div>
+</main><script type="module">
+import {db,requireLogin,money,esc} from "./firebase.js";
+import {collection,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+requireLogin(()=>onSnapshot(query(collection(db,"communityOrders"),orderBy("createdAt","desc")),s=>{
+ const orders=s.docs.map(d=>({id:d.id,...d.data()}));
+ const approvedOrders=orders.filter(o=>["disetujui","diproses","selesai"].includes(o.status));
+ const pcs=approvedOrders.reduce((sum,o)=>sum+(o.items||[]).reduce((a,x)=>a+(Number(x.qty)||0),0),0);
+ all.textContent=orders.length;wait.textContent=orders.filter(o=>o.status==="menunggu").length;approved.textContent=orders.filter(o=>o.status==="disetujui").length;
+ process.textContent=orders.filter(o=>o.status==="diproses").length;done.textContent=orders.filter(o=>o.status==="selesai").length;
+ const m=new Set(approvedOrders.map(o=>(o.noWa||"").replace(/\D/g,"")||("n:"+String(o.namaPelanggan||"").toLowerCase())));document.getElementById("customers").textContent=m.size;
+ document.getElementById("pcs").textContent=pcs+" PCS";manager.textContent=money(pcs*1000);kas.textContent=money(pcs*4000);
+ recent.innerHTML=orders.slice(0,10).map(o=>`<tr><td>${esc(o.nomorNota)}</td><td>${esc(o.namaPelanggan)}</td><td>${(o.items||[]).reduce((a,x)=>a+(Number(x.qty)||0),0)}</td><td>${money(o.total)}</td><td>${esc(o.status)}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">Belum ada order.</td></tr>';
+}));
+</script></body></html>

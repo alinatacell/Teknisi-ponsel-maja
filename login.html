@@ -1,0 +1,8 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login Komunitas</title><link rel="stylesheet" href="style.css"></head><body>
+<main style="max-width:420px;margin:60px auto"><div class="card"><h1>Login Komunitas</h1><div class="alert">Gunakan akun Firebase Authentication anggota komunitas.</div>
+<label>Email</label><input id="email" type="email" autocomplete="email"><br><br><label>Password</label><input id="password" type="password" autocomplete="current-password">
+<div class="actions"><button class="btn" id="login">Login</button></div><p id="msg" class="muted"></p></div></main>
+<script type="module">
+import {auth} from "./firebase.js"; import {signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+login.onclick=async()=>{msg.textContent="Memproses...";try{await signInWithEmailAndPassword(auth,email.value,password.value);location.href="input-order.html"}catch(e){msg.textContent=e.message}};
+</script></body></html>

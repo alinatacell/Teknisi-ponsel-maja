@@ -1,0 +1,26 @@
+
+CONTOH KONSEP RULES (sesuaikan dengan kebutuhan komunitas Anda).
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
+    match /communityProducts/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn();
+    }
+
+    match /communityOrders/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if false;
+    }
+  }
+}
+
+Catatan:
+- Ini sengaja transparan: semua anggota yang login dapat membaca produk dan order komunitas.
+- Untuk keamanan produksi, hak APPROVAL sebaiknya dibatasi berdasarkan role/claim komunitas.
+- Jangan memakai rules ini jika kebutuhan Anda mengharuskan hanya pengurus yang boleh mengubah status.

@@ -1,0 +1,15 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Data Keuangan Komunitas</title><link rel="stylesheet" href="style.css"></head><body><header><div class="wrap"><div class="logo">ORDER KOMUNITAS</div><div class="user" data-user></div></div></header>
+<nav><div class="wrap">
+<a href="index.html">Dashboard</a><a href="produk.html">Produk</a><a href="input-order.html">Input Order</a><a href="penerima-order.html">Approval</a><a href="daftar-order.html">Daftar Order</a><a href="pelanggan-approved.html">Pelanggan Approved</a><a href="data-keuangan.html">Keuangan</a>
+</div></nav><main>
+<div class="between"><h1>Data Keuangan Komunitas</h1><select id="status"><option value="all">Semua Approved</option><option value="disetujui">Disetujui</option><option value="diproses">Diproses</option><option value="selesai">Selesai</option></select></div>
+<div class="grid3"><div class="card"><h2>Total PCS</h2><div id="pcs" style="font-size:26px;font-weight:800">0</div></div><div class="card"><h2>Pengelola</h2><div id="manager" style="font-size:23px;font-weight:800">Rp0</div><div class="muted">Rp1.000 / PCS</div></div><div class="card"><h2>Kas Komunitas</h2><div id="kas" style="font-size:23px;font-weight:800">Rp0</div><div class="muted">Rp4.000 / PCS</div></div></div>
+<div class="card"><h2>Rincian Per Order</h2><div class="tablewrap"><table><thead><tr><th>Nota</th><th>Tanggal</th><th>Pelanggan</th><th>PCS</th><th>Pengelola</th><th>Kas</th><th>Total Kontribusi</th><th>Status</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+</main><script type="module">
+import {db,requireLogin,money,esc} from "./firebase.js";
+import {collection,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+let all=[];requireLogin(()=>onSnapshot(query(collection(db,"communityOrders"),orderBy("createdAt","desc")),s=>{all=s.docs.map(d=>({id:d.id,...d.data()}));render()}));status.onchange=render;
+function qty(o){return (o.items||[]).reduce((a,x)=>a+(Number(x.qty)||0),0)}
+function render(){const f=status.value;const rows=all.filter(o=>["disetujui","diproses","selesai"].includes(o.status)&&(f==="all"||o.status===f));let p=0;rows.forEach(o=>p+=qty(o));pcs.textContent=p+" PCS";manager.textContent=money(p*1000);kas.textContent=money(p*4000);
+tbody.innerHTML=rows.map(o=>{const q=qty(o),m=q*1000,k=q*4000;return `<tr><td>${esc(o.nomorNota)}</td><td>${esc(o.tanggal||"")}</td><td>${esc(o.namaPelanggan)}</td><td>${q}</td><td>${money(m)}</td><td>${money(k)}</td><td>${money(m+k)}</td><td>${esc(o.status)}</td></tr>`}).join("")||'<tr><td colspan="8" class="empty">Belum ada data approved.</td></tr>'}
+</script></body></html>
