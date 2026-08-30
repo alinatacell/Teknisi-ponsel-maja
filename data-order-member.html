@@ -43,7 +43,7 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .paybox{margin-top:10px;padding:10px;border:2px dashed #64748b;border-radius:9px;background:#f8fafc}
 .paygrid{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
-.primary{background:#111827;color:#fff}.green{background:#16a34a;color:#fff}.wa{background:#22c55e;color:#fff}.secondary{background:#e5e7eb;color:#111827}
+.primary{background:#111827;color:#fff}.green{background:#16a34a;color:#fff}.wa{background:#22c55e;color:#fff}.secondary{background:#e5e7eb;color:#111827}.edit{background:#facc15;color:#111827}.danger{background:#dc2626;color:#fff}
 .empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
 .modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:10000;padding:12px}
 .modal.show{display:flex}.modal-box{width:min(480px,100%);background:#fff;border:3px solid #111827;border-radius:14px;box-shadow:7px 7px 0 #111827;padding:15px}
@@ -115,6 +115,24 @@ body.dark .meta b{color:#fff}
   <div class="modal-actions">
    <button class="btn secondary" type="button" onclick="closePay()">Batal</button>
    <button class="btn green" type="button" onclick="savePayment()">💾 Simpan Pembayaran</button>
+  </div>
+ </div>
+</div>
+
+<div class="modal" id="editModal">
+ <div class="modal-box">
+  <h3>✏️ Edit Order Member</h3>
+  <div id="editInfo" style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:10px"></div>
+  <div style="display:grid;gap:9px">
+   <div><label>NAMA MEMBER</label><input id="editNama"></div>
+   <div><label>NO. WA</label><input id="editWa" inputmode="tel"></div>
+   <div><label>ALAMAT</label><input id="editAlamat"></div>
+   <div><label>TEMPO (HARI)</label><input id="editTempo" inputmode="numeric"></div>
+   <div><label>JATUH TEMPO</label><input id="editJatuh" type="date"></div>
+  </div>
+  <div class="modal-actions">
+   <button class="btn secondary" type="button" onclick="closeEdit()">Batal</button>
+   <button class="btn edit" type="button" onclick="saveEdit()">💾 Simpan Perubahan</button>
   </div>
  </div>
 </div>
@@ -334,6 +352,8 @@ function renderOrder(r){
 
    <div class="actions">
     <button class="btn wa" type="button" onclick="sendWA('${r.id}')">📲 Kirim WA</button>
+    <button class="btn edit" type="button" onclick="openEdit('${r.id}')">✏️ Edit</button>
+    <button class="btn danger" type="button" onclick="deleteOrder('${r.id}')">🗑️ Hapus</button>
     ${st==="tagihan"?`<button class="btn primary" type="button" onclick="markFull('${r.id}')">✅ Tandai Lunas</button>`:""}
    </div>
   </div>
@@ -414,6 +434,88 @@ window.markFull=async id=>{
   await load();
   notice("Order berhasil ditandai LUNAS.","ok");
  }catch(e){console.error(e);notice("Gagal melunasi: "+e.message,"err")}
+};
+
+window.closeEdit=()=>{$("editModal").classList.remove("show");window.editOrderId=null};
+
+window.openEdit=id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const m=memberOf(r);
+ window.editOrderId=id;
+ $("editInfo").innerHTML=`<b>${esc(r.nomorNota||id)}</b><br>Kode Member: ${esc(m.kode||r.kodeMember||"-")}<br><span style="color:#b45309">Edit ini mengubah data member dan jatuh tempo, bukan stok produk.</span>`;
+ $("editNama").value=m.nama||"";
+ $("editWa").value=m.wa||"";
+ $("editAlamat").value=m.alamat||"";
+ $("editTempo").value=Number(r.tempoHari||0)||0;
+ const due=dueDateValue(r);
+ $("editJatuh").value=due?`${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`:"";
+ $("editModal").classList.add("show");
+};
+
+window.saveEdit=async()=>{
+ const id=window.editOrderId;if(!id)return;
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const nama=$("editNama").value.trim(),wa=$("editWa").value.trim(),alamat=$("editAlamat").value.trim();
+ const tempo=Math.max(0,num($("editTempo").value));
+ const jatuh=$("editJatuh").value;
+ if(!nama) return notice("Nama member wajib diisi.","err");
+ if(!wa) return notice("No. WA wajib diisi.","err");
+ try{
+  notice("Menyimpan perubahan...");
+  const ref=doc(db,"order_member",id);
+  await runTransaction(db,async tx=>{
+   const snap=await tx.get(ref);
+   if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
+   const d=snap.data()||{};
+   if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik akun ini.");
+   const base=d.member||d.pelanggan||{};
+   const member={...base,nama,wa,alamat};
+   const patch={member,tempoHari:tempo,jatuhTempo:jatuh,tanggalJatuhTempo:jatuh,updatedAt:serverTimestamp()};
+   if(d.member) patch.member=member;
+   if(d.pelanggan) patch.pelanggan={...d.pelanggan,nama,wa,alamat};
+   tx.update(ref,patch);
+  });
+  closeEdit();
+  await load();
+  notice("Order berhasil diperbarui.","ok");
+ }catch(e){console.error(e);notice("Gagal edit: "+e.message,"err")}
+};
+
+window.deleteOrder=async id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const items=itemsOf(r);
+ if(!confirm(`Hapus order ${r.nomorNota||id}?\n\nStok produk yang sudah dikurangi saat approval akan dikembalikan ke stok member.`))return;
+ try{
+  notice("Menghapus order dan mengembalikan stok...");
+  const ref=doc(db,"order_member",id);
+  await runTransaction(db,async tx=>{
+   const snap=await tx.get(ref);
+   if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
+   const d=snap.data()||{};
+   if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik akun ini.");
+
+   const qtyMap=new Map();
+   for(const x of items){
+    if(!x.produkId)continue;
+    qtyMap.set(x.produkId,(qtyMap.get(x.produkId)||0)+(Number(x.qty)||0));
+   }
+   const stockRefs=[...qtyMap.entries()].map(([pid,qty])=>({pid,qty,ref:doc(db,"stok",pid)}));
+   const stockSnaps=[];
+   for(const x of stockRefs) stockSnaps.push({x,s:await tx.get(x.ref)});
+   for(const z of stockSnaps){
+    if(!z.s.exists())throw Error(`Stok ${z.x.pid} tidak ditemukan. Hapus dibatalkan agar data stok aman.`);
+    const sd=z.s.data()||{};
+    if(String(sd.ownerUid||sd.ownerId||"")!==ownerUid)throw Error("Stok bukan milik akun ini.");
+   }
+   for(const z of stockSnaps){
+    const sd=z.s.data()||{},current=Number(sd.sisa??sd.stok??0)||0,baru=current+z.x.qty;
+    tx.update(z.x.ref,{sisa:baru,stok:baru,status:"tersedia",updatedAt:serverTimestamp()});
+   }
+   tx.delete(ref);
+  });
+  await load();
+  notice("Order berhasil dihapus dan stok dikembalikan.","ok");
+ }catch(e){console.error(e);notice("Gagal hapus: "+e.message,"err")}
 };
 
 function buildWA(r){
