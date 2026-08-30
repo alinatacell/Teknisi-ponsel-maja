@@ -251,11 +251,10 @@ body.dark textarea:focus{
   pointer-events:auto!important;
   user-select:text!important;
   -webkit-user-select:text!important;
-  touch-action:manipulation!important;
   -webkit-touch-callout:default!important;
   caret-color:#111!important;
 }
-#nominal{cursor:text!important}
+#nominal{cursor:text!important;display:block!important}
 </style></head>
 <body>
 
@@ -314,10 +313,15 @@ body.dark textarea:focus{
 
       <div class="field">
         <label>NOMINAL</label>
-        <input id="nominal" type="text" inputmode="numeric" pattern="[0-9]*"
-       value="" placeholder="Masukkan nominal" autocomplete="off"
-       autocorrect="off" autocapitalize="off" spellcheck="false"
-       enterkeyhint="done">
+        <input id="nominal"
+       type="tel"
+       inputmode="numeric"
+       autocomplete="off"
+       autocorrect="off"
+       autocapitalize="off"
+       spellcheck="false"
+       enterkeyhint="done"
+       placeholder="Masukkan nominal">
       </div>
 
       <div class="field" style="grid-column:1/-1">
@@ -675,15 +679,6 @@ onAuthStateChanged(auth,async user=>{
 });
 
 
-const nominalField=document.getElementById("nominal");
-if(nominalField){
-  nominalField.addEventListener("input",function(){
-    this.value=this.value.replace(/[^0-9]/g,"");
-  });
-  nominalField.addEventListener("focus",function(){
-    setTimeout(()=>this.scrollIntoView({block:"center",behavior:"smooth"}),120);
-  });
-}
 </script>
 </body>
 </html>
