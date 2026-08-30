@@ -246,16 +246,7 @@ body.dark textarea:focus{
   box-shadow:0 0 0 3px #facc1522;
 }
 </style>
-<style>
-#nominal,#keterangan{
-  pointer-events:auto!important;
-  user-select:text!important;
-  -webkit-user-select:text!important;
-  -webkit-touch-callout:default!important;
-  caret-color:#111!important;
-}
-#nominal{cursor:text!important;display:block!important}
-</style></head>
+</head>
 <body>
 
 <header class="header">
@@ -303,30 +294,12 @@ body.dark textarea:focus{
 
       <div class="field">
         <label>JENIS PENGELUARAN</label>
-        <select id="jenis" onchange="ubahSumberDana()">
+        <select id="jenis" onchange="ubahJenis()">
           <option value="Transportasi">Transportasi</option>
           <option value="Acara Komunitas">Acara Komunitas</option>
           <option value="Lain Lain">Lain Lain</option>
           <option value="Pengeluaran Pengelola">Pengeluaran Pengelola</option>
         </select>
-      </div>
-
-      <div class="field">
-        <label>NOMINAL</label>
-        <input id="nominal"
-       type="tel"
-       inputmode="numeric"
-       autocomplete="off"
-       autocorrect="off"
-       autocapitalize="off"
-       spellcheck="false"
-       enterkeyhint="done"
-       placeholder="Masukkan nominal">
-      </div>
-
-      <div class="field" style="grid-column:1/-1">
-        <label>KETERANGAN</label>
-        <textarea id="keterangan" placeholder="Keterangan pengeluaran" autocomplete="off"></textarea>
       </div>
 
       <div class="actions">
@@ -460,6 +433,7 @@ window.tutupPopup=()=>$("popup").classList.remove("show");
 
 function bersihkan(){
   $("tanggal").value=today();
+  $("jenis").value="Konsumsi";
   $("nominal").value="";
   $("keterangan").value="";
   $("sumberDana").value="kas";
@@ -606,6 +580,22 @@ async function simpan(){
     return;
   }
 
+  let karyawanId="";
+  let namaKaryawan="";
+  let karyawanUid="";
+
+  if(jenis==="Kasbon Karyawan"){
+    const op=$("karyawan").selectedOptions[0];
+    karyawanId=$("karyawan").value;
+    namaKaryawan=op?.dataset?.name||op?.textContent||"";
+    karyawanUid=op?.dataset?.uid||"";
+
+    if(!karyawanId){
+      showPopup("Karyawan belum dipilih","Pilih karyawan untuk transaksi kasbon.");
+      return;
+    }
+  }
+
   try{
     $("status").textContent="⏳ Menyimpan pengeluaran ke Firebase...";
 
@@ -677,8 +667,6 @@ onAuthStateChanged(auth,async user=>{
   uid=user.uid;
   await muatSemua();
 });
-
-
 </script>
 </body>
 </html>
