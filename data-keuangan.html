@@ -53,7 +53,7 @@ body.dark .metric.blue,body.dark .metric.orange,body.dark .metric.green,body.dar
 body.dark .money-total,body.dark .total-row td{background:#1c1917}
 body.dark th{background:#020617}
 body.dark td{border-color:#334155}
-@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
+.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.expense-table{margin-top:12px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
 @media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding-top:80px}.summary-grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.acts .btn{padding:8px}.metric .value{font-size:18px}}
 </style>
 </head>
@@ -195,6 +195,44 @@ body.dark td{border-color:#334155}
  </div>
 
  <div class="card">
+  <div class="title">4. PENGELUARAN MEMBER</div>
+  <div class="section-note">
+   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
+   <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
+  </div>
+  <div class="expense-grid">
+   <div class="metric green">
+    <div class="label">Pengeluaran Uang Kas</div>
+    <div class="value" id="expenseKas">Rp 0</div>
+    <div class="sub">Transportasi + acara + lain-lain</div>
+   </div>
+   <div class="metric orange">
+    <div class="label">Pengeluaran Pengelola</div>
+    <div class="value" id="expensePengelola">Rp 0</div>
+    <div class="sub">Dari hasil pengelola</div>
+   </div>
+   <div class="metric red">
+    <div class="label">Total Pengeluaran</div>
+    <div class="value" id="expenseTotal">Rp 0</div>
+    <div class="sub">Kas + pengelola</div>
+   </div>
+  </div>
+  <div class="money-total">
+   Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
+   &nbsp; | &nbsp;
+   Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
+  </div>
+  <div class="table-wrap expense-table">
+   <table>
+    <thead><tr>
+     <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
+    </tr></thead>
+    <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
+
+ <div class="card">
   <div class="title">REKAP PER ORDER MEMBER</div>
   <div class="table-wrap">
    <table>
@@ -222,7 +260,7 @@ const cfg={
  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-let uid="",ownerUid="",profile={},stocks=[],orders=[],ready=false;
+let uid="",ownerUid="",profile={},stocks=[],orders=[],expenses=[],ready=false;
 
 const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
@@ -331,6 +369,61 @@ async function loadOrders(){
 
 function currentOrders(){
  return orders.filter(inPeriod);
+}
+
+async function loadExpenses(){
+  const s=await getDocs(collection(db,"pengeluaranMember"));
+  expenses=[];
+  s.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    // Jika pengeluaran mempunyai ownerUid/ownerId, hormati kepemilikan.
+    // Data lama tanpa owner field tetap ditampilkan agar histori tidak hilang.
+    const hasOwner=!!String(x.ownerUid||x.ownerId||"").trim();
+    if(!hasOwner ||
+       String(x.ownerUid||"")===ownerUid ||
+       String(x.ownerId||"")===ownerUid ||
+       String(x.ownerUid||"")===uid ||
+       String(x.ownerId||"")===uid){
+      expenses.push(x);
+    }
+  });
+}
+
+function currentExpenses(){
+  return expenses.filter(inPeriod);
+}
+
+function renderExpenses(){
+  let kas=0,pengelola=0;
+  for(const e of currentExpenses()){
+    const n=Math.max(0,num(e.nominal));
+    const source=String(e.sumber||"").toLowerCase();
+    if(source==="kas") kas+=n;
+    else if(source==="pengelola") pengelola+=n;
+  }
+
+  const qty=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty,0),0);
+  const kasMasuk=qty*4000;
+  const upMasuk=qty*1000;
+
+  $("expenseKas").textContent=rp(kas);
+  $("expensePengelola").textContent=rp(pengelola);
+  $("expenseTotal").textContent=rp(kas+pengelola);
+  $("saldoKasAkhir").textContent=rp(kasMasuk-kas);
+  $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
+
+  const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
+    const source=String(e.sumber||"").toLowerCase();
+    return `<tr>
+      <td>${esc(e.tanggal||"-")}</td>
+      <td>${esc(e.jenisLabel||e.jenis||"-")}</td>
+      <td>${source==="pengelola"?"HASIL PENGELOLA":"UANG KAS"}</td>
+      <td>${esc(e.keterangan||"-")}</td>
+      <td class="num">${rp(num(e.nominal))}</td>
+    </tr>`;
+  }).join("");
+
+  $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
 }
 
 function buildStockData(){
@@ -473,6 +566,7 @@ function renderAll(){
  renderStock();
  renderBills();
  renderOrders();
+ renderExpenses();
 }
 
 $("periode").onchange=renderAll;
@@ -496,6 +590,7 @@ onAuthStateChanged(auth,async u=>{
   $("email").textContent=u.email||"-";
   await loadStocks();
   await loadOrders();
+  await loadExpenses();
   ready=true;
   renderAll();
   notice(`Akun aktif • Data Keuangan Member milik Owner ini • ${orders.length} order member.`,"ok");
