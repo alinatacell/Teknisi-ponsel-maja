@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#081326">
+<title>RINGKASAN GAJI KARYAWAN</title>
+<style>
+*{box-sizing:border-box}
+:root{--navy:#081326;--navy2:#101d33;--yellow:#ffc107;--bg:#f2f5f9;--card:#fff;--line:#dbe3ed;--text:#172033;--muted:#64748b;--green:#16a34a;--red:#dc2626;--blue:#2563eb;--orange:#f59e0b}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.header{position:sticky;top:0;z-index:30;background:var(--navy);color:#fff;min-height:74px;padding:9px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px #0004}
+.logo{width:52px;height:52px;object-fit:contain;border-radius:10px;flex:none}
+.brand{flex:1;min-width:0}.brand h1{font-size:18px;margin:0;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand p{font-size:11px;color:#cbd5e1;margin:3px 0 0}
+.owner{text-align:right;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.owner b{display:block;font-size:12px}.owner span{display:block;font-size:10px;color:#cbd5e1;margin-top:3px}
+.refresh{height:44px;width:44px;border:0;border-radius:12px;background:var(--yellow);font-weight:900;color:#111;font-size:20px}
+.wrap{max-width:1250px;margin:auto;padding:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 4px 16px #0000000a}
+.status{font-size:12px;color:var(--muted);line-height:1.5}.ok{color:#15803d;font-weight:800}.err{color:#b91c1c;font-weight:800}
+.toolbar{display:grid;grid-template-columns:1fr 1fr 1.5fr auto;gap:9px;align-items:end}
+.field{display:flex;flex-direction:column;gap:5px}label{font-size:11px;font-weight:900;color:#475569}
+input,select{height:43px;width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:0 11px;background:#fff;outline:none}
+input:focus,select:focus{border-color:var(--yellow);box-shadow:0 0 0 3px #ffc10722}
+.btn{height:43px;border:0;border-radius:11px;padding:0 15px;font-weight:900}.dark{background:var(--navy);color:#fff}.yellow{background:var(--yellow);color:#111}.green{background:var(--green);color:#fff}.light{background:#e2e8f0;color:#111}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.kpi{padding:13px;border-radius:14px;color:#fff}.kpi small{display:block;font-size:10px;font-weight:900;opacity:.9}.kpi b{display:block;font-size:20px;margin-top:6px}
+.k1{background:linear-gradient(135deg,#2563eb,#1d4ed8)}.k2{background:linear-gradient(135deg,#16a34a,#059669)}.k3{background:linear-gradient(135deg,#7c3aed,#4f46e5)}.k4{background:linear-gradient(135deg,#ef4444,#dc2626)}.k5{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.section-title{font-size:17px;font-weight:900;margin:0 0 10px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}
+table{width:100%;border-collapse:collapse;min-width:1120px}
+th{background:var(--navy2);color:#fff;text-align:left;padding:10px;font-size:11px}
+td{padding:10px;border-bottom:1px solid #edf1f5;font-size:11px;vertical-align:middle}
+.num{text-align:right;white-space:nowrap}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:900}
+.badge.green{background:#dcfce7;color:#166534}.badge.red{background:#fee2e2;color:#991b1b}.badge.blue{background:#dbeafe;color:#1d4ed8}.badge.orange{background:#fef3c7;color:#92400e}.badge.gray{background:#e2e8f0;color:#475569}
+.employee-card{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr 1fr;gap:8px;align-items:end}
+.info{border:1px solid var(--line);border-radius:10px;padding:9px;background:#f8fafc}
+.info small{display:block;font-size:9px;color:var(--muted);font-weight:900}.info b{display:block;margin-top:4px;font-size:12px}
+.edit{height:36px;border:0;border-radius:9px;background:#fef3c7;color:#92400e;font-weight:900;padding:0 11px}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.notice{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);font-size:11px;color:var(--muted);margin-top:9px}
+.notice.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.popup{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:100;padding:12px}
+.popup.show{display:flex}.popup-box{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:15px;padding:17px}
+.popup-box h3{margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+.popup-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.calendar-box{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.day-info{padding:11px;border:1px solid var(--line);border-radius:10px;background:#f8fafc}
+.day-info small{font-size:9px;color:var(--muted);font-weight:900}.day-info b{display:block;margin-top:4px;font-size:14px}
+.action-row{display:flex;gap:6px;flex-wrap:wrap}.mini{height:34px;padding:0 9px;border:0;border-radius:8px;font-size:10px;font-weight:900}
+.hadir{background:#dcfce7;color:#166534}.tidak{background:#fee2e2;color:#991b1b}.libur{background:#e2e8f0;color:#475569}
+@media(max-width:1050px){.kpis{grid-template-columns:repeat(3,1fr)}.toolbar{grid-template-columns:1fr 1fr}.employee-card{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:700px){
+.header{min-height:64px;padding:8px 10px;gap:8px}.logo{width:42px;height:42px}.brand h1{font-size:14px}.brand p{font-size:9px}.owner{display:none}
+.wrap{padding:9px 8px}.card{padding:10px;border-radius:14px}.toolbar{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.kpi{padding:10px}.kpi b{font-size:16px}
+.employee-card{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.full{grid-column:auto}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table{min-width:1120px}
+.calendar-box{grid-template-columns:1fr}
+}
+
+.salary-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.salary-card{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.salary-head{padding:12px 13px;background:var(--navy2);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.salary-head b{font-size:14px}
+.salary-head small{display:block;color:#cbd5e1;font-size:9px;margin-top:3px}
+.salary-body{padding:12px}
+.salary-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.salary-item{border:1px solid #e5e7eb;border-radius:9px;padding:8px;background:#f8fafc}
+.salary-item small{display:block;font-size:9px;color:#64748b;font-weight:900}
+.salary-item b{display:block;margin-top:3px;font-size:12px}
+.salary-total{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.salary-total>div{border-radius:10px;padding:10px}
+.salary-gross{background:#ecfdf5;border:1px solid #a7f3d0}
+.salary-net{background:#eff6ff;border:1px solid #bfdbfe}
+.salary-gross b{color:#047857;font-size:16px}
+.salary-net b{color:#1d4ed8;font-size:16px}
+.salary-note{font-size:9px;color:#64748b;margin-top:8px;line-height:1.45}
+@media(max-width:700px){
+  .salary-summary{grid-template-columns:1fr}
+}
+
+.page-nav{display:flex;gap:8px;overflow:auto;margin-bottom:12px}
+.page-nav a{flex:1;min-width:130px;text-decoration:none;text-align:center;padding:10px 8px;border-radius:11px;background:#e2e8f0;color:#172033;font-size:11px;font-weight:900}
+.page-nav a.active{background:#ffc107;color:#111}
+.card-title{font-size:17px;font-weight:900;margin:0 0 10px}
+.salary-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.salary-card{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.salary-head{padding:12px 13px;background:var(--navy2);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.salary-head b{font-size:14px}.salary-head small{display:block;color:#cbd5e1;font-size:9px;margin-top:3px}
+.salary-body{padding:12px}.salary-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.salary-item{border:1px solid #e5e7eb;border-radius:9px;padding:8px;background:#f8fafc}
+.salary-item small{display:block;font-size:9px;color:#64748b;font-weight:900}.salary-item b{display:block;margin-top:3px;font-size:12px}
+.salary-total{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.salary-total>div{border-radius:10px;padding:10px}.salary-gross{background:#ecfdf5;border:1px solid #a7f3d0}.salary-net{background:#eff6ff;border:1px solid #bfdbfe}
+.salary-gross b{color:#047857;font-size:16px}.salary-net b{color:#1d4ed8;font-size:16px}
+.salary-note{font-size:9px;color:#64748b;margin-top:8px;line-height:1.45}
+.action-row{display:flex;gap:7px;flex-wrap:wrap}.action{height:38px;border:0;border-radius:9px;padding:0 12px;font-size:10px;font-weight:900}
+.action.hadir{background:#dcfce7;color:#166534}.action.tidak{background:#fee2e2;color:#991b1b}.action.edit{background:#fef3c7;color:#92400e}
+.status-pill{display:inline-block;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900}
+.status-hadir{background:#dcfce7;color:#166534}.status-tidak{background:#fee2e2;color:#991b1b}.status-libur{background:#e2e8f0;color:#475569}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+.readonly{background:#f8fafc!important;color:#475569}
+@media(max-width:700px){.salary-summary{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header class="header">
+  <img src="logo.png" class="logo" alt="FIXZY">
+  <div class="brand"><h1>RINGKASAN GAJI KARYAWAN</h1><p>Per karyawan • kalender • absensi </p></div>
+  <div class="owner"><b id="ownerName">Memuat...</b><span id="ownerEmail">Firebase</span></div>
+  <button class="refresh" id="refreshBtn" title="Refresh">↻</button>
+</header>
+<main class="wrap">
+
+    <div class="page-nav">
+      <a class="active" href="data-karyawan.html">📄 Ringkasan Gaji</a>
+      <a class="" href="absensi-karyawan.html">📅 Absensi</a>
+      <a class="" href="izin-akses.html">⚙️ Setting Upah</a>
+    </div>
+    
+<section class="card"><div id="status" class="status">Memeriksa sesi Firebase...</div></section>
+
+<section class="card">
+  <div class="toolbar">
+    <div class="field"><label>PERIODE UPAH</label><select id="periode"><option value="bulan">Bulan ini</option><option value="hari">Hari ini</option><option value="tahun">Tahun ini</option></select></div>
+    <div class="field"><label>TANGGAL / BULAN</label><input id="periodeTanggal" type="month"></div>
+    <div class="field"><label>CARI KARYAWAN</label><input id="cari" placeholder="Nama, jabatan, role..."></div>
+    <button class="btn dark" id="refresh2">↻ Refresh</button>
+  </div>
+  <div class="notice"><b>Perhitungan:</b> Harian berdasarkan HADIR. Bulanan memakai gaji bulanan dan hari libur tidak otomatis memotong. Persentase mengikuti basis yang tersedia pada data.</div>
+</section>
+<section class="kpis">
+  <div class="kpi k1"><small>KARYAWAN</small><b id="karyawan">0</b></div>
+  <div class="kpi k2"><small>HARI HADIR</small><b id="hadir">0</b></div>
+  <div class="kpi k3"><small>TOTAL UPAH</small><b id="gross">Rp 0</b></div>
+  <div class="kpi k4"><small>KASBON</small><b id="kasbon">Rp 0</b></div>
+  <div class="kpi k5"><small>SISA UPAH</small><b id="net">Rp 0</b></div>
+</section>
+<section class="card">
+  <h2 class="card-title">📄 Ringkasan Gaji Masing-Masing Karyawan</h2>
+  <div id="salarySummary" class="salary-summary"><div class="empty">Memuat...</div></div>
+</section>
+
+</main>
+<script type="module">
+
+
+import {initializeApp,getApps,getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,collection,query,where,getDocsFromServer,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+let uid="",ownerUid="",profile={},accounts=[],absensi=[],pengeluaran=[];
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function money(n){return "Rp "+(Number(n)||0).toLocaleString("id-ID");}
+function norm(v){return String(v??"").trim().toLowerCase();}
+function today(){return new Date().toISOString().slice(0,10);}
+function monthNow(){return new Date().toISOString().slice(0,7);}
+function daysInMonth(ym){const [y,m]=ym.split("-").map(Number);return new Date(y,m,0).getDate();}
+function dateOf(x){return String(x.tanggal||x.date||x.tanggalAbsen||"").slice(0,10);}
+function nama(a){return String(a.nama||a.namaKaryawan||a.namaLengkap||a.displayName||a.email||"").trim();}
+function upahHarian(a){return Number(a.upahHarian??a.upah??a.gajiHarian??0)||0;}
+function upahBulanan(a){return Number(a.upahBulanan??a.gajiBulanan??a.gaji??0)||0;}
+function persen(a){return Number(a.persentase??a.persen??a.bonusPersen??0)||0;}
+function jenisUpah(a){return norm(a.jenisUpah||a.sistemUpah||a.tipeUpah||"harian")||"harian";}
+function isHadir(x){return norm(x.status)==="hadir"||!!(x.jamMasuk||x.masuk||x.hadir===true);}
+function isLibur(x){return norm(x.status)==="libur";}
+function isKasbon(x){const j=norm(x.jenis||x.type||"");return j.includes("kasbon")||j.includes("bon");}
+function kasbonAmount(x){return Number(x.nominal||x.jumlah||x.amount||0)||0;}
+function kasbonName(x){return String(x.namaKaryawan||x.nama||x.karyawan||"");}
+function sameEmployee(x,a){
+ const id=x.userId||x.uid||x.karyawanUid||x.employeeUid||"";
+ if(id&&String(id)===String(a.id))return true;
+ const an=norm(nama(a)),xn=norm(x.nama||x.namaKaryawan||x.namaTeknisi||"");
+ return !!an&&!!xn&&(an===xn||an.includes(xn)||xn.includes(an));
+}
+async function loadProfile(user){
+ const s=await getDoc(doc(db,"users",user.uid));
+ if(!s.exists())throw new Error("Profil users tidak ditemukan.");
+ profile=s.data()||{};
+ const r=norm(profile.role);
+ if(!["owner","superadmin"].includes(r))throw new Error("Halaman ini hanya untuk OWNER dan SUPERADMIN.");
+ ownerUid=r==="owner"?user.uid:(profile.ownerUid||profile.ownerId||user.uid);
+}
+async function ownedUsers(){
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId"]){
+  try{
+   const s=await getDocsFromServer(query(collection(db,"users"),where(field,"==",ownerUid)));
+   s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+  }catch(e){console.warn("users",field,e.message);}
+ }
+ try{const s=await getDoc(doc(db,"users",uid));if(s.exists())map.set(uid,{id:uid,...s.data()});}catch{}
+ return [...map.values()].filter(x=>{
+  const r=norm(x.role);
+  return ["employee","karyawan","kasir","kurir","teknisi"].includes(r)||upahHarian(x)>0||upahBulanan(x)>0||persen(x)>0;
+ }).sort((a,b)=>nama(a).localeCompare(nama(b),"id"));
+}
+async function ownedCollection(name){
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId","uid"]){
+  try{
+   const s=await getDocsFromServer(query(collection(db,name),where(field,"==",ownerUid)));
+   s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+  }catch(e){console.warn(name,field,e.message);}
+ }
+ return [...map.values()];
+}
+async function loadAll(){
+ [accounts,absensi,pengeluaran]=await Promise.all([ownedUsers(),ownedCollection("absensi"),ownedCollection("pengeluaran")]);
+}
+function setupHeader(user){
+ $("ownerName").textContent=profile.namaKonter||profile.nama||user.displayName||"Akun FIXZY";
+ $("ownerEmail").textContent=user.email||"Firebase";
+}
+async function boot(loadFn){
+ onAuthStateChanged(auth,async user=>{
+  if(!user){$("status").innerHTML='<span class="err">❌ Sesi login tidak ditemukan.</span>';return;}
+  uid=user.uid;
+  try{await loadProfile(user);setupHeader(user);await loadFn();}
+  catch(e){$("status").innerHTML='<span class="err">🔒 '+esc(e.message||e)+'</span>';}
+ });
+}
+
+function periodKey(){const p=$("periode").value,v=$("periodeTanggal").value;if(p==="hari")return v||today();if(p==="tahun")return(v||monthNow()).slice(0,4);return v||monthNow();}
+function matchPeriod(x){const d=dateOf(x),k=periodKey();if(!d||!k)return false;if(k.length===10)return d===k;if(k.length===7)return d.startsWith(k);return d.startsWith(k);}
+function kasbonFor(a){return pengeluaran.filter(x=>matchPeriod(x)&&isKasbon(x)&&sameEmployee(x,{id:"",nama:kasbonName(x)}));}
+function calculate(a){
+ const rows=absensi.filter(x=>matchPeriod(x)&&sameEmployee(x,a));
+ const hadir=rows.filter(isHadir).length,libur=rows.filter(isLibur).length,tidak=rows.filter(x=>!isHadir(x)&&!isLibur(x)).length;
+ const jenis=jenisUpah(a),ym=periodKey().slice(0,7)||monthNow(),kalender=daysInMonth(ym),hd=upahHarian(a),bm=upahBulanan(a),ps=persen(a);
+ let base=0,percentPay=0;
+ if(jenis==="harian")base=hadir*hd;
+ else if(jenis==="bulanan")base=bm;
+ else if(jenis==="persentase")percentPay=0;
+ else if(jenis==="harian_persentase")base=hadir*hd;
+ else if(jenis==="bulanan_persentase")base=bm;
+ const gross=base+percentPay,kb=kasbonFor(a).reduce((s,x)=>s+kasbonAmount(x),0);
+ return {kalender,hadir,libur,tidak,gross,kb,net:Math.max(0,gross-kb),jenis,hd,bm,ps};
+}
+function jenisLabel(j){return({harian:"Harian",bulanan:"Bulanan",persentase:"Persentase",harian_persentase:"Harian + %",bulanan_persentase:"Bulanan + %"})[j]||"Harian";}
+function tarifLabel(c){if(c.jenis==="harian")return money(c.hd)+"/hari";if(c.jenis==="bulanan")return money(c.bm)+"/bulan";if(c.jenis==="persentase")return c.ps+"%";if(c.jenis==="harian_persentase")return money(c.hd)+" + "+c.ps+"%";return money(c.bm)+" + "+c.ps+"%";}
+function render(){
+ const q=norm($("cari").value),all=accounts.map(a=>({a,c:calculate(a)})),rows=all.filter(r=>!q||[nama(r.a),r.a.jabatan,r.a.posisi,r.a.role,r.a.email].join(" ").toLowerCase().includes(q));
+ $("karyawan").textContent=all.length;$("hadir").textContent=all.reduce((s,r)=>s+r.c.hadir,0);$("gross").textContent=money(all.reduce((s,r)=>s+r.c.gross,0));$("kasbon").textContent=money(all.reduce((s,r)=>s+r.c.kb,0));$("net").textContent=money(all.reduce((s,r)=>s+r.c.net,0));
+ $("salarySummary").innerHTML=rows.map(r=>`<div class="salary-card"><div class="salary-head"><div><b>${esc(nama(r.a))}</b><small>${esc(r.a.jabatan||r.a.posisi||"-")} • ${esc(jenisLabel(r.c.jenis))}</small></div><span class="status-pill ${r.c.hadir?"status-hadir":"status-tidak"}">${r.c.hadir?"Ada Kehadiran":"Belum Hadir"}</span></div><div class="salary-body"><div class="salary-grid">
+ <div class="salary-item"><small>HARI KALENDER</small><b>${r.c.kalender} hari</b></div><div class="salary-item"><small>HADIR</small><b>${r.c.hadir} hari</b></div><div class="salary-item"><small>LIBUR</small><b>${r.c.libur} hari</b></div><div class="salary-item"><small>TIDAK HADIR</small><b>${r.c.tidak} hari</b></div><div class="salary-item"><small>TARIF</small><b>${esc(tarifLabel(r.c))}</b></div><div class="salary-item"><small>KASBON</small><b>${money(r.c.kb)}</b></div></div>
+ <div class="salary-total"><div class="salary-gross"><small>UPAH KOTOR </small><b>${money(r.c.gross)}</b></div><div class="salary-net"><small>SISA DITERIMA </small><b>${money(r.c.net)}</b></div></div>
+ <div class="salary-note">${r.c.jenis==="bulanan"||r.c.jenis==="bulanan_persentase"?"Gaji bulanan tidak otomatis dipotong karena hari libur.":"Upah harian dihitung berdasarkan hari HADIR."}</div></div></div>`).join("")||'<div class="empty">Belum ada karyawan.</div>';
+}
+async function refresh(){$("status").textContent="⏳ Membaca data Firebase...";try{await loadAll();render();$("status").innerHTML=`<span class="ok">✓ ${accounts.length} karyawan • Absensi ${absensi.length} • Pengeluaran ${pengeluaran.length} • Isolasi aktif</span>`;}catch(e){$("status").innerHTML='<span class="err">❌ '+esc(e.message||e)+'</span>';}}
+$("refreshBtn").onclick=refresh;$("refresh2").onclick=refresh;$("cari").oninput=render;
+$("periode").onchange=()=>{const p=$("periode").value,f=$("periodeTanggal");f.type=p==="hari"?"date":"month";f.value=p==="hari"?today():monthNow();refresh();};
+$("periodeTanggal").onchange=refresh;$("periodeTanggal").value=monthNow();
+boot(refresh);
+
+</script>
+</body>
+</html>

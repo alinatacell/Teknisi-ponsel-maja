@@ -1,0 +1,23 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Input Pesanan Member</title><link rel="stylesheet" href="member.css"></head><body><main class="member-wrap">
+<div class="member-card"><h1>Input Pesanan Member</h1><div class="member-grid">
+<div><label>Nomor Nota</label><input id="nota" class="member-input" readonly></div>
+<div><label>Tanggal</label><input id="tanggal" type="date" class="member-input"></div>
+<div><label>Nama Member / Pelanggan</label><input id="nama" class="member-input"></div>
+<div><label>No. WhatsApp</label><input id="wa" class="member-input"></div>
+</div><div style="margin-top:12px"><label>Alamat</label><textarea id="alamat" class="member-textarea"></textarea></div></div>
+<div class="member-card"><h2>Load Produk Member</h2><div class="member-grid"><select id="produk" class="member-select"><option value="">Pilih produk member</option></select><input id="qty" class="member-input" type="number" min="1" value="1"></div><button id="add" class="member-btn member-primary" style="margin-top:10px">Tambah</button></div>
+<div class="member-card"><h2>Rincian Pesanan</h2><div class="member-table-wrap"><table class="member-table"><thead><tr><th>Produk</th><th>Qty</th><th>Harga</th><th>Subtotal</th><th></th></tr></thead><tbody id="items"></tbody></table></div><div id="total" class="member-total">Rp0</div><button id="save" class="member-btn member-success">Simpan Order Member</button><p id="msg"></p></div>
+<script type="module">
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, where, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {getApps,getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+const auth=getAuth(getApps()[0]||getApp()); const db=getFirestore(getApps()[0]||getApp());
+let user=null, products=[], cart=[];
+const money=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const gen=()=>{const d=new Date();return "OM-"+d.toISOString().slice(0,10).replaceAll("-","")+"-"+Math.random().toString(36).slice(2,6).toUpperCase()};
+onAuthStateChanged(auth,async u=>{if(!u){location.href="../login.html";return}user=u;nota.value=gen();tanggal.value=new Date().toISOString().slice(0,10);const s=await getDocs(collection(db,"stokMember"));products=s.docs.map(d=>({id:d.id,...d.data()}));produk.innerHTML='<option value="">Pilih produk member</option>'+products.map(p=>`<option value="${esc(p.id)}">${esc(p.nama||p.name||p.namaProduk||"Produk")} — ${money(p.harga||p.price||0)} — stok ${p.stok??p.stock??0}</option>`).join("")});
+add.onclick=()=>{const p=products.find(x=>x.id===produk.value),n=Math.max(1,Number(qty.value)||1);if(!p)return msg.textContent="Pilih produk.";const st=Number(p.stok??p.stock??0);if(n>st)return msg.textContent="Stok member tidak cukup.";const name=p.nama||p.name||p.namaProduk||"Produk";const price=Number(p.harga??p.price)||0;const old=cart.find(x=>x.productId===p.id);if(old)old.qty+=n;else cart.push({productId:p.id,name,price,qty:n});render()};
+function render(){items.innerHTML=cart.map((x,i)=>`<tr><td>${esc(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(x.qty*x.price)}</td><td><button class="member-btn member-danger" data-i="${i}">Hapus</button></td></tr>`).join("");items.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.i,1);render()});total.textContent=money(cart.reduce((a,x)=>a+x.qty*x.price,0))}
+save.onclick=async()=>{if(!nama.value.trim()||!wa.value.trim()||!alamat.value.trim()||!cart.length)return msg.textContent="Lengkapi data member dan minimal satu produk.";const totalValue=cart.reduce((a,x)=>a+x.qty*x.price,0);await addDoc(collection(db,"orderMember"),{nomorNota:nota.value,tanggal:tanggal.value,namaMember:nama.value.trim(),noWa:wa.value.trim(),alamat:alamat.value.trim(),items:cart,total:totalValue,status:"menunggu",createdBy:user.uid,createdByEmail:user.email||"",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});msg.textContent="Order tersimpan dan menunggu approval.";cart=[];render();nota.value=gen();nama.value=wa.value=alamat.value=""};
+</script></main></body></html>
