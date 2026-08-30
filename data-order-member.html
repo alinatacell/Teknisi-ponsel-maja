@@ -57,7 +57,8 @@ body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475
 body.dark .items,body.dark .money,body.dark .paybox{border-color:#475569}
 body.dark .money{background:#1c1917}
 body.dark .meta b{color:#fff}
-@media(max-width:800px){.filters{grid-template-columns:1fr}.paygrid{grid-template-columns:1fr}.order-head{flex-direction:column}}
+@media(max-width:800px){.filters{grid-template-columns:1fr}.paygrid{grid-template-columns:1fr}.order-head{flex-direction:column}.edit-item-row{grid-template-columns:1fr 1fr!important}}
+@media(max-width:520px){#editModal .modal-box>div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}.edit-item-row{grid-template-columns:1fr!important}}
 @media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding-top:80px}.refresh{padding:8px}.actions .btn{flex:1;min-width:120px}}
 </style>
 </head>
@@ -120,19 +121,30 @@ body.dark .meta b{color:#fff}
 </div>
 
 <div class="modal" id="editModal">
- <div class="modal-box">
-  <h3>✏️ Edit Order Member</h3>
+ <div class="modal-box" style="max-width:850px;max-height:92vh;overflow:auto">
+  <h3>✏️ Edit Semua Data Order Member</h3>
   <div id="editInfo" style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:10px"></div>
-  <div style="display:grid;gap:9px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+   <div><label>NOMOR NOTA</label><input id="editNota"></div>
+   <div><label>TANGGAL</label><input id="editTanggal" type="date"></div>
    <div><label>NAMA MEMBER</label><input id="editNama"></div>
+   <div><label>KODE MEMBER</label><input id="editKodeMember"></div>
    <div><label>NO. WA</label><input id="editWa" inputmode="tel"></div>
    <div><label>ALAMAT</label><input id="editAlamat"></div>
    <div><label>TEMPO (HARI)</label><input id="editTempo" inputmode="numeric"></div>
    <div><label>JATUH TEMPO</label><input id="editJatuh" type="date"></div>
+   <div><label>DP / UANG MUKA</label><input id="editDp" inputmode="numeric"></div>
   </div>
+  <div style="margin-top:12px;border-top:2px solid #111827;padding-top:10px">
+   <div style="font-size:12px;font-weight:900;margin-bottom:7px">DAFTAR PRODUK / QTY / HARGA / DISKON</div>
+   <div id="editItems"></div>
+   <button class="btn secondary" type="button" onclick="addEditItem()" style="margin-top:8px">➕ Tambah Produk</button>
+  </div>
+  <div id="editTotalPreview" style="margin-top:10px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb;font-size:12px;line-height:1.8"></div>
+  <div style="font-size:10px;color:#64748b;margin-top:8px">Perubahan qty produk akan menyesuaikan stok member secara otomatis. OwnerUid, UID, status sistem, dan histori pembayaran tidak dapat dipindahkan ke Owner lain.</div>
   <div class="modal-actions">
    <button class="btn secondary" type="button" onclick="closeEdit()">Batal</button>
-   <button class="btn edit" type="button" onclick="saveEdit()">💾 Simpan Perubahan</button>
+   <button class="btn edit" type="button" onclick="saveEdit()">💾 Simpan Semua Perubahan</button>
   </div>
  </div>
 </div>
@@ -436,49 +448,136 @@ window.markFull=async id=>{
  }catch(e){console.error(e);notice("Gagal melunasi: "+e.message,"err")}
 };
 
-window.closeEdit=()=>{$("editModal").classList.remove("show");window.editOrderId=null};
+window.closeEdit=()=>{$("editModal").classList.remove("show");window.editOrderId=null;window.editItemsData=[]};
+
+window.addEditItem=(item={})=>{
+ const box=$("editItems");
+ const row=document.createElement("div");
+ row.className="edit-item-row";
+ row.style="display:grid;grid-template-columns:1fr 1fr 1.2fr .55fr .9fr .8fr auto;gap:6px;align-items:end;margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc";
+ row.innerHTML=`
+  <div><label>PRODUK ID</label><input class="ei-pid" value="${esc(item.produkId||item.id||"")}" placeholder="ID stok"></div>
+  <div><label>KODE PRODUK</label><input class="ei-kode" value="${esc(item.kode||"")}" placeholder="Kode"></div>
+  <div><label>NAMA PRODUK</label><input class="ei-nama" value="${esc(item.nama||"")}" placeholder="Nama produk"></div>
+  <div><label>QTY</label><input class="ei-qty" inputmode="numeric" value="${Number(item.qty||0)||0}"></div>
+  <div><label>HARGA</label><input class="ei-harga" inputmode="numeric" value="${Number(item.harga||0)||0}"></div>
+  <div><label>DISKON</label><input class="ei-diskon" inputmode="numeric" value="${Number(item.diskon||0)||0}"></div>
+  <button class="btn danger" type="button" onclick="this.closest('.edit-item-row').remove();updateEditTotal()">🗑️</button>`;
+ box.appendChild(row);
+ row.querySelectorAll("input").forEach(x=>x.addEventListener("input",updateEditTotal));
+ updateEditTotal();
+};
+
+function getEditItems(){
+ return [...document.querySelectorAll("#editItems .edit-item-row")].map(row=>{
+  const produkId=row.querySelector(".ei-pid").value.trim();
+  const kode=row.querySelector(".ei-kode").value.trim();
+  const nama=row.querySelector(".ei-nama").value.trim();
+  const qty=Math.max(0,num(row.querySelector(".ei-qty").value));
+  const harga=Math.max(0,num(row.querySelector(".ei-harga").value));
+  const diskon=Math.min(Math.max(0,num(row.querySelector(".ei-diskon").value)),harga*qty);
+  return {produkId,nama,kode,qty,harga,diskon,total:Math.max(0,harga*qty-diskon)};
+ }).filter(x=>x.qty>0);
+}
+
+window.updateEditTotal=()=>{
+ const items=getEditItems(),subtotal=items.reduce((a,x)=>a+x.harga*x.qty,0),diskon=items.reduce((a,x)=>a+x.diskon,0),total=Math.max(0,subtotal-diskon),dp=Math.min(num($("editDp").value),total),sisa=Math.max(0,total-dp);
+ $("editTotalPreview").innerHTML=`<b>Subtotal:</b> ${rp(subtotal)} &nbsp; | &nbsp; <b>Diskon:</b> ${rp(diskon)}<br><b>Total Order:</b> ${rp(total)} &nbsp; | &nbsp; <b>DP:</b> ${rp(dp)} &nbsp; | &nbsp; <b>Sisa:</b> ${rp(sisa)}`;
+};
 
 window.openEdit=id=>{
  const r=rows.find(x=>x.id===id);if(!r)return;
  const m=memberOf(r);
  window.editOrderId=id;
- $("editInfo").innerHTML=`<b>${esc(r.nomorNota||id)}</b><br>Kode Member: ${esc(m.kode||r.kodeMember||"-")}<br><span style="color:#b45309">Edit ini mengubah data member dan jatuh tempo, bukan stok produk.</span>`;
+ $("editInfo").innerHTML=`<b>${esc(r.nomorNota||id)}</b><br>Kode Member saat ini: ${esc(m.kode||r.kodeMember||"-")}<br>Edit di sini mencakup data nota, member, tempo, DP, dan seluruh detail produk.`;
+ $("editNota").value=r.nomorNota||r.nota||"";
+ const rawTanggal=String(r.tanggal||"");
+ $("editTanggal").value=/^\d{4}-\d{2}-\d{2}$/.test(rawTanggal)?rawTanggal:"";
  $("editNama").value=m.nama||"";
+ $("editKodeMember").value=m.kode||r.kodeMember||"";
  $("editWa").value=m.wa||"";
  $("editAlamat").value=m.alamat||"";
  $("editTempo").value=Number(r.tempoHari||0)||0;
  const due=dueDateValue(r);
  $("editJatuh").value=due?`${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`:"";
+ $("editDp").value=Number(r.dp??r.uangMuka??0)||0;
+ $("editItems").innerHTML="";
+ itemsOf(r).forEach(x=>addEditItem(x));
+ if(!itemsOf(r).length)addEditItem();
  $("editModal").classList.add("show");
+ updateEditTotal();
 };
 
 window.saveEdit=async()=>{
  const id=window.editOrderId;if(!id)return;
  const r=rows.find(x=>x.id===id);if(!r)return;
  const nama=$("editNama").value.trim(),wa=$("editWa").value.trim(),alamat=$("editAlamat").value.trim();
- const tempo=Math.max(0,num($("editTempo").value));
- const jatuh=$("editJatuh").value;
- if(!nama) return notice("Nama member wajib diisi.","err");
- if(!wa) return notice("No. WA wajib diisi.","err");
+ const nota=$("editNota").value.trim(),tanggal=$("editTanggal").value, kodeMember=$("editKodeMember").value.trim();
+ const tempo=Math.max(0,num($("editTempo").value)),jatuh=$("editJatuh").value;
+ const items=getEditItems();
+ if(!nota)return notice("Nomor nota wajib diisi.","err");
+ if(!nama)return notice("Nama member wajib diisi.","err");
+ if(!wa)return notice("No. WA wajib diisi.","err");
+ if(!items.length)return notice("Minimal satu produk harus ada.","err");
+ if(items.some(x=>!x.produkId))return notice("Semua produk wajib memiliki Produk ID.","err");
+ const subtotal=items.reduce((a,x)=>a+x.harga*x.qty,0),diskon=items.reduce((a,x)=>a+x.diskon,0),total=Math.max(0,subtotal-diskon);
+ const dp=Math.min(num($("editDp").value),total),sisa=Math.max(0,total-dp);
  try{
-  notice("Menyimpan perubahan...");
+  notice("Menyimpan semua perubahan dan menyesuaikan stok...");
   const ref=doc(db,"order_member",id);
   await runTransaction(db,async tx=>{
    const snap=await tx.get(ref);
    if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
    const d=snap.data()||{};
    if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik akun ini.");
+
+   const oldItems=itemsOf(d);
+   const oldMap=new Map(),newMap=new Map();
+   for(const x of oldItems)oldMap.set(x.produkId,(oldMap.get(x.produkId)||0)+x.qty);
+   for(const x of items)newMap.set(x.produkId,(newMap.get(x.produkId)||0)+x.qty);
+   const pids=new Set([...oldMap.keys(),...newMap.keys()].filter(Boolean));
+   const stockData=[];
+   for(const pid of pids){
+    const sr=doc(db,"stok",pid),ss=await tx.get(sr);
+    if(!ss.exists())throw Error(`Stok produk ${pid} tidak ditemukan.`);
+    const sd=ss.data()||{};
+    if(String(sd.ownerUid||sd.ownerId||"")!==ownerUid)throw Error(`Stok produk ${pid} bukan milik akun ini.`);
+    stockData.push({pid,ref:sr,sd,oldQty:oldMap.get(pid)||0,newQty:newMap.get(pid)||0});
+   }
+   // Order sudah mengurangi stok saat approval. Terapkan selisih qty saja.
+   if(d.stokDikurangi!==false){
+    for(const z of stockData){
+     const delta=z.newQty-z.oldQty;
+     if(delta>0){
+      const cur=Number(z.sd.sisa??z.sd.stok??0)||0;
+      if(cur<delta)throw Error(`Stok ${z.pid} tersisa ${cur}, tambahan yang dibutuhkan ${delta}.`);
+     }
+    }
+    for(const z of stockData){
+     const delta=z.newQty-z.oldQty;if(!delta)continue;
+     const cur=Number(z.sd.sisa??z.sd.stok??0)||0,baru=cur-delta;
+     tx.update(z.ref,{sisa:baru,stok:baru,status:baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
+    }
+   }
    const base=d.member||d.pelanggan||{};
-   const member={...base,nama,wa,alamat};
-   const patch={member,tempoHari:tempo,jatuhTempo:jatuh,tanggalJatuhTempo:jatuh,updatedAt:serverTimestamp()};
-   if(d.member) patch.member=member;
-   if(d.pelanggan) patch.pelanggan={...d.pelanggan,nama,wa,alamat};
+   const member={...base,nama,wa,alamat,kode:kodeMember};
+   const newItems=items.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,harga:x.harga,diskon:x.diskon,qty:x.qty,total:x.total,modalSatuan:0}));
+   const paidOld=Number(d.totalDibayar??d.pembayaran??d.dp??0)||0;
+   const paid=Math.min(paidOld,total);
+   const newSisa=Math.max(0,total-paid);
+   const status=newSisa===0?"lunas":"tagihan";
+   const patch={
+    nomorNota:nota,nota,tanggal,
+    member, pelanggan:d.pelanggan?{...d.pelanggan,nama,wa,alamat,kode:kodeMember}:undefined,
+    kodeMember,items:newItems,subtotal,diskon,total,totalBayar:total,
+    dp,uangMuka:dp,totalDibayar:paid,pembayaran:paid,sisa:newSisa,sisaBayar:newSisa,piutang:newSisa,
+    tempoHari:tempo,jatuhTempo:jatuh,tanggalJatuhTempo:jatuh,status,updatedAt:serverTimestamp()
+   };
+   if(!d.pelanggan)delete patch.pelanggan;
    tx.update(ref,patch);
   });
-  closeEdit();
-  await load();
-  notice("Order berhasil diperbarui.","ok");
- }catch(e){console.error(e);notice("Gagal edit: "+e.message,"err")}
+  closeEdit();await load();notice("Semua data order berhasil diperbarui dan stok disesuaikan.","ok");
+ }catch(e){console.error(e);notice("Gagal edit semua data: "+e.message,"err")}
 };
 
 window.deleteOrder=async id=>{
@@ -493,28 +592,16 @@ window.deleteOrder=async id=>{
    if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
    const d=snap.data()||{};
    if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik akun ini.");
-
-   const qtyMap=new Map();
-   for(const x of items){
-    if(!x.produkId)continue;
-    qtyMap.set(x.produkId,(qtyMap.get(x.produkId)||0)+(Number(x.qty)||0));
-   }
-   const stockRefs=[...qtyMap.entries()].map(([pid,qty])=>({pid,qty,ref:doc(db,"stok",pid)}));
-   const stockSnaps=[];
-   for(const x of stockRefs) stockSnaps.push({x,s:await tx.get(x.ref)});
-   for(const z of stockSnaps){
-    if(!z.s.exists())throw Error(`Stok ${z.x.pid} tidak ditemukan. Hapus dibatalkan agar data stok aman.`);
-    const sd=z.s.data()||{};
-    if(String(sd.ownerUid||sd.ownerId||"")!==ownerUid)throw Error("Stok bukan milik akun ini.");
-   }
-   for(const z of stockSnaps){
-    const sd=z.s.data()||{},current=Number(sd.sisa??sd.stok??0)||0,baru=current+z.x.qty;
-    tx.update(z.x.ref,{sisa:baru,stok:baru,status:"tersedia",updatedAt:serverTimestamp()});
+   if(d.stokDikurangi!==false){
+    const qtyMap=new Map();
+    for(const x of items)if(x.produkId)qtyMap.set(x.produkId,(qtyMap.get(x.produkId)||0)+x.qty);
+    const stockSnaps=[];
+    for(const [pid,qty] of qtyMap){const sr=doc(db,"stok",pid),ss=await tx.get(sr);if(!ss.exists())throw Error(`Stok ${pid} tidak ditemukan. Hapus dibatalkan.`);const sd=ss.data()||{};if(String(sd.ownerUid||sd.ownerId||"")!==ownerUid)throw Error(`Stok ${pid} bukan milik akun ini.`);stockSnaps.push({sr,sd,qty});}
+    for(const z of stockSnaps){const cur=Number(z.sd.sisa??z.sd.stok??0)||0,baru=cur+z.qty;tx.update(z.sr,{sisa:baru,stok:baru,status:"tersedia",updatedAt:serverTimestamp()});}
    }
    tx.delete(ref);
   });
-  await load();
-  notice("Order berhasil dihapus dan stok dikembalikan.","ok");
+  await load();notice("Order berhasil dihapus dan stok dikembalikan.","ok");
  }catch(e){console.error(e);notice("Gagal hapus: "+e.message,"err")}
 };
 
