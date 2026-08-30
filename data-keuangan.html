@@ -53,7 +53,7 @@ body.dark .metric.blue,body.dark .metric.orange,body.dark .metric.green,body.dar
 body.dark .money-total,body.dark .total-row td{background:#1c1917}
 body.dark th{background:#020617}
 body.dark td{border-color:#334155}
-.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
+.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.expense-table{margin-top:12px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
 @media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding-top:80px}.summary-grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.acts .btn{padding:8px}.metric .value{font-size:18px}}
 </style>
 </head>
@@ -193,27 +193,44 @@ body.dark td{border-color:#334155}
   </div>
   <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
  </div>
-  <div class="card">
-   <div class="title">4. PENGELUARAN MEMBER</div>
-   <div class="section-note">
-    <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
-    <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
-   </div>
-   <div class="summary-grid">
-    <div class="metric green"><div class="label">Pengeluaran Uang Kas</div><div class="value" id="expenseKas">Rp 0</div><div class="sub">Transportasi + acara + lain-lain</div></div>
-    <div class="metric orange"><div class="label">Pengeluaran Pengelola</div><div class="value" id="expensePengelola">Rp 0</div><div class="sub">Dari hasil pengelola</div></div>
-    <div class="metric red"><div class="label">Total Pengeluaran</div><div class="value" id="expenseTotal">Rp 0</div><div class="sub">Kas + pengelola</div></div>
-   </div>
-   <div class="money-total">
-    Saldo Kas Setelah Pengeluaran: <b id="saldoKasAkhir">Rp 0</b>
-    &nbsp; | &nbsp; Saldo Pengelola Setelah Pengeluaran: <b id="saldoPengelolaAkhir">Rp 0</b>
-   </div>
-   <div class="table-wrap" style="margin-top:12px"><table>
-    <thead><tr><th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th></tr></thead>
-    <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
-   </table></div>
-  </div>
 
+ <div class="card">
+  <div class="title">4. PENGELUARAN MEMBER</div>
+  <div class="section-note">
+   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
+   <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
+  </div>
+  <div class="expense-grid">
+   <div class="metric green">
+    <div class="label">Pengeluaran Uang Kas</div>
+    <div class="value" id="expenseKas">Rp 0</div>
+    <div class="sub">Transportasi + acara + lain-lain</div>
+   </div>
+   <div class="metric orange">
+    <div class="label">Pengeluaran Pengelola</div>
+    <div class="value" id="expensePengelola">Rp 0</div>
+    <div class="sub">Dari hasil pengelola</div>
+   </div>
+   <div class="metric red">
+    <div class="label">Total Pengeluaran</div>
+    <div class="value" id="expenseTotal">Rp 0</div>
+    <div class="sub">Kas + pengelola</div>
+   </div>
+  </div>
+  <div class="money-total">
+   Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
+   &nbsp; | &nbsp;
+   Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
+  </div>
+  <div class="table-wrap expense-table">
+   <table>
+    <thead><tr>
+     <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
+    </tr></thead>
+    <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
 
  <div class="card">
   <div class="title">REKAP PER ORDER MEMBER</div>
@@ -310,49 +327,42 @@ function inPeriod(r){
  return true;
 }
 
-async function safeGetDocs(ref){
-  try{return await getDocs(ref);}
-  catch(e){console.warn("Koleksi tidak dapat dibaca:",e);return null;}
-}
-
 async function loadStocks(){
  const map=new Map();
- const ref=collection(db,"stok");
- // SAMA dengan halaman stok FIXZY: baca hanya stok milik owner aktif
- // melalui query ownerUid agar sesuai Firestore Rules dan index yang berjalan.
- try{
-  const snap=await getDocs(query(ref,where("ownerUid","==",ownerUid)));
-  snap.forEach(d=>{
+ const qs=[
+  query(collection(db,"stok"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"stok"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of qs){
+  const s=await getDocs(q);
+  s.forEach(d=>{
    const x=d.data()||{};
-   if(String(x.ownerUid||"").trim()!==ownerUid)return;
-   map.set(d.id,{id:d.id,...x,
-    qtySisa:Math.max(0,Number(x.sisa??x.stok??x.qty??0)||0),
-    modal:Math.max(0,Number(x.hargaModal??x.modal??x.modalSatuan??0)||0),
-    nama:String(x.nama||x.namaProduk||x.name||"-"),
-    kode:String(x.kode||x.kodeProduk||x.code||"")
-   });
+   const key=d.id;
+   if(!map.has(key)){
+    map.set(key,{id:d.id,...x,
+     qtySisa:Math.max(0,Number(x.sisa??x.stok??0)||0),
+     modal:Math.max(0,Number(x.hargaModal??x.modal??0)||0),
+     nama:String(x.nama||x.namaProduk||"-"),
+     kode:String(x.kode||x.kodeProduk||"")
+    });
+   }
   });
- }catch(e){
-  console.error("Gagal membaca stok owner:",e);
-  throw new Error("Stok Member tidak dapat dibaca: "+e.message);
  }
  stocks=[...map.values()];
 }
 
 async function loadOrders(){
  const map=new Map();
- const ref=collection(db,"order_member");
- // SAMA dengan Data Order Member: query berdasarkan ownerUid.
- try{
-  const snap=await getDocs(query(ref,where("ownerUid","==",ownerUid)));
-  snap.forEach(d=>{
-   const x=d.data()||{};
-   if(String(x.ownerUid||"").trim()!==ownerUid)return;
-   map.set(d.id,{id:d.id,...x});
+ const qs=[
+  query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of qs){
+  const s=await getDocs(q);
+  s.forEach(d=>{
+   const x={id:d.id,...d.data()};
+   if(!map.has(d.id))map.set(d.id,x);
   });
- }catch(e){
-  console.error("Gagal membaca order member:",e);
-  throw new Error("Order Member tidak dapat dibaca: "+e.message);
  }
  orders=[...map.values()];
 }
@@ -362,39 +372,72 @@ function currentOrders(){
 }
 
 async function loadExpenses(){
- const map=new Map();
- try{
-  const snap=await getDocs(query(collection(db,"pengeluaranMember"),where("ownerUid","==",ownerUid)));
-  snap.forEach(d=>{
-   const x=d.data()||{};
-   if(String(x.ownerUid||"").trim()!==ownerUid)return;
-   map.set(d.id,{id:d.id,...x});
-  });
- }catch(e){
-  // Pengeluaran adalah modul tambahan; jika rules belum membuka koleksi ini,
-  // laporan stok/order tetap boleh tampil.
-  console.warn("Pengeluaran Member belum dapat dibaca:",e);
- }
- expenses=[...map.values()];
+  expenses=[];
+  const map=new Map();
+
+  // SINKRON dengan halaman Pengeluaran Member yang baru:
+  // tetap memakai koleksi FIXZY "pengeluaran".
+  // Data lama tidak dihapus/diubah.
+  // Hanya data dengan modul="member" yang masuk ke laporan Member.
+  const qs=[
+    query(collection(db,"pengeluaran"),where("ownerUid","==",ownerUid)),
+    query(collection(db,"pengeluaran"),where("ownerId","==",ownerUid)),
+    query(collection(db,"pengeluaran"),where("uid","==",ownerUid)),
+    query(collection(db,"pengeluaran"),where("uid","==",uid))
+  ];
+
+  for(const q of qs){
+    try{
+      const s=await getDocs(q);
+      s.forEach(d=>{
+        const x={id:d.id,...d.data()};
+        if(String(x.modul||"").toLowerCase()==="member"){
+          map.set(d.id,x);
+        }
+      });
+    }catch(e){
+      console.warn("Gagal membaca pengeluaran:",e.message);
+    }
+  }
+
+  expenses=[...map.values()];
 }
-function currentExpenses(){return expenses.filter(inPeriod)}
+
+function currentExpenses(){
+  return expenses.filter(inPeriod);
+}
+
 function renderExpenses(){
   let kas=0,pengelola=0;
-  currentExpenses().forEach(e=>{
-    const n=Math.max(0,num(e.nominal)),s=String(e.sumber||"").toLowerCase();
-    if(s==="kas")kas+=n; else if(s==="pengelola")pengelola+=n;
-  });
+  for(const e of currentExpenses()){
+    const n=Math.max(0,num(e.nominal));
+    const source=String(e.sumber||"").toLowerCase();
+    if(source==="kas") kas+=n;
+    else if(source==="pengelola") pengelola+=n;
+  }
+
   const qty=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty,0),0);
+  const kasMasuk=qty*4000;
+  const upMasuk=qty*1000;
+
   $("expenseKas").textContent=rp(kas);
   $("expensePengelola").textContent=rp(pengelola);
   $("expenseTotal").textContent=rp(kas+pengelola);
-  $("saldoKasAkhir").textContent=rp(qty*4000-kas);
-  $("saldoPengelolaAkhir").textContent=rp(qty*1000-pengelola);
-  const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>`
-   <tr><td>${esc(e.tanggal||"-")}</td><td>${esc(e.jenisLabel||e.jenis||"-")}</td>
-   <td>${String(e.sumber||"").toLowerCase()==="pengelola"?"HASIL PENGELOLA":"UANG KAS"}</td>
-   <td>${esc(e.keterangan||"-")}</td><td class="num">${rp(num(e.nominal))}</td></tr>`).join("");
-  $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Belum ada pengeluaran pada periode ini.</td></tr>';
+  $("saldoKasAkhir").textContent=rp(kasMasuk-kas);
+  $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
+
+  const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
+    const source=String(e.sumber||"").toLowerCase();
+    return `<tr>
+      <td>${esc(e.tanggal||"-")}</td>
+      <td>${esc(e.jenisLabel||e.jenis||"-")}</td>
+      <td>${source==="pengelola"?"HASIL PENGELOLA":"UANG KAS"}</td>
+      <td>${esc(e.keterangan||"-")}</td>
+      <td class="num">${rp(num(e.nominal))}</td>
+    </tr>`;
+  }).join("");
+
+  $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
 }
 
 function buildStockData(){
