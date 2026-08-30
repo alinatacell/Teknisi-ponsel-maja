@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIXZY | Data Keuangan Member</title>
+<style>
+*{box-sizing:border-box}:root{--navy:#081326;--yellow:#ffc107;--bg:#f2f5f9;--card:#fff;--line:#dbe3ed;--text:#172033;--muted:#64748b}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+.header{background:var(--navy);color:#fff;min-height:74px;padding:9px 14px;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--yellow)}
+.logo{width:52px;height:52px;object-fit:contain;border-radius:10px}.brand{flex:1}.brand h1{font-size:18px;margin:0;font-weight:900}.brand p{font-size:11px;color:#cbd5e1;margin:3px 0}
+.owner{text-align:right}.owner b,.owner span{display:block}.owner span{font-size:10px;color:#cbd5e1}
+button,select,input{font:inherit}button{height:44px;border:0;border-radius:11px;padding:0 16px;font-weight:900;cursor:pointer}
+.refresh{background:var(--yellow);color:#111}.wrap{max-width:1100px;margin:auto;padding:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.title{font-size:18px;font-weight:900;margin:0 0 12px}.status{font-size:12px;line-height:1.5;color:var(--muted)}
+.err{color:#b91c1c;font-weight:900}.ok{color:#15803d;font-weight:900}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.kpi{padding:13px;border-radius:14px;background:#e8eef7}
+.kpi small{display:block;font-size:10px;font-weight:900;color:#64748b}.kpi b{display:block;font-size:19px;margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.box{padding:13px;border-radius:14px;border:1px solid var(--line)}
+.box b{display:block;font-size:18px;margin-top:6px}.muted{color:var(--muted);font-size:12px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;min-width:850px}
+th{background:var(--navy);color:#fff;padding:10px;text-align:left;font-size:12px}td{padding:10px;border-bottom:1px solid #edf1f5;font-size:12px}.num{text-align:right;white-space:nowrap}
+input,select{height:44px;width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:0 12px;background:#fff}
+@media(max-width:800px){.kpis{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.owner{display:none}}
+</style>
+</head>
+<body>
+<header class="header">
+<img src="logo.png" class="logo" alt="FIXZY">
+<div class="brand"><h1 id="konterNameHeader">Memuat nama konter...</h1><p>FIXZY • DATA KEUANGAN MEMBER</p></div>
+<div class="owner"><b id="ownerName">Memuat...</b><span id="ownerEmail">Firebase</span></div>
+<button class="refresh" onclick="muatSemua()">↻ Refresh</button>
+</header>
+<main class="wrap">
+<div id="status" class="status">Memeriksa sesi Firebase...</div>
+<section class="card">
+<h2 class="title">Ringkasan Keuangan Member</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div><label>PERIODE</label><select id="periode" onchange="render()"><option value="">Semua Data</option></select></div>
+<div><label>PENCARIAN PRODUK/ORDER</label><input id="cari" placeholder="Nama / kode produk / order..." oninput="render()"></div>
+</div>
+</section>
+<section class="kpis">
+<div class="kpi"><small>TOTAL ORDER DISETUJUI</small><b id="qtyOrder">0 pcs</b></div>
+<div class="kpi"><small>PEMASUKAN KAS</small><b id="kas">Rp 0</b></div>
+<div class="kpi"><small>HASIL PENGELOLA</small><b id="pengelola">Rp 0</b></div>
+<div class="kpi"><small>TOTAL PENGELUARAN</small><b id="totalKeluar">Rp 0</b></div>
+</section>
+<section class="card">
+<h2 class="title">Saldo Member</h2>
+<div class="grid">
+<div class="box"><div class="muted">UANG KAS</div><b id="saldoKas">Rp 0</b><div class="muted">Pemasukan kas − pengeluaran kas</div></div>
+<div class="box"><div class="muted">HASIL PENGELOLA</div><b id="saldoPengelola">Rp 0</b><div class="muted">Hasil pengelola − pengeluaran pengelola</div></div>
+<div class="box"><div class="muted">TOTAL PENGELUARAN</div><b id="saldoKeluar">Rp 0</b><div class="muted">Kas + hasil pengelola</div></div>
+</div>
+</section>
+<section class="card">
+<h2 class="title">Riwayat Pengeluaran Member</h2>
+<div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</section>
+</main>
+<script type="module">
+import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,getDocs,query,where,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const cfg={
+  apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+  authDomain:"fixzy-update.firebaseapp.com",
+  projectId:"fixzy-update",
+  storageBucket:"fixzy-update.firebasestorage.app",
+  messagingSenderId:"995892519622",
+  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+};
+const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id),money=v=>"Rp "+(Number(v)||0).toLocaleString("id-ID");
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let uid="",ownerUid="",rows=[],orders=[];
+
+async function profile(){
+ const u=await getDoc(doc(db,"users",uid)); const p=u.exists()?u.data():{};
+ ownerUid=p.ownerUid||p.ownerId||uid;
+ $("konterNameHeader").textContent=p.namaKonter||p.konterName||p.namaToko||"Nama Konter";
+ $("ownerName").textContent=p.nama||p.namaPemilik||p.namaLengkap||auth.currentUser?.displayName||"Akun FIXZY";
+ $("ownerEmail").textContent=auth.currentUser?.email||"Firebase";
+}
+async function loadExpenses(){
+ rows=[]; const map=new Map();
+ for(const field of ["ownerUid","uid"]){
+  const value=field==="ownerUid"?ownerUid:uid;if(!value)continue;
+  try{const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",value)));
+   s.docs.forEach(d=>{const x={id:d.id,...d.data()};if(String(x.modul||"").toLowerCase()==="member")map.set(d.id,x)})
+  }catch(e){console.warn("pengeluaran",field,e.message)}
+ }
+ rows=[...map.values()];
+}
+async function loadOrders(){
+ orders=[];const map=new Map();
+ for(const field of ["ownerUid","uid"]){
+  const value=field==="ownerUid"?ownerUid:uid;if(!value)continue;
+  try{const s=await getDocs(query(collection(db,"order_member"),where(field,"==",value)));
+   s.docs.forEach(d=>{const x={id:d.id,...d.data()};if(String(x.status||"order_member").toLowerCase()==="order_member")map.set(d.id,x)})
+  }catch(e){console.warn("order_member",field,e.message)}
+ }
+ orders=[...map.values()];
+}
+function items(o){
+ const a=o.items||o.produk||o.detail||[];
+ return Array.isArray(a)?a:(a&&typeof a==="object"?Object.values(a):[]);
+}
+function render(){
+ const search=($("cari").value||"").toLowerCase(),period=$("periode").value;
+ let q=0;
+ orders.forEach(o=>items(o).forEach(i=>{const n=Number(i.qty||i.jumlah||0);q+=n}));
+ let kas=0,peng=0,keluarKas=0,keluarPeng=0;
+ rows.forEach(r=>{
+  const s=String(r.sumberDana||r.sumber||"kas").toLowerCase(),n=Number(r.nominal)||0;
+  if(!period||String(r.tanggal||"").startsWith(period)){
+   if(s==="pengelola")keluarPeng+=n;else keluarKas+=n;
+  }
+ });
+ kas=q*4000;peng=q*1000;
+ $("qtyOrder").textContent=q+" pcs";$("kas").textContent=money(kas);$("pengelola").textContent=money(peng);
+ $("totalKeluar").textContent=money(keluarKas+keluarPeng);$("saldoKas").textContent=money(kas-keluarKas);
+ $("saldoPengelola").textContent=money(peng-keluarPeng);$("saldoKeluar").textContent=money(keluarKas+keluarPeng);
+ const data=rows.filter(r=>(!period||String(r.tanggal||"").startsWith(period))&&(!search||JSON.stringify(r).toLowerCase().includes(search)));
+ $("tbody").innerHTML=data.sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(r=>`<tr><td>${esc(r.tanggal||"-")}</td><td>${esc(r.jenis||"-")}</td><td>${String(r.sumberDana||"kas").toLowerCase()==="pengelola"?"HASIL PENGELOLA":"UANG KAS"}</td><td>${esc(r.keterangan||"-")}</td><td class="num">${money(r.nominal)}</td></tr>`).join("")||'<tr><td colspan="5">Belum ada pengeluaran member.</td></tr>';
+}
+async function muatSemua(){
+ try{await profile();await loadOrders();await loadExpenses();render();
+  $("status").innerHTML=`<span class="ok">✓ Firebase aktif • ${orders.length} order disetujui • ${rows.length} pengeluaran member</span>`;
+ }catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal memuat: ${esc(e.message||e)}</span>`}
+}
+window.muatSemua=muatSemua;
+onAuthStateChanged(auth,async u=>{if(!u)return;uid=u.uid;await muatSemua();});
+</script>
+</body></html>
