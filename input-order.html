@@ -7,7 +7,7 @@
 <div class="card"><h2>Rincian Pesanan</h2><div class="tablewrap"><table><thead><tr><th>Produk</th><th>Qty</th><th>Harga</th><th>Subtotal</th><th></th></tr></thead><tbody id="items"></tbody></table></div><div class="total" id="total">Rp0</div><div class="actions"><button class="btn" id="save">Simpan Orderan</button></div><p id="msg" class="alert" style="display:none"></p></div></main>
 <script type="module">
 import {db,requireLogin,money,esc} from "./firebase.js";
-import {collection,getDocs,addDoc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {collection,getDocs,addDoc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 let user,products=[],cart=[]; function showMsg(t){msg.style.display="block";msg.textContent=t;}
 requireLogin(u=>{user=u;init()});
 function genNota(){const d=new Date(),s=d.toISOString().slice(0,10).replaceAll("-","");return "ORD-"+s+"-"+Math.random().toString(36).slice(2,6).toUpperCase()}

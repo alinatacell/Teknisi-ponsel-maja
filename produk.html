@@ -8,7 +8,7 @@
 <div id="modal" class="card" style="display:none"><h2>Tambah / Edit Produk</h2><div class="grid"><div><label>Nama produk</label><input id="pname"></div><div><label>Brand</label><input id="brand"></div><div><label>Kategori</label><input id="category"></div><div><label>Harga</label><input id="price" type="number" min="0"></div><div><label>Stok</label><input id="stock" type="number" min="0"></div><div><label>Foto URL (opsional)</label><input id="image"></div></div><div class="actions"><button class="btn" id="save">Simpan</button><button class="btn2" id="cancel">Batal</button></div></div>
 </main><script type="module">
 import {db,requireLogin,money,esc,canManageCommunity} from "./firebase.js";
-import {collection,addDoc,doc,updateDoc,deleteDoc,onSnapshot,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {collection,addDoc,doc,updateDoc,deleteDoc,onSnapshot,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 let uid=null,editId=null,all=[],canManage=false;
 requireLogin(u=>{uid=u.uid; canManage=canManageCommunity(u); document.getElementById("add").style.display=canManage?"inline-block":"none"; watch()});
 const products=collection(db,"communityProducts");

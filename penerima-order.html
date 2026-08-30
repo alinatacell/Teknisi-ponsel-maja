@@ -4,7 +4,7 @@
 </div></nav><main><div class="between"><h1>Penerima Pesanan / Approval</h1><select id="filter"><option value="">Semua</option><option value="menunggu">Menunggu</option><option value="disetujui">Disetujui</option><option value="ditolak">Ditolak</option><option value="diproses">Diproses</option><option value="selesai">Selesai</option></select></div><div id="list"></div></main>
 <script type="module">
 import {db,requireLogin,money,esc,canManageCommunity} from "./firebase.js";
-import {collection,onSnapshot,query,orderBy,doc,updateDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {collection,onSnapshot,query,orderBy,doc,updateDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 let user,orders=[],canManage=false;requireLogin(u=>{user=u;canManage=canManageCommunity(u);onSnapshot(query(collection(db,"communityOrders"),orderBy("createdAt","desc")),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()}));render()})});
 filter.onchange=render;
 function badge(s){return `<span class="badge ${s==="menunggu"?"wait":s==="disetujui"||s==="selesai"?"ok":s==="diproses"?"blue":s==="ditolak"?"red":""}">${esc(s)}</span>`}

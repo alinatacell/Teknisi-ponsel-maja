@@ -1,0 +1,32 @@
+// TAMBAHAN RULES ORDER KOMUNITAS
+// Tempel sebelum fallback match /{document=**} milik FIXZY.
+// Helper di bawah memakai fungsi FIXZY yang sudah ada: isAuth(), isOwner(), isAdmin(), isSuperAdmin(), myRole(), myUid().
+
+function isCommunityMember() {
+  return isAuth() && (
+    isOwner() ||
+    myRole() == 'karyawan' ||
+    myRole() == 'employee' ||
+    isAdmin()
+  );
+}
+
+function isCommunityManager() {
+  return isSuperAdmin() || isAdmin() || isOwner();
+}
+
+match /communityProducts/{id} {
+  allow read: if isCommunityMember();
+  allow create, update, delete: if isCommunityManager();
+}
+
+match /communityOrders/{id} {
+  allow read: if isCommunityMember();
+
+  allow create: if isCommunityMember()
+    && request.resource.data.createdBy == myUid()
+    && request.resource.data.status == 'menunggu';
+
+  allow update: if isCommunityManager();
+  allow delete: if false;
+}

@@ -10,47 +10,84 @@ export const db = getFirestore(app);
 export let currentUser = null;
 export let currentProfile = null;
 
+const ALLOWED_ROLES = ["owner","employee","karyawan","kasir","kurir","reseller","superadmin","admin","iprem"];
+
+export function roleFromUser(data) {
+  return String(data?.role || "").trim().toLowerCase();
+}
+
+export function isOwner(data) {
+  return roleFromUser(data) === "owner";
+}
+
+export function isEmployee(data) {
+  const r = roleFromUser(data);
+  return r === "karyawan" || r === "employee";
+}
+
+export function canManageCommunity(data) {
+  const r = roleFromUser(data);
+  return r === "owner" || r === "admin" || r === "superadmin";
+}
+
+export function isCommunityMember(data) {
+  const r = roleFromUser(data);
+  return ["owner","karyawan","employee","admin","superadmin"].includes(r);
+}
+
 export function requireLogin(callback) {
   let delivered = false;
-  onAuthStateChanged(auth, async (user) => {
+  return onAuthStateChanged(auth, async (user) => {
     if (!user) {
       currentUser = null;
       currentProfile = null;
       window.location.replace("login.html");
       return;
     }
-    currentUser = user;
+
     try {
       const snap = await getDoc(doc(db, "users", user.uid));
-      currentProfile = snap.exists() ? snap.data() : {};
+      if (!snap.exists()) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      const profile = snap.data() || {};
+      const role = roleFromUser(profile);
+      const status = String(profile.status || "").trim().toLowerCase();
+
+      if (!ALLOWED_ROLES.includes(role)) {
+        window.location.replace("login.html");
+        return;
+      }
+      if (status === "blocked" || status === "rejected") {
+        window.location.replace("login.html");
+        return;
+      }
+      if (status && status !== "aktif") {
+        window.location.replace("login.html");
+        return;
+      }
+
+      currentUser = user;
+      currentProfile = profile;
+
+      const el = document.querySelector("[data-user]");
+      if (el) el.textContent = profile.namaKonter || profile.namaToko || profile.nama || profile.namaPemilik || user.displayName || user.email || "Akun";
+
+      if (!delivered) {
+        delivered = true;
+        callback(user, profile);
+      }
     } catch (e) {
-      console.warn("Profil FIXZY tidak dapat dibaca:", e);
-      currentProfile = {};
-    }
-    const role = String(currentProfile?.role || "").toLowerCase();
-    const status = String(currentProfile?.status || "").toLowerCase();
-    const allowed = ["owner","employee","karyawan","kasir","kurir","reseller","superadmin","admin","iprem"];
-    if (role && !allowed.includes(role)) {
-      console.warn("Role FIXZY tidak dikenali:", role);
-    }
-    if (status === "blocked" || status === "rejected") {
+      console.error("FIXZY auth/profile:", e);
       window.location.replace("login.html");
-      return;
     }
-    const el = document.querySelector("[data-user]");
-    if (el) el.textContent = currentProfile?.namaKonter || currentProfile?.namaToko || currentProfile?.nama || user.displayName || user.email || "Akun";
-    if (!delivered) { delivered = true; callback(user, currentProfile); }
   });
 }
 
-export function roleFromUser(data) {
-  return String(data?.role || "").toLowerCase();
-}
-export function canManageCommunity(data) {
-  const r = roleFromUser(data);
-  return r === "owner" || r === "admin" || r === "superadmin";
-}
 export function money(n) {
-  return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
+  return new Intl.NumberFormat("id-ID", {style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
 }
+
 export const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));

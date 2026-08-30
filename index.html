@@ -19,7 +19,7 @@
 <div class="card"><h2>Order Terbaru</h2><div class="tablewrap"><table><thead><tr><th>Nota</th><th>Pelanggan</th><th>PCS</th><th>Total</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div></div>
 </main><script type="module">
 import {db,requireLogin,money,esc} from "./firebase.js";
-import {collection,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {collection,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 requireLogin(()=>onSnapshot(query(collection(db,"communityOrders"),orderBy("createdAt","desc")),s=>{
  const orders=s.docs.map(d=>({id:d.id,...d.data()}));
  const approvedOrders=orders.filter(o=>["disetujui","diproses","selesai"].includes(o.status));

@@ -7,7 +7,7 @@
 <div class="card"><h2>Rincian Per Order</h2><div class="tablewrap"><table><thead><tr><th>Nota</th><th>Tanggal</th><th>Pelanggan</th><th>PCS</th><th>Pengelola</th><th>Kas</th><th>Total Kontribusi</th><th>Status</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
 </main><script type="module">
 import {db,requireLogin,money,esc} from "./firebase.js";
-import {collection,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {collection,onSnapshot,query,orderBy} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 let all=[];requireLogin(()=>onSnapshot(query(collection(db,"communityOrders"),orderBy("createdAt","desc")),s=>{all=s.docs.map(d=>({id:d.id,...d.data()}));render()}));status.onchange=render;
 function qty(o){return (o.items||[]).reduce((a,x)=>a+(Number(x.qty)||0),0)}
 function render(){const f=status.value;const rows=all.filter(o=>["disetujui","diproses","selesai"].includes(o.status)&&(f==="all"||o.status===f));let p=0;rows.forEach(o=>p+=qty(o));pcs.textContent=p+" PCS";manager.textContent=money(p*1000);kas.textContent=money(p*4000);

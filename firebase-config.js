@@ -1,8 +1,8 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyCwMbJsuORhIq4QCmp4c1r6OsjAUlfxU5Y",
-  authDomain: "fixzy-f056f.firebaseapp.com",
-  projectId: "fixzy-f056f",
-  storageBucket: "fixzy-f056f.firebasestorage.app",
-  messagingSenderId: "838081521031",
-  appId: "1:838081521031:web:50fddf909b56460b055f22"
+  apiKey: "AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+  authDomain: "fixzy-update.firebaseapp.com",
+  projectId: "fixzy-update",
+  storageBucket: "fixzy-update.firebasestorage.app",
+  messagingSenderId: "995892519622",
+  appId: "1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
