@@ -101,23 +101,15 @@ main{max-width:1180px;margin:auto;padding:14px 10px 70px}.card{background:#fff;b
 <div class="field"><label>JABATAN / POSISI</label><input id="fJabatan" placeholder="Teknisi / Kasir / Kurir"></div>
 <div class="field"><label>UPAH HARIAN</label><input id="fUpah" type="number" min="0" step="1000"></div>
 <div class="field full"><label>STATUS AKUN</label><select id="fStatus"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div>
-<div class="full group"><div class="group-title">🔐 HAK AKSES MENU - SINKRON DENGAN INDEX LENGKAP (CEKLIS SEMUA YANG BOLEH DIAKSES)</div>
-<div class="permission-actions"><button type="button" class="btn secondary" onclick="pilihSemuaIzin()">☑ Pilih Semua</button><button type="button" class="btn secondary" onclick="hapusSemuaIzin()">☐ Hapus Semua</button><button type="button" class="btn secondary" onclick="pilihAksesOperasional()">⚙️ Hanya Operasional</button><button type="button" class="btn secondary" onclick="pilihAksesKaryawan()">👥 Karyawan Kasir Kurir</button><span id="izinCount" class="count">0 izin dipilih</span></div>
+<div class="full group"><div class="group-title">🔐 HAK AKSES KARYAWAN — SINKRON DENGAN INDEX</div>
+<div class="permission-actions"><button type="button" class="btn secondary" onclick="pilihSemuaIzin()">☑ Pilih Semua</button><button type="button" class="btn secondary" onclick="hapusSemuaIzin()">☐ Hapus Semua</button><button type="button" class="btn secondary" onclick="pilihAksesKaryawan()">👥 Akses Karyawan</button><span id="izinCount" class="count">0 izin dipilih</span></div>
 <div class="checks">
-<label class="check"><input type="checkbox" value="servis" class="izin">🧾 Input Servisan</label>
-<label class="check"><input type="checkbox" value="penjualan" class="izin">🛒 Input Penjualan</label>
-<label class="check"><input type="checkbox" value="pengeluaran" class="izin">🛍 Input Pengeluaran</label>
-<label class="check"><input type="checkbox" value="dataServis" class="izin">💴 Data Servisan</label>
-<label class="check"><input type="checkbox" value="dataPenjualan" class="izin">💶 Data Penjualan</label>
-<label class="check"><input type="checkbox" value="stock" class="izin">📦 Stock Produk</label>
-<label class="check"><input type="checkbox" value="laporanKeuangan" class="izin">💰 Laporan Keuangan</label>
-<label class="check"><input type="checkbox" value="absensi" class="izin">⏰ Absensi Karyawan</label>
-<label class="check"><input type="checkbox" value="saldoToken" class="izin">💳 Saldo & Token</label>
-<label class="check"><input type="checkbox" value="cekPaket" class="izin">📦 Cek Paket Langganan</label>
-<label class="check"><input type="checkbox" value="laporanPendapatan" class="izin">💻 Ringkasan Pendapatan</label>
-<label class="check"><input type="checkbox" value="dashboardPendapatan" class="izin">📊 Dashboard Admin</label>
+<label class="check"><input type="checkbox" value="inputOrderMember" class="izin">📝 Input Pesanan Member</label>
+<label class="check"><input type="checkbox" value="dataOrderMember" class="izin">📋 Data Order Member</label>
+<label class="check"><input type="checkbox" value="dataKeuanganMember" class="izin">💰 Data Keuangan Member</label>
+<label class="check"><input type="checkbox" value="tampilStockMember" class="izin">📦 Tampil Stock Member</label>
 </div>
-<div class="status" style="margin-top:8px">Owner Only (pengaturan, data karyawan, izin akses) tetap hanya bisa diakses owner, meski diceklis. Superadmin menu tidak bisa diberikan ke karyawan.</div>
+<div class="status" style="margin-top:8px">Owner otomatis memiliki akses semua menu Owner. Menu <b>Approval Order Member</b>, <b>Pengeluaran</b>, dan <b>Reload Stock Member</b> adalah menu Owner pada index sehingga tidak dibuat sebagai checklist karyawan.</div>
 </div></div>
 <div id="editInfo" class="status"></div><div class="popup-actions"><button class="btn secondary" onclick="tutupPopup()">Batal</button><button class="btn primary" onclick="simpanAkun()">💾 Simpan</button></div></div></div>
 
@@ -134,19 +126,10 @@ const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getF
 const rupiah=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 // PERMS SINKRON 100% DENGAN INDEX-FIXED-CEKKIS
 const PERMS=[
-["servis","Input Servisan"],
-["penjualan","Input Penjualan"],
-["pengeluaran","Input Pengeluaran"],
-["dataServis","Data Servisan"],
-["dataPenjualan","Data Penjualan"],
-["stock","Stock Produk"],
-["laporanKeuangan","Laporan Keuangan"],
-["absensi","Absensi Karyawan"],
-["saldoToken","Saldo & Token"],
-["cekPaket","Cek Paket Langganan"],
-["laporanPendapatan","Ringkasan Pendapatan"],
-["dashboardPendapatan","Dashboard Admin"],
-["ownerOnly","Menu Owner (Dashboard, Data Upah, Pengaturan, Izin Akses)"]
+  ["inputOrderMember","Input Pesanan Member"],
+  ["dataOrderMember","Data Order Member"],
+  ["dataKeuanganMember","Data Keuangan Member"],
+  ["tampilStockMember","Tampil Stock Member"]
 ];
 let uid="",ownerUid="",profile={},accounts=[],editId=null,ready=false,editEmailLama="";
 function norm(v){return String(v??"").trim().toLowerCase()}
@@ -167,12 +150,8 @@ window.tutupNotice=()=>$("notice").classList.remove("show");
 window.tutupPopup=()=>{$("popup").classList.remove("show");$("fRole").disabled=false;editId=null;editEmailLama=""};
 window.pilihSemuaIzin=()=>{document.querySelectorAll(".izin").forEach(x=>x.checked=true);updateCount()};
 window.hapusSemuaIzin=()=>{document.querySelectorAll(".izin").forEach(x=>x.checked=false);updateCount()};
-window.pilihAksesOperasional=()=>{
-  const allowed=new Set(["servis","penjualan","pengeluaran","dataServis","dataPenjualan","stock","laporanKeuangan","absensi","saldoToken","cekPaket"]);
-  document.querySelectorAll(".izin").forEach(x=>x.checked=allowed.has(x.value));updateCount()
-};
 window.pilihAksesKaryawan=()=>{
-  const allowed=new Set(["servis","penjualan","dataServis","dataPenjualan","stock","absensi"]);
+  const allowed=new Set(["inputOrderMember","dataOrderMember","dataKeuanganMember","tampilStockMember"]);
   document.querySelectorAll(".izin").forEach(x=>x.checked=allowed.has(x.value));updateCount()
 };
 function renderIzin(a){const izin=gabungIzin(a);if(!izin.length)return '<span style="color:#94a3b8">Tidak ada akses</span>';return izin.map(v=>`<span class="badge">${esc(izinLabel(v))}</span>`).join("")}
@@ -187,7 +166,7 @@ async function load(){if(!ready)return;
 
 function render(){const role=$("roleFilter").value,q=norm($("cari").value);const arr=accounts.filter(a=>(!role||a.role===role)&&(!q||norm(nama(a)).includes(q)||norm(a.email).includes(q)||norm(a.jabatan).includes(q)));$("total").textContent=arr.length;$("aktif").textContent=arr.filter(a=>norm(a.status)==="aktif").length;$("jmlKaryawan").textContent=arr.filter(a=>a.role==="employee").length;$("jmlReseller").textContent=arr.filter(a=>a.role==="reseller").length;$("tbody").innerHTML=arr.length?arr.map(a=>`<tr><td><b>${esc(nama(a))}</b></td><td>${esc(a.email||"-")}</td><td>${esc(a.noWA||a.wa||a.noWa||a.noHp||"-")}</td><td><span class="badge ${esc(a.role||"")}">${esc(roleLabel(a.role))}</span></td><td>${esc(a.jabatan||a.posisi||"-")}</td><td><span class="badge ${norm(a.status)==="aktif"?"active":"off"}">${esc(a.status||"-")}</span></td><td>${renderIzin(a)}</td><td><button class="btn secondary" style="padding:7px 9px;font-size:10px" onclick="editAkun('${a.id}')">✏️ Edit</button></td></tr>`).join(""):'<tr><td colspan="8" class="empty">Belum ada akun karyawan/reseller untuk konter ini.</td></tr>'}
 window.render=render;window.resetFilter=()=>{$("roleFilter").value="";$("cari").value="";render()};
-window.bukaTambah=()=>{if(!ready)return;editId=null;editEmailLama="";$("popupTitle").textContent="＋ Tambah Akun";$("fNama").value="";$("fRole").value="employee";$("fRole").disabled=false;$("fEmail").value="";$("fWA").value="";$("fPassword").value="";$("passLabel").textContent="PASSWORD AWAL";$("fPassword").placeholder="Minimal 6 karakter";$("fJabatan").value="";$("fUpah").value="";$("fStatus").value="aktif";setIzin(["penjualan","servis","dataPenjualan","dataServis","stock","absensi"]);$("passWrap").style.display="flex";$("editInfo").textContent="Akun dibuat di Firebase Auth dan dihubungkan ke ownerUid ini (isolasi per konter).";$("popup").classList.add("show")};
+window.bukaTambah=()=>{if(!ready)return;editId=null;editEmailLama="";$("popupTitle").textContent="＋ Tambah Akun";$("fNama").value="";$("fRole").value="employee";$("fRole").disabled=false;$("fEmail").value="";$("fWA").value="";$("fPassword").value="";$("passLabel").textContent="PASSWORD AWAL";$("fPassword").placeholder="Minimal 6 karakter";$("fJabatan").value="";$("fUpah").value="";$("fStatus").value="aktif";setIzin(["inputOrderMember","dataOrderMember","dataKeuanganMember","tampilStockMember"]);$("passWrap").style.display="flex";$("editInfo").textContent="Akun dibuat di Firebase Auth dan dihubungkan ke ownerUid ini (isolasi per konter).";$("popup").classList.add("show")};
 window.editAkun=id=>{const a=accounts.find(x=>x.id===id);if(!a)return;editId=id;editEmailLama=String(a.email||"").trim();$("popupTitle").textContent="✏️ Edit Akun & Checklist Hak Akses";$("fNama").value=nama(a);$("fRole").value=a.role;$("fRole").disabled=true;$("fEmail").value=editEmailLama;$("fWA").value=a.noWA||a.wa||a.noWa||a.noHp||"";$("fPassword").value="";$("passLabel").textContent="PASSWORD LOGIN BARU";$("fPassword").placeholder="Isi bila email login diganti";$("fJabatan").value=a.jabatan||a.posisi||"";$("fUpah").value=a.upahHarian??a.upah??a.gajiHarian??0;$("fStatus").value=a.status||"aktif";setIzin(gabungIzin(a));$("passWrap").style.display="flex";$("editInfo").innerHTML='Jika email tetap, password tidak perlu diisi. Checklist di atas sinkron dengan menu index-FIXED.';$("popup").classList.add("show")};
 
 async function buatAuthBaru(email,pass,n){
