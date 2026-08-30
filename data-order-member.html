@@ -535,17 +535,20 @@ window.saveEdit=async()=>{
    const oldMap=new Map(),newMap=new Map();
    for(const x of oldItems)oldMap.set(x.produkId,(oldMap.get(x.produkId)||0)+x.qty);
    for(const x of items)newMap.set(x.produkId,(newMap.get(x.produkId)||0)+x.qty);
-   const pids=new Set([...oldMap.keys(),...newMap.keys()].filter(Boolean));
-   const stockData=[];
-   for(const pid of pids){
-    const sr=doc(db,"stok",pid),ss=await tx.get(sr);
-    if(!ss.exists())throw Error(`Stok produk ${pid} tidak ditemukan.`);
-    const sd=ss.data()||{};
-    if(String(sd.ownerUid||sd.ownerId||"")!==ownerUid)throw Error(`Stok produk ${pid} bukan milik akun ini.`);
-    stockData.push({pid,ref:sr,sd,oldQty:oldMap.get(pid)||0,newQty:newMap.get(pid)||0});
-   }
-   // Order sudah mengurangi stok saat approval. Terapkan selisih qty saja.
-   if(d.stokDikurangi!==false){
+   // Hanya order yang benar-benar mengurangi stok saat approval yang boleh
+   // membaca/mengubah collection stok. Data lama tidak menyentuh stok.
+   if(d.stokDikurangi===true){
+    const pids=new Set([...oldMap.keys(),...newMap.keys()].filter(Boolean));
+    const stockData=[];
+    for(const pid of pids){
+     const sr=doc(db,"stok",pid),ss=await tx.get(sr);
+     if(!ss.exists())throw Error(`Stok produk ${pid} tidak ditemukan.`);
+     const sd=ss.data()||{};
+     const stockOwner=String(sd.ownerUid||sd.ownerId||sd.uid||"");
+     if(stockOwner!==ownerUid)throw Error(`Stok produk ${pid} bukan milik akun ini.`);
+     stockData.push({pid,ref:sr,sd,oldQty:oldMap.get(pid)||0,newQty:newMap.get(pid)||0});
+    }
+    // Terapkan hanya selisih qty dari stok yang sudah terpotong saat approval.
     for(const z of stockData){
      const delta=z.newQty-z.oldQty;
      if(delta>0){
@@ -582,27 +585,53 @@ window.saveEdit=async()=>{
 
 window.deleteOrder=async id=>{
  const r=rows.find(x=>x.id===id);if(!r)return;
- const items=itemsOf(r);
- if(!confirm(`Hapus order ${r.nomorNota||id}?\n\nStok produk yang sudah dikurangi saat approval akan dikembalikan ke stok member.`))return;
+ const approvedStock = r.stokDikurangi === true;
+ const pesan=approvedStock
+  ? `Hapus order ${r.nomorNota||id}?\n\nOrder ini pernah mengurangi stok. Stok produk akan dikembalikan terlebih dahulu, lalu order dihapus.`
+  : `Hapus order ${r.nomorNota||id}?\n\nOrder ini tidak tercatat pernah mengurangi stok, jadi order akan langsung dihapus tanpa menyentuh stok.`;
+ if(!confirm(pesan))return;
  try{
-  notice("Menghapus order dan mengembalikan stok...");
+  notice(approvedStock?"Menghapus order dan mengembalikan stok...":"Menghapus order...");
   const ref=doc(db,"order_member",id);
   await runTransaction(db,async tx=>{
    const snap=await tx.get(ref);
    if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
    const d=snap.data()||{};
-   if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik akun ini.");
-   if(d.stokDikurangi!==false){
+   const orderOwner=String(d.ownerUid||d.ownerId||d.uid||"");
+   if(orderOwner!==ownerUid)throw Error("Order bukan milik akun ini.");
+
+   // Jangan pernah membaca stok untuk order lama yang tidak punya
+   // penanda stokDikurangi=true. Ini mencegah kegagalan permission
+   // pada data lama hanya karena proses pengembalian stok.
+   if(d.stokDikurangi===true){
     const qtyMap=new Map();
-    for(const x of items)if(x.produkId)qtyMap.set(x.produkId,(qtyMap.get(x.produkId)||0)+x.qty);
+    for(const x of itemsOf(d)){
+     if(x.produkId)qtyMap.set(x.produkId,(qtyMap.get(x.produkId)||0)+x.qty);
+    }
     const stockSnaps=[];
-    for(const [pid,qty] of qtyMap){const sr=doc(db,"stok",pid),ss=await tx.get(sr);if(!ss.exists())throw Error(`Stok ${pid} tidak ditemukan. Hapus dibatalkan.`);const sd=ss.data()||{};if(String(sd.ownerUid||sd.ownerId||"")!==ownerUid)throw Error(`Stok ${pid} bukan milik akun ini.`);stockSnaps.push({sr,sd,qty});}
-    for(const z of stockSnaps){const cur=Number(z.sd.sisa??z.sd.stok??0)||0,baru=cur+z.qty;tx.update(z.sr,{sisa:baru,stok:baru,status:"tersedia",updatedAt:serverTimestamp()});}
+    for(const [pid,qty] of qtyMap){
+     const sr=doc(db,"stok",pid);
+     const ss=await tx.get(sr);
+     if(!ss.exists())throw Error(`Stok ${pid} tidak ditemukan. Hapus dibatalkan agar stok tidak hilang.`);
+     const sd=ss.data()||{};
+     const stockOwner=String(sd.ownerUid||sd.ownerId||sd.uid||"");
+     if(stockOwner!==ownerUid)throw Error(`Stok ${pid} bukan milik akun ini. Hapus dibatalkan agar stok tidak salah akun.`);
+     stockSnaps.push({sr,sd,qty});
+    }
+    for(const z of stockSnaps){
+     const cur=Number(z.sd.sisa??z.sd.stok??0)||0;
+     const baru=cur+z.qty;
+     tx.update(z.sr,{sisa:baru,stok:baru,status:baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
+    }
    }
    tx.delete(ref);
   });
-  await load();notice("Order berhasil dihapus dan stok dikembalikan.","ok");
- }catch(e){console.error(e);notice("Gagal hapus: "+e.message,"err")}
+  await load();
+  notice(approvedStock?"Order berhasil dihapus dan stok dikembalikan.":"Order lama berhasil dihapus tanpa mengubah stok.","ok");
+ }catch(e){
+  console.error(e);
+  notice("Gagal hapus: "+e.message,"err");
+ }
 };
 
 function buildWA(r){
