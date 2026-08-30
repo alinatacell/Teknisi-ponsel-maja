@@ -30,7 +30,14 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .metric.blue{background:#eff6ff}.metric.orange{background:#fffbeb}.metric.green{background:#f0fdf4}.metric.red{background:#fef2f2}
 .money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
-table{width:100%;border-collapse:collapse;min-width:760px}
+table{width:100%;border-collapse:collapse;min-width:0}
+@media(max-width:650px){
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:680px}
+  .expense-table table{min-width:620px}
+  th,td{padding:8px 7px;font-size:10px}
+  th{font-size:9px}
+}
 th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
 th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
 td.num{text-align:right;font-weight:800}
@@ -54,7 +61,16 @@ body.dark .money-total,body.dark .total-row td{background:#1c1917}
 body.dark th{background:#020617}
 body.dark td{border-color:#334155}
 .expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.expense-table{margin-top:12px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
-@media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding-top:80px}.summary-grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.acts .btn{padding:8px}.metric .value{font-size:18px}}
+@media(max-width:650px){
+      header{height:68px}
+      .hi h1{font-size:16px}
+      main{padding:80px 8px 24px}
+      .summary-grid{grid-template-columns:1fr}
+      .filters{grid-template-columns:1fr}
+      .acts .btn{padding:8px}
+      .metric .value{font-size:18px}
+      .card{padding:12px}
+    }
 </style>
 </head>
 <body>
@@ -372,33 +388,41 @@ function currentOrders(){
 }
 
 async function loadExpenses(){
-  expenses=[];
+  // SINKRON TOTAL:
+  // 1) koleksi lama/utama FIXZY: pengeluaran (modul="member")
+  // 2) koleksi member lama: pengeluaranMember
+  // Keduanya dibaca dan digabung berdasarkan ID dokumen.
+  // Tidak ada data lama yang dihapus/dipindahkan.
   const map=new Map();
 
-  // SINKRON dengan halaman Pengeluaran Member yang baru:
-  // tetap memakai koleksi FIXZY "pengeluaran".
-  // Data lama tidak dihapus/diubah.
-  // Hanya data dengan modul="member" yang masuk ke laporan Member.
-  const qs=[
-    query(collection(db,"pengeluaran"),where("ownerUid","==",ownerUid)),
-    query(collection(db,"pengeluaran"),where("ownerId","==",ownerUid)),
-    query(collection(db,"pengeluaran"),where("uid","==",ownerUid)),
-    query(collection(db,"pengeluaran"),where("uid","==",uid))
-  ];
+  async function readOwnerCollection(collectionName){
+    const qs=[
+      query(collection(db,collectionName),where("ownerUid","==",ownerUid)),
+      query(collection(db,collectionName),where("ownerId","==",ownerUid)),
+      query(collection(db,collectionName),where("uid","==",uid))
+    ];
 
-  for(const q of qs){
-    try{
-      const s=await getDocs(q);
-      s.forEach(d=>{
-        const x={id:d.id,...d.data()};
-        if(String(x.modul||"").toLowerCase()==="member"){
-          map.set(d.id,x);
-        }
-      });
-    }catch(e){
-      console.warn("Gagal membaca pengeluaran:",e.message);
+    for(const q of qs){
+      try{
+        const s=await getDocs(q);
+        s.forEach(d=>{
+          const x={id:d.id,...d.data()};
+          const modul=String(x.modul||"").toLowerCase();
+
+          // Untuk koleksi pengeluaran, hanya transaksi Member.
+          // Untuk pengeluaranMember, semua dokumen memang milik modul Member.
+          if(collectionName==="pengeluaranMember" || modul==="member"){
+            map.set(`${collectionName}:${d.id}`,x);
+          }
+        });
+      }catch(e){
+        console.warn(`Gagal membaca ${collectionName}:`,e.message);
+      }
     }
   }
+
+  await readOwnerCollection("pengeluaran");
+  await readOwnerCollection("pengeluaranMember");
 
   expenses=[...map.values()];
 }
@@ -411,9 +435,19 @@ function renderExpenses(){
   let kas=0,pengelola=0;
   for(const e of currentExpenses()){
     const n=Math.max(0,num(e.nominal));
-    const source=String(e.sumber||"").toLowerCase();
-    if(source==="kas") kas+=n;
-    else if(source==="pengelola") pengelola+=n;
+    const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
+    const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
+
+    // Kompatibel dengan data lama:
+    // "Uang Kas", "Kas", "Hasil Pengelola", "Pengelola",
+    // serta data yang hanya membedakan lewat jenis.
+    const isPengelola =
+      source.includes("pengelola") ||
+      jenis.includes("pengelola");
+
+    if(isPengelola) pengelola+=n;
+    else if(source.includes("kas") || source==="" || jenis.includes("transport") ||
+            jenis.includes("acara") || jenis.includes("lain")) kas+=n;
   }
 
   const qty=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty,0),0);
@@ -427,11 +461,13 @@ function renderExpenses(){
   $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
 
   const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
-    const source=String(e.sumber||"").toLowerCase();
+    const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
+    const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
+    const isPengelola=source.includes("pengelola") || jenis.includes("pengelola");
     return `<tr>
       <td>${esc(e.tanggal||"-")}</td>
       <td>${esc(e.jenisLabel||e.jenis||"-")}</td>
-      <td>${source==="pengelola"?"HASIL PENGELOLA":"UANG KAS"}</td>
+      <td>${isPengelola?"HASIL PENGELOLA":"UANG KAS"}</td>
       <td>${esc(e.keterangan||"-")}</td>
       <td class="num">${rp(num(e.nominal))}</td>
     </tr>`;
