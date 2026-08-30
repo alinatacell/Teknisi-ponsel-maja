@@ -122,7 +122,7 @@ window.approveOrder=async id=>{
  if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
  const ref=doc(db,"penjualan",id);
  try{
-  msg("Memeriksa stok dan membuat order member...");
+  msg("Memeriksa stok, mengurangi stok, dan membuat Data Order Member...");
   const result=await runTransaction(db,async tx=>{
    const fresh=await tx.get(ref);if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
    const freshData=fresh.data()||{};if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
@@ -143,7 +143,7 @@ window.approveOrder=async id=>{
   msg("Stok sesuai pesanan yang disetujui sudah masuk Data Order Member.","ok");
   await load();
   sendWAData(result.order,"approved");
- }catch(e){console.error(e);msg("Gagal approval: "+e.message,"err")}
+ }catch(e){console.error("APPROVAL MEMBER ERROR",e);let detail=e?.code==="permission-denied"?"Izin Firebase ditolak. Pastikan Rules memiliki akses OWNER untuk penjualan, stok, dan order_member.":(e?.message||e);msg("Gagal approval: "+detail,"err")}
 };
 window.rejectOrder=async id=>{
  const r=rows.find(x=>x.id===id);if(!r)return;const alasan=prompt("Alasan penolakan / stok kosong:","Stok tidak tersedia");if(alasan===null)return;
