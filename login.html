@@ -1,8 +1,24 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login Komunitas</title><link rel="stylesheet" href="style.css"></head><body>
-<main style="max-width:420px;margin:60px auto"><div class="card"><h1>Login Komunitas</h1><div class="alert">Gunakan akun Firebase Authentication anggota komunitas.</div>
-<label>Email</label><input id="email" type="email" autocomplete="email"><br><br><label>Password</label><input id="password" type="password" autocomplete="current-password">
-<div class="actions"><button class="btn" id="login">Login</button></div><p id="msg" class="muted"></p></div></main>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login FIXZY</title>
+<link rel="stylesheet" href="style.css"><style>.login{max-width:420px;margin:60px auto}.msg{margin-top:12px;padding:10px;border-radius:8px;background:#fee2e2;color:#991b1b;display:none}</style></head>
+<body><main class="login"><div class="card"><h1>Login FIXZY</h1><p class="muted">Gunakan akun FIXZY yang sudah terdaftar.</p>
+<form id="form"><label>Email</label><input id="email" type="email" autocomplete="username" required><br><br><label>Password</label><input id="password" type="password" autocomplete="current-password" required>
+<div class="actions"><button class="btn" id="btn" type="submit">Login</button></div><div id="msg" class="msg"></div></form></div></main>
 <script type="module">
-import {auth} from "./firebase.js"; import {signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-login.onclick=async()=>{msg.textContent="Memproses...";try{await signInWithEmailAndPassword(auth,email.value,password.value);location.href="input-order.html"}catch(e){msg.textContent=e.message}};
+import { initializeApp,getApps,getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth,onAuthStateChanged,signInWithEmailAndPassword,setPersistence,browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore,doc,getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+const app=getApps().length?getApp():initializeApp(firebaseConfig); const auth=getAuth(app); const db=getFirestore(app);
+let loginInProgress=false;
+onAuthStateChanged(auth,async user=>{ if(user&&!loginInProgress){ try{const s=await getDoc(doc(db,"users",user.uid)); if(s.exists()){location.replace("index.html");}}catch(e){console.warn(e)} }});
+form.addEventListener("submit",async e=>{e.preventDefault();if(loginInProgress)return;loginInProgress=true;btn.disabled=true;btn.textContent="Memproses...";msg.style.display="none";
+try{await setPersistence(auth,browserLocalPersistence);const cred=await signInWithEmailAndPassword(auth,email.value.trim(),password.value);const s=await getDoc(doc(db,"users",cred.user.uid));
+if(!s.exists()){msg.textContent="Profil akun FIXZY tidak ditemukan.";msg.style.display="block";return;}
+const d=s.data()||{},r=String(d.role||"").toLowerCase(),st=String(d.status||"").toLowerCase();
+if(!["owner","employee","karyawan","kasir","kurir","reseller","superadmin","admin","iprem"].includes(r)){msg.textContent="Role akun tidak dikenali.";msg.style.display="block";return;}
+if(st==="blocked"||st==="rejected"){msg.textContent="Akun diblokir/ditolak.";msg.style.display="block";return;}
+if(st&&st!=="aktif"){msg.textContent="Akun belum aktif.";msg.style.display="block";return;}
+location.replace("index.html");
+}catch(e){msg.textContent=(e.code==="auth/invalid-credential"?"Email atau password salah.":e.message);msg.style.display="block";}
+finally{loginInProgress=false;btn.disabled=false;btn.textContent="Login";}});
 </script></body></html>
