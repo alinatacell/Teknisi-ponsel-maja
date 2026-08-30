@@ -548,18 +548,19 @@ window.saveEdit=async()=>{
      if(stockOwner!==ownerUid)throw Error(`Stok produk ${pid} bukan milik akun ini.`);
      stockData.push({pid,ref:sr,sd,oldQty:oldMap.get(pid)||0,newQty:newMap.get(pid)||0});
     }
-    // Terapkan hanya selisih qty dari stok yang sudah terpotong saat approval.
+    // Sesuaikan stok dua arah: qty bertambah mengurangi stok,
+    // qty berkurang mengembalikan stok.
     for(const z of stockData){
      const delta=z.newQty-z.oldQty;
-     if(delta>0){
-      const cur=Number(z.sd.sisa??z.sd.stok??0)||0;
-      if(cur<delta)throw Error(`Stok ${z.pid} tersisa ${cur}, tambahan yang dibutuhkan ${delta}.`);
-     }
+     const cur=Math.max(0,Number(z.sd.sisa??z.sd.stok??z.sd.stock??0)||0);
+     const baru=cur-delta;
+     if(baru<0)throw Error(`Stok ${z.pid} tersisa ${cur}, tambahan yang dibutuhkan ${delta}.`);
+     z.baru=baru;
     }
     for(const z of stockData){
-     const delta=z.newQty-z.oldQty;if(!delta)continue;
-     const cur=Number(z.sd.sisa??z.sd.stok??0)||0,baru=cur-delta;
-     tx.update(z.ref,{sisa:baru,stok:baru,status:baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
+     const delta=z.newQty-z.oldQty;
+     if(!delta)continue;
+     tx.update(z.ref,{sisa:z.baru,stok:z.baru,status:z.baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
     }
    }
    const base=d.member||d.pelanggan||{};
@@ -589,68 +590,57 @@ window.deleteOrder=async id=>{
  const canDelete=role==="owner"||role==="superadmin"||String(auth.currentUser?.email||"").toLowerCase()==="servicehpmaja@gmail.com";
  if(!canDelete){notice("Akun ini tidak memiliki hak menghapus data order member.","err");return}
  const nota=r.nomorNota||r.nota||id;
- if(!confirm("Hapus data order member nota "+nota+" secara permanen?\n\nStok dari pesanan yang sudah di-approval akan DIKEMBALIKAN ke stok.\nPenghapusan dan pengembalian stok dilakukan bersamaan."))return;
+ if(!confirm("Hapus data order member nota "+nota+" secara permanen?
+
+Jika stok sudah dikurangi saat approval, stok akan DIKEMBALIKAN otomatis.
+Penghapusan hanya dianggap berhasil jika pengembalian stok dan hapus order sama-sama berhasil."))return;
  try{
-  notice("Menghapus order dan mengembalikan stok...");
+  notice("Memeriksa order dan menyiapkan pengembalian stok...");
   const ref=doc(db,"order_member",id);
 
   await runTransaction(db,async tx=>{
-   // 1. Baca order terlebih dahulu.
    const snap=await tx.get(ref);
    if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
-
    const d=snap.data()||{};
    const orderOwner=String(d.ownerUid||d.ownerId||d.uid||"").trim();
    if(orderOwner!==ownerUid && !canDelete)throw Error("Order bukan milik akun ini.");
 
-   // 2. Ambil seluruh item order. Qty inilah yang sebelumnya
-   //    sudah dikurangi ketika approval.
-   const items=itemsOf(d).filter(x=>x.produkId && x.qty>0);
-   const qtyMap=new Map();
-   for(const item of items){
-    const pid=String(item.produkId).trim();
-    qtyMap.set(pid,(qtyMap.get(pid)||0)+Number(item.qty||0));
-   }
+   if(d.stokDikurangi===true){
+    const items=itemsOf(d).filter(x=>x.produkId&&x.qty>0);
+    if(!items.length)throw Error("Order menandai stok sudah dikurangi, tetapi productId/qty tidak tersedia. Order tidak dihapus agar stok tidak salah.");
 
-   // 3. Semua stok dibaca dahulu sebelum ada update/delete.
-   //    Ini wajib untuk transaksi Firestore.
-   const stockRows=[];
-   for(const [pid,qtyKembali] of qtyMap.entries()){
-    const stockRef=doc(db,"stok",pid);
-    const stockSnap=await tx.get(stockRef);
-    if(!stockSnap.exists()){
-     throw Error("Stok produk "+pid+" tidak ditemukan. Order TIDAK dihapus agar stok tidak hilang.");
+    const grouped=new Map();
+    for(const x of items)grouped.set(x.produkId,(grouped.get(x.produkId)||0)+x.qty);
+
+    const stockRows=[];
+    for(const [produkId,qty] of grouped){
+     const stockRef=doc(db,"stok",produkId);
+     const stockSnap=await tx.get(stockRef);
+     if(!stockSnap.exists())throw Error(`Stok produk ${produkId} tidak ditemukan. Order tidak dihapus agar data tetap aman.`);
+     const sd=stockSnap.data()||{};
+     const stockOwner=String(sd.ownerUid||sd.ownerId||sd.uid||"").trim();
+     if(stockOwner && stockOwner!==ownerUid)throw Error(`Stok produk ${produkId} bukan milik akun ini. Order tidak dihapus.`);
+     const cur=Math.max(0,Number(sd.sisa??sd.stok??sd.stock??0)||0);
+     stockRows.push({ref:stockRef,baru:cur+qty});
     }
-    const sd=stockSnap.data()||{};
-    const stockOwner=String(sd.ownerUid||sd.ownerId||sd.uid||"").trim();
-    if(stockOwner!==ownerUid){
-     throw Error("Stok produk "+pid+" bukan milik akun ini. Order TIDAK dihapus.");
+
+    for(const x of stockRows){
+     tx.update(x.ref,{sisa:x.baru,stok:x.baru,status:x.baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
     }
-    const current=Number(sd.sisa??sd.stok??0)||0;
-    stockRows.push({ref:stockRef,sd,current,qty:Number(qtyKembali)||0});
    }
 
-   // 4. Kembalikan qty ke stok.
-   for(const x of stockRows){
-    const baru=x.current+x.qty;
-    tx.update(x.ref,{
-     sisa:baru,
-     stok:baru,
-     status:baru>0?"tersedia":"kosong",
-     updatedAt:serverTimestamp()
-    });
-   }
-
-   // 5. Baru hapus order. Jika salah satu langkah gagal,
-   //    seluruh transaksi dibatalkan oleh Firestore.
+   // Delete dan pengembalian stok harus satu transaksi.
    tx.delete(ref);
   });
 
   await load();
-  notice("Order member berhasil dihapus dan stok pesanan telah dikembalikan.","ok");
+  notice("Order member berhasil dihapus dan stok yang terpakai sudah dikembalikan.","ok");
  }catch(e){
-  console.error(e);
-  notice("Gagal hapus: "+(e?.message||e),"err");
+  console.error("DELETE ORDER MEMBER ERROR",e);
+  const detail=e?.code==="permission-denied"
+   ?"Izin Firebase ditolak. Pastikan Rules mengizinkan Owner mengubah stok dan menghapus order_member miliknya."
+   :(e?.message||e);
+  notice("Gagal hapus: "+detail,"err");
  }
 };
 
