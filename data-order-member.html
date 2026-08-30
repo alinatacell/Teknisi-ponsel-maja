@@ -26,7 +26,12 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .order-head{padding:12px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .order-title{font-weight:900;font-size:15px}.order-sub{font-size:11px;color:#64748b;margin-top:4px}
 .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
-.badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}.badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
+.badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
+.due-warning{margin-top:8px;padding:8px 10px;border:2px solid #f59e0b;border-radius:8px;background:#fffbeb;color:#92400e;font-size:11px;font-weight:900}
+.due-urgent{border-color:#dc2626;background:#fef2f2;color:#b91c1c}
+.due-overdue{border-color:#dc2626;background:#fee2e2;color:#991b1b}
+.due-ok{border-color:#22c55e;background:#f0fdf4;color:#166534}
 .order-body{padding:12px}
 .meta{font-size:12px;line-height:1.75}.meta b{color:#111827}
 .items{margin-top:10px;border:2px solid #111827;border-radius:9px;overflow:hidden}
@@ -89,7 +94,8 @@ body.dark .meta b{color:#fff}
    <div>
     <label>KETERANGAN</label>
     <div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">
-     Hanya order yang sudah <b>disetujui</b> pada Approval Member yang tampil di sini.
+     Hanya order yang sudah <b>disetujui</b> pada Approval Member yang tampil di sini.<br>
+     <b>Prioritas:</b> tagihan terdekat otomatis berada paling atas. Peringatan muncul mulai H-5.
     </div>
    </div>
   </div>
@@ -160,6 +166,71 @@ function orderStatus(r){
  return s==="lunas"?"lunas":"tagihan";
 }
 
+/*
+  PRIORITAS TAGIHAN:
+  - Tagihan terdekat selalu di atas.
+  - H-5 sampai H-1 diberi tanda PERINGATAN.
+  - H-0 diberi tanda JATUH TEMPO HARI INI.
+  - Tanggal lewat diberi tanda TERLAMBAT.
+*/
+function dueDateValue(r){
+ const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
+ if(!raw)return null;
+
+ if(typeof raw==="object" && raw?.seconds){
+  return new Date(raw.seconds*1000);
+ }
+
+ const s=String(raw).trim();
+ if(!s)return null;
+
+ // YYYY-MM-DD
+ if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+  const [y,m,d]=s.split("-").map(Number);
+  return new Date(y,m-1,d);
+ }
+
+ // DD/MM/YYYY
+ if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+  const [d,m,y]=s.split("/").map(Number);
+  return new Date(y,m-1,d);
+ }
+
+ const d=new Date(s);
+ return isNaN(d.getTime())?null:d;
+}
+
+function todayStart(){
+ const d=new Date();
+ return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+function dueInfo(r){
+ const due=dueDateValue(r);
+ if(!due)return {days:null,label:"Jatuh tempo: -",cls:"due-ok"};
+
+ const today=todayStart();
+ const target=new Date(due.getFullYear(),due.getMonth(),due.getDate());
+ const days=Math.round((target-today)/86400000);
+
+ if(days<0){
+  return {days,label:`⚠️ TERLAMBAT ${Math.abs(days)} HARI • Jatuh tempo ${target.toLocaleDateString("id-ID")}`,cls:"due-overdue"};
+ }
+ if(days===0){
+  return {days,label:`🔴 JATUH TEMPO HARI INI • ${target.toLocaleDateString("id-ID")}`,cls:"due-urgent"};
+ }
+ if(days<=5){
+  return {days,label:`⚠️ AKAN DITAGIH • H-${days} • Jatuh tempo ${target.toLocaleDateString("id-ID")}`,cls:"due-warning"};
+ }
+ return {days,label:`📅 Jatuh tempo ${target.toLocaleDateString("id-ID")} • H-${days}`,cls:"due-ok"};
+}
+
+function dueSortValue(r){
+ const d=dueDateValue(r);
+ // Tagihan tanpa tanggal diletakkan paling bawah.
+ return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
+}
+
 async function load(){
  const map=new Map();
  const qs=[
@@ -173,8 +244,22 @@ async function load(){
    if(!map.has(d.id))map.set(d.id,x);
   });
  }
- rows=[...map.values()].sort((a,b)=>String(b.approvedAt?.seconds||b.createdAt?.seconds||"").localeCompare(String(a.approvedAt?.seconds||a.createdAt?.seconds||"")));
- render();
+ rows=[...map.values()].sort((a,b)=>{
+  const sa=orderStatus(a), sb=orderStatus(b);
+
+  // Semua TAGIHAN selalu lebih atas daripada LUNAS.
+  if(sa!==sb)return sa==="tagihan"?-1:1;
+
+  // Dalam TAGIHAN: jatuh tempo terdekat selalu paling atas.
+  const da=dueSortValue(a), db=dueSortValue(b);
+  if(da!==db)return da-db;
+
+  // Jika tanggal sama/tidak ada, yang terbaru di approval lebih atas.
+  const aa=Number(a.approvedAt?.seconds||a.createdAt?.seconds||0);
+  const ab=Number(b.approvedAt?.seconds||b.createdAt?.seconds||0);
+  return ab-aa;
+});
+render();
 }
 
 function render(){
@@ -211,6 +296,11 @@ function renderOrder(r){
     <b>Alamat:</b> ${esc(m.alamat||"-")}<br>
     <b>Tempo:</b> ${tempo} hari • <b>Jatuh tempo:</b> ${esc(jatuh)}
    </div>
+
+   ${st==="tagihan" ? (()=>{const di=dueInfo(r);return di.days!==null
+      ? `<div class="due-warning ${di.cls}">${esc(di.label)}</div>`
+      : `<div class="due-warning due-ok">📅 Tanggal jatuh tempo belum diisi</div>`;
+    })() : ""}
 
    <div class="items">
     ${items.map(x=>`<div class="item">
