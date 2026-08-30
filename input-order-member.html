@@ -21,7 +21,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .cart-item{
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,doc,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let uid="",businessUid="",products=[],selected=null,cart=[],ready=false;
 const $=x=>document.getElementById(x),num=x=>Number(String($(x)?.value||"").replace(/[^\d]/g,""))||0,rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),today=()=>new Date().toISOString().slice(0,10);
