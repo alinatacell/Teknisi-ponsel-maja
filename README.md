@@ -1,1 +1,0 @@
-# Teknisi-ponsel-maja
