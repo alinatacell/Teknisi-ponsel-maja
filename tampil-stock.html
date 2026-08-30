@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#111111">
+<title>Fixzy | Stok Firebase</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f7fb;--card:#fff;--line:#e5e7eb;--y:#f59e0b;--y2:#ffc107;
+  --txt:#172033;--muted:#64748b;--green:#16a34a;--red:#dc2626;--blue:#2563eb;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:Arial,Helvetica,sans-serif}
+body{background:linear-gradient(180deg,#fff 0,#f5f7fb 250px)}
+button,input,select{font:inherit}button{cursor:pointer}
+.header{
+  position:sticky;top:0;z-index:20;background:#111111;color:#fff;
+  border-bottom:1px solid #262626;box-shadow:0 2px 14px #0005
+}
+.header-in{max-width:1180px;margin:auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#f1f5f9}
+.brand h1{font-size:18px;font-weight:900;color:#fff}.brand p{font-size:10px;color:#a3a3a3;margin-top:3px}
+.head-actions{display:flex;gap:7px}
+.head-btn{height:42px;border:1px solid #3a3a3a;border-radius:11px;background:#1f1f1f;color:#fff;font-size:14px;padding:0 12px;font-weight:800}.head-btn:hover{background:#2a2a2a}
+.head-btn.refresh{background:var(--y2);border-color:var(--y2)}
+.header-account{margin-left:auto;text-align:right;line-height:1.15;min-width:0}
+.account-name{font-size:11px;font-weight:900;color:#ffc107;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-exp{font-size:9px;color:#a3a3a3;margin-top:3px}
+@media(max-width:600px){.header-in{padding:9px 10px;gap:7px}.logo{width:38px;height:38px}.brand{gap:7px}.brand h1{font-size:16px}.brand p{font-size:9px}.account-name{max-width:110px;font-size:9px}.head-actions{gap:4px}.head-btn{width:38px;padding:0;height:38px}}
+.container{width:min(1180px,100%);margin:auto;padding:18px 14px 70px}
+.top{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+.btn{min-height:42px;border:0;border-radius:11px;padding:10px 15px;font-weight:800}
+.primary{background:linear-gradient(135deg,#ffc107,#f59e0b);color:#111827;box-shadow:0 5px 14px #f59e0b22}
+.dark{background:#111827;color:#fff}
+.green{background:#16a34a;color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px;box-shadow:0 5px 18px #17203308}
+.title{font-size:15px;font-weight:900;margin-bottom:11px;color:#111827}.sub{font-size:11px;color:var(--muted);line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 4px 14px #17203308}
+.stat small{font-size:10px;color:var(--muted);font-weight:800}.stat strong{display:block;color:#111827;font-size:23px;margin-top:6px}.stat span{font-size:10px;color:#94a3b8}
+.stat:nth-child(2) strong{color:var(--green)}.stat:nth-child(3) strong{color:var(--red)}.stat:nth-child(4) strong{color:#d97706}
+.grid4{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:9px}
+.field label{display:block;color:#475569;font-size:10px;font-weight:900;margin:0 0 5px 2px}
+.field input,.field select{width:100%;height:42px;background:#fff;color:#111827;border:1px solid #cbd5e1;border-radius:10px;padding:0 11px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--y);box-shadow:0 0 0 3px #f59e0b18}
+.import-box{display:grid;grid-template-columns:1fr auto;gap:9px}
+.import-box input{height:46px;width:100%;background:#fff;color:#111827;border:1px solid #cbd5e1;border-radius:12px;padding:0 13px;outline:none}
+.import-box input:focus{border-color:var(--y)}
+.note{margin-top:8px;font-size:10px;color:var(--muted);line-height:1.55}
+.msg{display:none;margin-top:10px;padding:10px;border-radius:10px;font-size:11px;white-space:pre-line;line-height:1.5;overflow-wrap:anywhere}
+.msg.show{display:block}.msg.ok{color:#166534;background:#f0fdf4;border:1px solid #bbf7d0}.msg.err{color:#b91c1c;background:#fef2f2;border:1px solid #fecaca}.msg.info{color:#92400e;background:#fffbeb;border:1px solid #fde68a}
+.preview{display:none;margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:auto}
+.preview table{min-width:760px;width:100%;border-collapse:collapse}.preview th,.preview td{padding:9px;border-bottom:1px solid var(--line);font-size:10px;text-align:left}.preview th{color:#92400e;background:#fffbeb}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;min-width:900px;border-collapse:collapse}
+th{padding:11px;background:#f8fafc;color:#475569;font-size:10px;text-align:left;position:sticky;top:0;z-index:1}
+td{padding:10px;border-bottom:1px solid #edf0f3;font-size:11px;vertical-align:top}
+tr:hover td{background:#fffdf5}
+.badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:9px;font-weight:900}
+.ready{color:#166534;background:#dcfce7}.empty{color:#b91c1c;background:#fee2e2}
+.price{color:#b45309;font-weight:900}.code{font-family:monospace;color:#64748b}
+.acts{display:flex;gap:5px}.mini{border:0;border-radius:8px;padding:7px 9px;font-size:9px;font-weight:900;background:#f1f5f9;color:#334155}.mini.edit{color:#b45309;background:#fef3c7}.mini.del{color:#b91c1c;background:#fee2e2}
+.mobile-list{display:none;gap:9px}.m-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 4px 12px #17203308}
+.m-head{display:flex;justify-content:space-between;gap:8px}.m-name{font-size:12px;font-weight:900;line-height:1.35}.m-code{font-size:9px;color:var(--muted);margin-top:3px}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.m-grid div{background:#f8fafc;border-radius:8px;padding:8px;font-size:10px;color:#334155}.m-grid b{display:block;color:#94a3b8;font-size:8px;margin-bottom:2px}
+.overlay{display:none;position:fixed;inset:0;z-index:100;background:#11182780;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:14px}.overlay.show{display:flex}
+.modal{width:min(600px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:19px;padding:16px;box-shadow:0 25px 80px #0003}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.modal-head h2{font-size:16px;color:#111827}.close{width:34px;height:34px;border:0;border-radius:9px;background:#f1f5f9;color:#64748b;font-size:18px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:9px}.full{grid-column:1/-1}.modal-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:13px}
+.loading{display:none;position:fixed;inset:0;z-index:200;background:#11182766;align-items:center;justify-content:center}.loading.show{display:flex}
+.loader{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;text-align:center;box-shadow:0 20px 60px #0002}.spin{width:32px;height:32px;border:4px solid #e5e7eb;border-top-color:var(--y);border-radius:50%;animation:s .8s linear infinite;margin:auto auto 10px}@keyframes s{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;bottom:22px;z-index:300;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#111827;color:#fff;border:1px solid #374151;border-radius:12px;padding:11px 15px;font-size:11px;width:min(90%,430px);text-align:center;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.confirm-ui{display:none;position:fixed;inset:0;z-index:400;background:#11182780;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:14px}
+.confirm-ui.show{display:flex}
+.confirm-box{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:0 25px 80px #0004}
+.confirm-box h3{font-size:16px;color:#111827;margin-bottom:8px}
+.confirm-box p{font-size:12px;color:#475569;line-height:1.55;white-space:pre-line}
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+.confirm-no,.confirm-yes{border:0;border-radius:10px;padding:11px;font-weight:900;cursor:pointer}
+.confirm-no{background:#f1f5f9;color:#334155}.confirm-yes{background:#dc2626;color:#fff}
+
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.grid4{grid-template-columns:1fr 1fr}.grid4 .search{grid-column:1/-1}}
+@media(max-width:600px){
+  .container{padding:10px}.header-in{padding:10px}.brand h1{font-size:16px}.brand p{font-size:9px}
+  .head-btn{height:39px;padding:0 10px}.stats{gap:7px}.stat{padding:11px}.stat strong{font-size:20px}
+  .grid4{grid-template-columns:1fr}.grid4 .search{grid-column:auto}.import-box{grid-template-columns:1fr}
+  .table-wrap{display:none}.mobile-list{display:grid}.form{grid-template-columns:1fr}.full{grid-column:auto}.top .btn{flex:1}
+}
+
+.excel-import{display:grid;grid-template-columns:1fr auto;gap:9px;margin-top:9px}
+.excel-file{height:46px;width:100%;background:#fff;color:#111827;border:1px solid #cbd5e1;border-radius:12px;padding:11px 13px}
+.import-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:9px}
+.dup-info{margin-top:9px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb;color:#475569;font-size:10px;line-height:1.5;display:none}
+.dup-info.show{display:block}
+@media(max-width:600px){.excel-import{grid-template-columns:1fr}.import-actions .btn{width:100%}}
+</style>
+<style id="price-rule-style">
+.price-rule-box{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:13px;background:#f8fafc}
+.price-rule-box .field input{height:42px}
+.price-rule-preview{grid-column:1/-1;font-size:11px;color:#475569;line-height:1.5}
+.price-rule-preview b{color:#111827}
+@media(max-width:600px){.price-rule-box{grid-template-columns:1fr 1fr}.price-rule-box .apply-price-btn{grid-column:1/-1;width:100%}}
+</style>
+<style id="stock-logic-patch">
+.stockBulkBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-start;margin:10px 0;padding:10px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc}
+.stockBulkBar button{border:0;border-radius:10px;padding:9px 13px;font-weight:800;cursor:pointer}.stockBulkDelete{background:#dc2626;color:#fff}.stockCheck{width:18px;height:18px;accent-color:#dc2626}
+/* =========================
+   FIXZY DARK MODE
+   ========================= */
+
+.dark-toggle{
+  height:44px;
+  width:44px;
+  border:0;
+  border-radius:12px;
+  background:#1e293b;
+  color:#facc15;
+  font-size:19px;
+  font-weight:900;
+  cursor:pointer;
+  flex:none;
+}
+
+/* BODY */
+body.dark{
+  --bg:#0b1220;
+  --card:#111827;
+  --line:#334155;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+}
+
+/* HEADER */
+body.dark .header{
+  background:#020617;
+  box-shadow:0 4px 16px #0008;
+}
+
+/* CARD */
+body.dark .card{
+  background:#111827;
+  border-color:#334155;
+  box-shadow:0 4px 16px #0006;
+}
+
+/* TEXT */
+body.dark .title{
+  color:#f8fafc;
+}
+
+body.dark .status{
+  color:#94a3b8;
+}
+
+body.dark label{
+  color:#cbd5e1;
+}
+
+/* INPUT */
+body.dark input,
+body.dark select,
+body.dark textarea{
+  background:#0f172a;
+  color:#e5e7eb;
+  border-color:#475569;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder{
+  color:#64748b;
+}
+
+body.dark input:focus,
+body.dark select:focus,
+body.dark textarea:focus{
+  border-color:#facc15;
+  box-shadow:0 0 0 3px #facc1522;
+}
+
+/* TABLE */
+body.dark .table-wrap{
+  border-color:#334155;
+}
+
+body.dark table{
+  color:#e5e7eb;
+}
+
+body.dark th{
+  background:#020617;
+  color:#fff;
+}
+
+body.dark td{
+  color:#e5e7eb;
+  border-bottom-color:#334155;
+}
+
+body.dark tr:hover td{
+  background:#1e293b;
+}
+
+body.dark .empty{
+  color:#94a3b8;
+}
+
+/* BADGE */
+body.dark .badge{
+  background:#1e3a8a;
+  color:#bfdbfe;
+}
+
+/* TOMBOL LIGHT */
+body.dark .light{
+  background:#334155;
+  color:#fff;
+}
+
+/* DARK TOGGLE */
+body.dark .dark-toggle{
+  background:#facc15;
+  color:#111827;
+}
+
+/* POPUP */
+body.dark .popup{
+  background:#111827;
+  color:#e5e7eb;
+}
+
+body.dark .popup h2{
+  color:#fff;
+}
+
+body.dark .popup p{
+  color:#94a3b8;
+}
+
+body.dark .popup-actions button:first-child{
+  background:#334155!important;
+  color:#fff!important;
+}
+
+body.dark .popup-actions button:last-child{
+  background:#facc15!important;
+  color:#111!important;
+}
+
+/* KPI tetap terlihat */
+body.dark .kpi{
+  box-shadow:0 4px 14px #0005;
+}
+</style>
+<style id="fixzy-display-only">
+/* STOCK DISPLAY ONLY — tidak ada upload, tambah, edit, hapus, atau import */
+.top,
+section.card:has(#csvUrl),
+.stockBulkBar,
+.stockSelectCol,
+.acts,
+#manualModal,
+#confirmUi,
+#loading,
+#toast{display:none!important}
+</style>
+
+<style id="stock-mobile-responsive-patch">
+/* RESPONSIVE STOCK MOBILE — hanya memperbaiki tampilan HP.
+   Tidak mengubah Firebase, data, filter, logika, atau desktop. */
+html,body{overflow-x:hidden}
+.container{width:100%;max-width:1180px}
+
+@media(max-width:600px){
+  .container{
+    width:100%;
+    max-width:100%;
+    padding:10px 8px 70px;
+    overflow-x:hidden;
+  }
+
+  /* Kartu stok selalu mengikuti lebar layar */
+  .mobile-list{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow:hidden;
+  }
+
+  .m-card{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow:hidden;
+  }
+
+  .m-head{
+    width:100%;
+    min-width:0;
+  }
+
+  .m-head > div:first-child{
+    min-width:0;
+    max-width:75%;
+  }
+
+  .m-name,
+  .m-code{
+    max-width:100%;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .m-grid{
+    width:100%;
+    min-width:0;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  }
+
+  .m-grid div{
+    min-width:0;
+    max-width:100%;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .price{
+    overflow-wrap:anywhere;
+  }
+
+  /* Header halaman stok tetap rapi di layar kecil */
+  .header{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+  }
+
+  .header-in{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  .brand{
+    min-width:0;
+    flex:1 1 auto;
+  }
+
+  .brand > div{
+    min-width:0;
+  }
+
+  .header-account{
+    flex:0 1 auto;
+    max-width:105px;
+  }
+
+  .head-actions{
+    flex:0 0 auto;
+  }
+}
+
+@media(max-width:380px){
+  .container{padding-left:6px;padding-right:6px}
+  .m-grid{grid-template-columns:1fr}
+  .header-in{padding-left:7px;padding-right:7px}
+  .account-name{max-width:85px}
+}
+</style>
+
+</head>
+<body><script>
+/* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
+function tutupHalaman(){
+  try{
+    if(window.frameElement){
+      window.frameElement.remove();
+      return;
+    }
+  }catch(e){}
+
+  try{
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:"FIXZY_CLOSE_STOK"}, "*");
+      return;
+    }
+  }catch(e){}
+
+  try{
+    window.close();
+  }catch(e){}
+
+  // Fallback untuk halaman yang tidak boleh ditutup browser.
+  history.replaceState(null,"",location.href);
+  document.body.innerHTML="";
+}
+</script>
+
+<header class="header">
+  <div class="header-in">
+    <div class="brand">
+      <img src="logo.png" class="logo" onerror="this.style.display='none'">
+      <div><h1>FIXZY</h1><p>Stok Produk • <span id="headerRole">Memuat...</span></p></div>
+    </div>
+    <div class="header-account">
+      <div class="account-name" id="headerAccount">Memuat...</div>
+      <div class="account-exp">Exp: <span id="headerExp">-</span></div>
+    </div>
+    <div class="head-actions">
+      <button class="head-btn refresh" id="refreshBtn" onclick="refreshHalaman()">↻</button>
+   <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" title="Mode Gelap">🌙</button>
+  </div>
+</header>
+
+<main class="container">
+  <div class="top">
+    <button class="btn primary" onclick="openManual()">＋ Tambah Stok Manual</button>
+    <button class="btn dark" onclick="document.getElementById('csvUrl').focus()">🔗 Link Google Sheet</button>
+  </div>
+
+  <section class="stats">
+    <div class="stat"><small>Total Produk</small><strong id="total">0</strong><span>SKU Firebase</span></div>
+    <div class="stat"><small>Ready Stock</small><strong id="ready">0</strong><span>sisa &gt; 0</span></div>
+    <div class="stat"><small>Stok Kosong</small><strong id="empty">0</strong><span>perlu restock</span></div>
+    <div class="stat"><small>Nilai Modal</small><strong id="value">Rp 0</strong><span>modal × sisa</span></div>
+  </section>
+
+  <section class="card">
+    <div class="title">🔗 Import Stok dari Link CSV</div>
+    <div class="import-box">
+      <input id="csvUrl" placeholder="Paste link CSV di sini... https://docs.google.com/...output=csv">
+      <button id="csvLoadBtn" class="btn primary" onclick="previewCSV()">CEK & MUAT CSV</button>
+    </div>
+    <div class="import-actions">
+      <button type="button" class="btn green" onclick="document.getElementById('excelFile').click()">📊 Upload Excel</button>
+      <input id="excelFile" class="excel-file" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelUpload(this.files[0])">
+    </div>
+    <div id="excelMsg" class="msg"></div>
+    <div id="duplicateInfo" class="dup-info"></div>
+    <div class="note">
+      Google Sheets harus dipublikasikan sebagai <b>CSV</b>. Google menjelaskan bahwa spreadsheet dapat dipublish ke web dan memilih format CSV; perubahan pada spreadsheet yang dipublish dapat diperbarui otomatis.
+      <br><br>
+      Setelah CSV/Excel terbaca, data akan ditampilkan sebagai preview. Klik <b>SIMPAN KE FIREBASE</b> untuk memasukkannya ke koleksi stok.
+      <br><br><b>Anti produk ganda:</b> produk dengan kode yang sama atau nama + kategori yang sama tidak akan di-upload lagi.
+    </div>
+    <div id="csvMsg" class="msg"></div>
+    <div id="preview" class="preview">
+      <table><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table>
+    </div>
+    <button id="saveCsvBtn" class="btn primary" style="display:none;width:100%;margin-top:10px" onclick="saveCSVToFirebase()">⬆ SIMPAN HASIL CSV KE FIREBASE</button>
+
+    <div class="price-rule-box">
+      <div class="field">
+        <label>TAMBAHAN HARGA JUAL (%)</label>
+        <input id="pricePercent" type="number" min="0" step="0.01" value="15" placeholder="15">
+      </div>
+      <div class="field">
+        <label>TAMBAHAN DARI MODAL (Rp)</label>
+        <input id="priceNominal" type="number" min="0" step="1" value="0" placeholder="10000">
+      </div>
+      <button type="button" class="btn primary apply-price-btn" onclick="applyGlobalSellingPrice()">
+        💰 TERAPKAN KE SELURUH STOK
+      </button>
+      <div class="price-rule-preview" id="priceRulePreview">
+        Rumus: <b>Harga Jual = Modal + (% × Modal) + Nominal Tambahan</b>.
+        Contoh modal Rp100.000 + 15% + Rp10.000 = <b>Rp125.000</b>.
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="title">🔎 Cari Stok</div>
+    <div class="grid4">
+      <div class="field search"><label>CARI PRODUK</label><input id="search" placeholder="Kode / nama / merk..."></div>
+      <div class="field"><label>KATEGORI</label><select id="cat"><option value="">Semua kategori</option></select></div>
+      <div class="field"><label>STATUS</label><select id="status"><option value="">Semua</option><option value="ready">Ready</option><option value="empty">Kosong</option></select></div>
+      <button class="btn dark" onclick="resetFilter()">Reset</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="title">📦 Stok Firebase</div><div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">🔒 Stok hanya menampilkan data milik owner akun aktif — stok owner/konter lain tidak ditampilkan.</div>
+    <div id="listMsg" class="sub">Memuat data...</div>
+    <div class="stockBulkBar">
+  <label style="display:flex;align-items:center;gap:7px;font-weight:800;cursor:pointer">
+    <input id="stockSelectAll" class="stockCheck" type="checkbox" onchange="toggleAllStock(this.checked)">
+    Ceklis Semua
+  </label>
+  <span id="stockSelectedInfo" style="font-size:12px;color:#64748b">0 dipilih</span>
+  <button type="button" class="stockBulkDelete" onclick="hapusStockTerpilih()">🗑 Hapus Terpilih</button>
+</div>
+
+    <div class="table-wrap" style="margin-top:11px">
+      <table>
+        <thead><tr><th class="stockSelectCol">☑</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Modal</th><th>Jual</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="mobileList" class="mobile-list" style="margin-top:11px"></div>
+  </section>
+</main>
+
+<!-- MODAL MANUAL -->
+<div class="overlay" id="manualModal">
+<div class="modal">
+  <div class="modal-head"><h2 id="modalTitle">Tambah Stok Baru</h2><button class="close" onclick="closeManual()">×</button></div>
+  <div class="form">
+    <div class="field"><label>KODE</label><input id="fKode" placeholder="LCD001"></div>
+    <div class="field"><label>KATEGORI</label><select id="fCat"><option>LCD</option><option>BATTERY</option><option>FLEXI</option><option>SPAREPART</option><option>ACCESSORIES</option><option>LAINNYA</option></select></div>
+    <div class="field full"><label>NAMA PRODUK *</label><input id="fNama" placeholder="Nama barang"></div>
+    <div class="field"><label>HARGA MODAL *</label><input id="fModal" type="number" min="0"></div>
+    <div class="field"><label>HARGA JUAL</label><input id="fJual" type="number" min="0" placeholder="Otomatis"></div>
+    <div class="field"><label>JUMLAH STOK *</label><input id="fSisa" type="number" min="0" step="1" value="1"></div>
+    <div class="field"><label>MERK / SUPPLIER</label><input id="fMerk" placeholder="Zevan"></div>
+    <div class="field full"><label>CATATAN</label><input id="fNote" placeholder="Opsional"></div>
+  </div>
+  <div class="sub" style="margin-top:8px">Jika harga jual kosong: harga modal + 15%.</div>
+  <div class="modal-actions"><button class="btn dark" onclick="closeManual()">Batal</button><button class="btn primary" id="manualSave" onclick="saveManual()">SIMPAN STOK</button></div>
+</div>
+</div>
+
+<div class="confirm-ui" id="confirmUi"><div class="confirm-box"><h3 id="confirmTitle">Konfirmasi</h3><p id="confirmText"></p><div class="confirm-actions"><button class="confirm-no" id="confirmNo">Batal</button><button class="confirm-yes" id="confirmYes">Ya, lanjutkan</button></div></div></div>
+<div class="loading" id="loading"><div class="loader"><div class="spin"></div><b id="loadingText">Memproses...</b></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+function uiConfirm(text,title="Konfirmasi",yesText="Ya, lanjutkan"){
+  return new Promise(resolve=>{
+    const ui=document.getElementById("confirmUi"),t=document.getElementById("confirmTitle"),p=document.getElementById("confirmText"),no=document.getElementById("confirmNo"),yes=document.getElementById("confirmYes");
+    t.textContent=title;p.textContent=text;yes.textContent=yesText;ui.classList.add("show");
+    const finish=v=>{ui.classList.remove("show");no.onclick=null;yes.onclick=null;resolve(v)};
+    no.onclick=()=>finish(false);yes.onclick=()=>finish(true);
+  });
+}
+
+function refreshHalaman(){
+  const b=document.getElementById("refreshBtn");
+  if(b){
+    b.disabled=true;
+    b.textContent="↻ Memuat...";
+  }
+  // Hard reload: ensures HTML + module + Firebase query are initialized again.
+  const u=new URL(window.location.href);
+  u.searchParams.set("_refresh",Date.now());
+  window.location.replace(u.toString());
+}
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,serverTimestamp,getDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+  authDomain:"fixzy-update.firebaseapp.com",
+  projectId:"fixzy-update",
+  storageBucket:"fixzy-update.firebasestorage.app",
+  messagingSenderId:"995892519622",
+  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+
+applyDarkMode();
+let uid=null;
+let currentUser=null;
+let currentProfile=null;
+let isSuperAdmin=false;
+let products=[];
+let csvRows=[];
+let editingId=null;
+
+const $=id=>document.getElementById(id);
+const money=n=>"Rp "+Number(n||0).toLocaleString("id-ID");
+/* =========================
+   FIXZY DARK MODE
+   ========================= */
+
+function applyDarkMode(){
+  const dark = localStorage.getItem("fixzy_dark_mode") === "1";
+
+  document.body.classList.toggle("dark", dark);
+
+  const btn = document.getElementById("darkToggle");
+
+  if(btn){
+    btn.textContent = dark ? "☀️" : "🌙";
+    btn.title = dark ? "Mode Terang" : "Mode Gelap";
+  }
+}
+
+window.toggleDark = function(){
+  const dark = !document.body.classList.contains("dark");
+
+  document.body.classList.toggle("dark", dark);
+
+  localStorage.setItem(
+    "fixzy_dark_mode",
+    dark ? "1" : "0"
+  );
+
+  const btn = document.getElementById("darkToggle");
+
+  if(btn){
+    btn.textContent = dark ? "☀️" : "🌙";
+    btn.title = dark ? "Mode Terang" : "Mode Gelap";
+  }
+};
+
+/* Terapkan setelah DOM tersedia */
+applyDarkMode();
+function showLoading(v,text="Memproses..."){
+  $("loadingText").textContent=text;
+  $("loading").classList.toggle("show",v);
+}
+function toast(text){
+  $("toast").textContent=text;$("toast").classList.add("show");
+  setTimeout(()=>$("toast").classList.remove("show"),2600);
+}
+function msg(text,type="info"){
+  const el=$("csvMsg");el.className="msg show "+type;el.textContent=text;
+}
+function clearMsg(){ $("csvMsg").className="msg";$("csvMsg").textContent=""; }
+
+function cleanKey(s){
+  return String(s??"").trim().toLowerCase().replace(/[\s_\-()./]+/g,"");
+}
+function num(s){
+  if(typeof s==="number") return s;
+  let x=String(s??"").trim();
+  if(!x)return 0;
+  x=x.replace(/[^\d,.-]/g,"");
+  if(x.includes(",") && x.includes(".")){
+    if(x.lastIndexOf(",")>x.lastIndexOf(".")) x=x.replace(/\./g,"").replace(",",".");
+    else x=x.replace(/,/g,"");
+  }else if(x.includes(".")){
+    const parts=x.split(".");
+    if(parts.length===2 && parts[1].length===3)x=x.replace(".","");
+  }else if(x.includes(",")){
+    x=x.replace(",",".");
+  }
+  const n=parseFloat(x);
+  return Number.isFinite(n)?n:0;
+}
+
+/* CSV parser: menangani koma, kutip, dan baris baru di dalam kutip */
+function parseCSV(text){
+  const out=[];let row=[],cell="",q=false;
+  text=text.replace(/^\uFEFF/,"");
+  for(let i=0;i<text.length;i++){
+    const c=text[i],n=text[i+1];
+    if(c==='"'){
+      if(q && n==='"'){cell+='"';i++}
+      else q=!q;
+    }else if(c===","&&!q){row.push(cell);cell=""}
+    else if((c==="\n"||c==="\r")&&!q){
+      if(c==="\r"&&n==="\n")i++;
+      row.push(cell);cell="";
+      if(row.some(v=>String(v).trim()!==""))out.push(row);
+      row=[];
+    }else cell+=c;
+  }
+  if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()!==""))out.push(row)}
+  return out;
+}
+
+function pick(obj,keys){
+  for(const k of keys){
+    const v=obj[cleanKey(k)];
+    if(v!==undefined && String(v).trim()!=="")return v;
+  }
+  return "";
+}
+
+function normalizeCSV(rows){
+  if(!rows.length)throw Error("CSV kosong.");
+  const headers=rows[0].map(x=>String(x).trim());
+  const h=headers.map(cleanKey);
+  const data=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];if(!r || r.every(x=>String(x).trim()===""))continue;
+    const o={};h.forEach((k,j)=>o[k]=r[j]??"");
+    const nama=pick(o,["nama","nama produk","produk","product","barang","nama barang","namaproduk"]);
+    const kode=pick(o,["kode","kode produk","sku","code","id"]);
+    if(!nama && !kode)continue;
+    const modal=num(pick(o,["harga modal","harga tunai","modal","harga","buy price","cost","harga beli"]));
+    const jual=num(pick(o,["harga jual","jual","selling price","price"]));
+    const sisa=num(pick(o,["sisa","sisa stock","sisa stok","stok","stock","qty","jumlah","jumlah stok","stock akhir","saldo"]));
+    const kategori=pick(o,["kategori","category","jenis"])||"LAINNYA";
+    const merk=pick(o,["merk","brand","supplier"]);
+    const catatan=pick(o,["catatan","keterangan","note"]);
+    data.push({
+      kode:String(kode||"").trim(),
+      nama:String(nama||"").trim(),
+      kategori:String(kategori).trim().toUpperCase(),
+      hargaModal:modal,
+      hargaJual:jual||defaultSellingPrice(modal),
+      sisa:Math.max(0,sisa),
+      merk:String(merk||"").trim(),
+      catatan:String(catatan||"").trim()
+    });
+  }
+  if(!data.length)throw Error("Tidak ada produk yang dikenali. Pastikan ada kolom Nama/Produk atau Kode/SKU.");
+  return data;
+}
+
+function productKeyCode(v){
+  return String(v??"").trim().toLowerCase();
+}
+function productKeyName(v){
+  return String(v??"").trim().toLowerCase().replace(/\s+/g," ");
+}
+function isSameProduct(a,b){
+  const ac=productKeyCode(a.kode), bc=productKeyCode(b.kode);
+  if(ac && bc && ac===bc) return true;
+  const an=productKeyName(a.nama), bn=productKeyName(b.nama);
+  const ak=productKeyName(a.kategori||"LAINNYA"), bk=productKeyName(b.kategori||"LAINNYA");
+  return !!an && !!bn && an===bn && ak===bk;
+}
+function findDuplicateProducts(rows, existing=products){
+  const accepted=[];
+  const duplicate=[];
+  for(const r of rows){
+    const hitExisting=existing.find(p=>isSameProduct(r,p));
+    const hitNew=accepted.find(p=>isSameProduct(r,p));
+    if(hitExisting || hitNew){
+      duplicate.push({
+        row:r,
+        reason:hitExisting ? "sudah ada di Firebase" : "duplikat di file upload"
+      });
+    }else accepted.push(r);
+  }
+  return {accepted,duplicate};
+}
+function showDuplicateInfo(items){
+  const el=$("duplicateInfo");
+  if(!el)return;
+  if(!items.length){
+    el.className="dup-info";
+    el.textContent="";
+    return;
+  }
+  const preview=items.slice(0,8).map(x=>{
+    const label=x.row.kode||x.row.nama||"Produk";
+    return "• "+label+" — "+x.reason;
+  }).join("\n");
+  el.className="dup-info show";
+  el.textContent=`${items.length} produk ditolak karena duplikat.\n${preview}${items.length>8?"\n• ... dan lainnya":""}`;
+}
+function setImportMessage(text,type="info"){
+  const el=$("excelMsg");
+  if(!el)return;
+  el.className="msg show "+type;
+  el.textContent=text;
+}
+
+async function handleExcelUpload(file){
+  if(!file)return;
+  let XLSX;
+  try{
+    XLSX=await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
+  }catch(e){
+    setImportMessage("Library Excel gagal dimuat. Periksa koneksi internet lalu coba lagi.","err");
+    return;
+  }
+  setImportMessage("Membaca file Excel...","info");
+  $("saveCsvBtn").style.display="none";
+  $("preview").style.display="none";
+  $("duplicateInfo").className="dup-info";
+  showLoading(true,"Membaca Excel...");
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:"array",cellDates:false});
+    const firstSheet=wb.SheetNames[0];
+    if(!firstSheet)throw Error("Sheet Excel tidak ditemukan.");
+    const ws=wb.Sheets[firstSheet];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+    if(!rows.length)throw Error("File Excel kosong.");
+    const normalized=normalizeCSV(rows);
+    const result=findDuplicateProducts(normalized,products);
+    csvRows=result.accepted;
+    showDuplicateInfo(result.duplicate);
+    if(!csvRows.length){
+      renderPreview();
+      $("saveCsvBtn").style.display="none";
+      setImportMessage(
+        `Tidak ada produk baru. ${result.duplicate.length} produk dari Excel sudah ada/duplikat.`,
+        "info"
+      );
+      return;
+    }
+    renderPreview();
+    $("saveCsvBtn").style.display="block";
+    setImportMessage(
+      `Excel berhasil dibaca. ${csvRows.length} produk baru siap disimpan.`+
+      (result.duplicate.length?` ${result.duplicate.length} produk duplikat ditolak.`:""),
+      "ok"
+    );
+  }catch(e){
+    console.error("EXCEL ERROR:",e);
+    setImportMessage("Gagal membaca Excel:\n"+(e.message||e),"err");
+  }finally{
+    showLoading(false);
+    $("excelFile").value="";
+  }
+}
+
+async function previewCSV(){
+  clearMsg();
+  $("excelMsg").className="msg";
+  $("excelMsg").textContent="";
+  $("duplicateInfo").className="dup-info";
+  let url=$("csvUrl").value.trim();
+
+  if(!url){
+    msg("Paste link Google Sheets terlebih dahulu.","err");
+    return;
+  }
+
+  if(!/^https?:\/\//i.test(url)){
+    msg("Link tidak valid. Harus diawali http:// atau https://","err");
+    return;
+  }
+
+  /*
+   * GOOGLE SHEETS → CSV
+   *
+   * Link yang ditempel boleh berupa:
+   * 1. .../pubhtml?gid=123&single=true
+   * 2. .../pub?gid=123&single=true
+   * 3. .../d/ID/edit#gid=123
+   * 4. .../d/e/2PACX.../pubhtml?gid=123&single=true
+   *
+   * GID WAJIB dipertahankan karena spreadsheet A Yudi
+   * memakai sheet tertentu (contoh gid=2070671735).
+   */
+  try{
+    const u=new URL(url);
+    const host=u.hostname.toLowerCase();
+
+    if(host==="docs.google.com" && u.pathname.includes("/spreadsheets/")){
+      const gid=u.searchParams.get("gid") || (url.match(/[#&?]gid=(\d+)/i)||[])[1] || "0";
+
+      // ID publish /d/e/...
+      const pubMatch=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/i);
+
+      if(pubMatch){
+        url=
+          "https://docs.google.com/spreadsheets/d/e/"+
+          pubMatch[1]+
+          "/pub?gid="+encodeURIComponent(gid)+
+          "&single=true&output=csv";
+      }else{
+        // ID spreadsheet biasa /d/ID/...
+        const idMatch=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);
+
+        if(idMatch){
+          url=
+            "https://docs.google.com/spreadsheets/d/"+
+            idMatch[1]+
+            "/export?format=csv&gid="+encodeURIComponent(gid);
+        }
+      }
+    }
+  }catch(e){
+    msg("Link Google Sheets tidak valid.","err");
+    return;
+  }
+
+  $("csvUrl").value=url;
+
+  showLoading(true,"Membaca CSV...");
+
+  const csvBtn=$("csvLoadBtn");
+  if(csvBtn){
+    csvBtn.disabled=true;
+    csvBtn.textContent="MEMBACA CSV...";
+  }
+
+  try{
+    const res=await fetch(url,{
+      method:"GET",
+      mode:"cors",
+      cache:"no-store",
+      redirect:"follow"
+    });
+
+    if(!res.ok){
+      throw Error("HTTP "+res.status);
+    }
+
+    const text=await res.text();
+
+    if(!text || text.trim().length<2){
+      throw Error("CSV kosong.");
+    }
+
+    const first=text.trim().slice(0,300).toLowerCase();
+
+    if(first.startsWith("<!doctype") || first.startsWith("<html") || first.includes("<html")){
+      throw Error(
+        "Google tidak mengirim CSV. Pastikan spreadsheet sudah Publish to web dan sheet yang dipilih adalah sheet stok."
+      );
+    }
+
+    const parsed=parseCSV(text);
+
+    if(!parsed.length){
+      throw Error("Tidak ada baris CSV yang terbaca.");
+    }
+
+    /*
+     * Normalisasi lebih toleran:
+     * Kode / nama produk / stock awal / harga / harga sabtu /
+     * terjual / sisa stock / merk / status.
+     */
+    const normalized=normalizeCSV(parsed);
+    const result=findDuplicateProducts(normalized,products);
+    csvRows=result.accepted;
+    showDuplicateInfo(result.duplicate);
+
+    renderPreview();
+
+    if(!csvRows.length){
+      $("saveCsvBtn").style.display="none";
+      msg(`Tidak ada produk baru. ${result.duplicate.length} produk sudah ada/duplikat.`,"info");
+    }else{
+      msg(
+        "BERHASIL MEMBACA CSV\n"+
+        csvRows.length+" produk baru ditemukan."+
+        (result.duplicate.length?`\n${result.duplicate.length} produk duplikat ditolak.`:"")+
+        "\n\nData belum masuk Firebase. Klik SIMPAN HASIL CSV KE FIREBASE.",
+        "ok"
+      );
+      $("saveCsvBtn").style.display="block";
+    }
+
+  }catch(e){
+    console.error("CSV ERROR:",e);
+
+    $("preview").style.display="none";
+    $("saveCsvBtn").style.display="none";
+
+    let detail=e && e.message ? e.message : String(e);
+
+    if(/Failed to fetch|NetworkError|Load failed/i.test(detail)){
+      detail=
+        "Browser tidak dapat mengambil CSV dari Google.\\n\\n"+
+        "Pastikan Google Sheet sudah Publish to web dan bisa dibuka tanpa login.";
+    }
+
+    msg(
+      "GAGAL MEMBACA CSV\\n\\n"+
+      detail+
+      "\\n\\nURL CSV yang digunakan:\\n"+
+      url,
+      "err"
+    );
+
+  }finally{
+    showLoading(false);
+
+    if(csvBtn){
+      csvBtn.disabled=false;
+      csvBtn.textContent="CEK & MUAT CSV";
+    }
+  }
+}
+
+function renderPreview(){
+  const head=$("previewHead"),body=$("previewBody");
+  head.innerHTML="<tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Modal</th><th>Jual</th><th>Sisa</th><th>Merk</th></tr>";
+  body.innerHTML=csvRows.slice(0,30).map(r=>`<tr><td>${esc(r.kode)}</td><td>${esc(r.nama)}</td><td>${esc(r.kategori)}</td><td>${money(r.hargaModal)}</td><td>${money(r.hargaJual)}</td><td>${r.sisa}</td><td>${esc(r.merk)}</td></tr>`).join("");
+  $("preview").style.display="block";
+  if(csvRows.length>30)msg(`CSV terbaca ${csvRows.length} produk. Preview menampilkan 30 pertama.`,"info");
+}
+
+function identityFields(){
+  const email=String(currentUser?.email||"").toLowerCase();
+  const konterId=String(currentProfile?.konterId||"").trim();
+
+  /*
+   * Owner memakai UID dirinya sendiri.
+   * Superadmin memakai ownerUid/ownerId yang tersimpan di profil;
+   * bila belum ada, gunakan UID Superadmin sendiri.
+   * Jangan pernah mengosongkan ownerUid saat menyimpan stok.
+   */
+  const ownerUid=String(
+    currentProfile?.role==="owner"
+      ? uid
+      : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
+  ).trim();
+
+  const ownerEmail=String(
+    currentProfile?.role==="owner"
+      ? email
+      : (currentProfile?.ownerEmail||email)
+  ).toLowerCase();
+
+  return {uid,akun:email,ownerEmail,konterId,ownerUid};
+}
+function formatExp(v){
+  if(!v)return "-";
+  try{
+    let d=null;
+    if(typeof v==="object"&&typeof v.toDate==="function")d=v.toDate();
+    else if(typeof v==="object"&&v.seconds!==undefined)d=new Date(Number(v.seconds)*1000);
+    else d=new Date(v);
+    return isNaN(d.getTime())?"-":d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
+  }catch{return "-"}
+}
+
+async function saveCSVToFirebase(){
+  if(!uid){msg("Sesi Firebase belum tersedia.","err");return}
+  if(!csvRows.length){msg("Tidak ada produk baru untuk disimpan.","err");return}
+
+  const ok=await uiConfirm(
+    `Simpan ${csvRows.length} produk baru ke Firebase?\n\nProduk yang sama tidak akan di-upload.`,
+    "Simpan Stok",
+    "Simpan"
+  );
+  if(!ok)return;
+
+  showLoading(true,"Memeriksa duplikat...");
+  try{
+    // Ambil data terbaru sebelum menyimpan agar dua proses upload tidak
+    // memasukkan produk yang sama secara berurutan.
+    await loadProducts();
+    const result=findDuplicateProducts(csvRows,products);
+    showDuplicateInfo(result.duplicate);
+    if(!result.accepted.length){
+      msg("Semua produk pada file sudah ada/duplikat. Tidak ada data baru yang disimpan.","info");
+      csvRows=[];
+      $("saveCsvBtn").style.display="none";
+      $("preview").style.display="none";
+      return;
+    }
+
+    showLoading(true,"Menyimpan stok ke Firebase...");
+    const ref=collection(db,"stok");
+    let baru=0;
+    for(const r of result.accepted){
+      await addDoc(ref,{
+        ...r,
+        ...identityFields(),
+        updatedAt:serverTimestamp(),
+        createdAt:serverTimestamp(),
+        sumber:"CSV/Excel"
+      });
+      baru++;
+    }
+
+    const duplicateCount=result.duplicate.length;
+    msg(
+      `Berhasil menyimpan ${baru} produk baru ke Firebase.`+
+      (duplicateCount?`\n${duplicateCount} produk duplikat ditolak.`:""),
+      "ok"
+    );
+    csvRows=[];
+    $("saveCsvBtn").style.display="none";
+    $("preview").style.display="none";
+    await loadProducts();
+  }catch(e){
+    console.error(e);
+    msg("Gagal menyimpan ke Firebase:\n"+(e.message||e),"err");
+  }finally{
+    showLoading(false);
+  }
+}
+async function loadProducts(){
+  if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
+  $("listMsg").textContent="Memuat data stok...";
+  try{
+    const ref=collection(db,"stok");
+    const map=new Map();
+
+    /*
+     * FIX ISOLASI PER KONTER
+     * Superadmin tidak lagi membaca seluruh koleksi "stok".
+     * Semua akun hanya membaca dokumen yang ownerUid/ownerId-nya
+     * sama dengan ownerUid akun aktif.
+     */
+    const role=String(currentProfile?.role||"").toLowerCase();
+    // Sama seperti Data Servis: owner dan superadmin memakai UID sendiri.
+    // Karyawan/teknisi/akun bawahan memakai ownerUid/ownerId milik profilnya.
+    const activeOwnerUid=String(
+      (role==="owner" || role==="superadmin" || isSuperAdmin)
+        ? uid
+        : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
+    ).trim();
+
+    if(!activeOwnerUid){
+      throw new Error("ownerUid akun aktif tidak ditemukan.");
+    }
+
+    const queries=[
+      query(ref,where("ownerUid","==",activeOwnerUid)),
+      query(ref,where("ownerId","==",activeOwnerUid))
+    ];
+
+    for(const q of queries){
+      try{
+        const snap=await getDocs(q);
+        snap.forEach(d=>{
+          const p={id:d.id,...d.data()};
+          map.set(d.id,p);
+        });
+      }catch(e){
+        console.warn("Query stok isolasi:",e);
+      }
+    }
+
+    /*
+     * Filter kedua di sisi aplikasi sebagai pengaman tambahan.
+     * Jadi walaupun ada dokumen dengan field lain, stok owner lain
+     * tidak akan masuk ke array products.
+     */
+    products=[...map.values()].filter(p=>{
+      const pOwner=String(p.ownerUid||p.ownerId||"").trim();
+      return pOwner===activeOwnerUid;
+    });
+
+    $("listMsg").textContent=products.length
+      ? `${products.length} produk tersimpan di Firebase.`
+      : "Belum ada data stok.";
+    fillCategories();render();
+  }catch(e){
+    console.error(e);
+    $("listMsg").textContent="Gagal membaca stok: "+e.message;
+  }
+}
+function fillCategories(){
+  const sel=$("cat"),old=sel.value;
+  const cats=[...new Set(products.map(x=>String(x.kategori||"LAINNYA").toUpperCase()).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">Semua kategori</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  if(cats.includes(old))sel.value=old;
+}
+
+function render(){
+  const q=$("search").value.toLowerCase().trim(),cat=$("cat").value,status=$("status").value;
+  const arr=products.filter(p=>{
+    const text=[p.kode,p.nama,p.merk,p.kategori].join(" ").toLowerCase();
+    if(q&&!text.includes(q))return false;
+    if(cat&&String(p.kategori||"").toUpperCase()!==cat)return false;
+    const s=num(p.sisa);
+    if(status==="ready"&&s<=0)return false;
+    if(status==="empty"&&s>0)return false;
+    return true;
+  }).sort((a,b)=>String(a.nama||"").localeCompare(String(b.nama||"")));
+  let ready=0,empty=0,value=0;
+  products.forEach(p=>{const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++});
+  $("total").textContent=products.length;$("ready").textContent=ready;$("empty").textContent=empty;$("value").textContent=money(value);
+  $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="8" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
+  $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>';
+  const sa=document.getElementById("stockSelectAll");if(sa)sa.checked=false;updateSelectedStockCount();updatePriceRulePreview();
+}
+
+function rowHTML(p){
+  const st=num(p.sisa);
+  const stat=st>0
+    ? `<span class="badge ready">READY • ${st}</span>`
+    : `<span class="badge empty">KOSONG</span>`;
+  const jual=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
+
+  return `<tr>
+    <td class="stockSelectCol">
+      <input class="stockCheck" data-stock-id="${p.id}" type="checkbox"
+             onchange="updateSelectedStockCount()">
+    </td>
+    <td class="code">${esc(p.kode||"-")}</td>
+    <td><b>${esc(p.nama||"-")}</b></td>
+    <td>${esc(p.kategori||"LAINNYA")}</td>
+    <td>${money(p.hargaModal)}</td>
+    <td class="price">${money(jual)}</td>
+    <td>${st}</td>
+    <td>${stat}</td>
+    <td><div class="acts">
+      <button class="mini edit" onclick="editProduct('${p.id}')">Edit</button>
+      <button class="mini del" onclick="deleteProduct('${p.id}')">Hapus</button>
+    </div></td>
+  </tr>`;
+}
+
+function mobileHTML(p){
+  const st=num(p.sisa);
+  const stat=st>0
+    ? `<span class="badge ready">READY • ${st}</span>`
+    : `<span class="badge empty">KOSONG</span>`;
+  const jual=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
+
+  return `<div class="m-card">
+    <div class="m-head">
+      <div style="display:flex;align-items:flex-start;gap:9px">
+        <input class="stockCheck" data-stock-id="${p.id}" type="checkbox"
+               onchange="updateSelectedStockCount()" aria-label="Pilih ${esc(p.nama||p.kode||"produk")}">
+        <div>
+          <div class="m-name">${esc(p.nama||"-")}</div>
+          <div class="m-code">${esc(p.kode||"-")}</div>
+        </div>
+      </div>
+      ${stat}
+    </div>
+    <div class="m-grid">
+      <div><b>Kategori</b>${esc(p.kategori||"-")}</div>
+      <div><b>Merk</b>${esc(p.merk||"-")}</div>
+      <div><b>Modal</b>${money(p.hargaModal)}</div>
+      <div><b>Harga Jual</b><span class="price">${money(jual)}</span></div>
+      <div><b>Sisa</b>${st} pcs</div>
+    </div>
+    <div class="acts" style="margin-top:9px">
+      <button class="mini edit" onclick="editProduct('${p.id}')">Edit</button>
+      <button class="mini del" onclick="deleteProduct('${p.id}')">Hapus</button>
+    </div>
+  </div>`;
+}
+
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+
+window.openManual=async()=>{$("manualModal").classList.add("show");editingId=null;$("modalTitle").textContent="Tambah Stok Baru";$("manualSave").textContent="SIMPAN STOK";clearForm();await setNextStockCode()};
+window.closeManual=()=>{$("manualModal").classList.remove("show")};
+function clearForm(){["fKode","fNama","fModal","fJual","fSisa","fMerk","fNote"].forEach(id=>$(id).value="");$("fSisa").value=1;$("fCat").value="LCD"}
+window.editProduct=async id=>{
+  const p=products.find(x=>x.id===id);if(!p)return;
+  editingId=id;$("modalTitle").textContent="Edit Stok";$("manualSave").textContent="UPDATE STOK";
+  $("fKode").value=p.kode||"";$("fNama").value=p.nama||"";$("fCat").value=p.kategori||"LAINNYA";$("fModal").value=p.hargaModal||0;$("fJual").value=p.hargaJual||0;$("fSisa").value=p.sisa??0;$("fMerk").value=p.merk||"";$("fNote").value=p.catatan||"";
+  $("manualModal").classList.add("show");
+}
+function getSellingPrice(modal, percent, nominal){
+  const m=Math.max(0,num(modal));
+  const p=Math.max(0,num(percent));
+  const n=Math.max(0,num(nominal));
+  return Math.round(m+(m*p/100)+n);
+}
+function getGlobalPriceSettings(){
+  return {percent:Math.max(0,num($("pricePercent").value)),nominal:Math.max(0,num($("priceNominal").value))};
+}
+function defaultSellingPrice(modal){return getSellingPrice(modal,15,0)}
+function updatePriceRulePreview(){
+  const el=$("priceRulePreview");
+  if(!el)return;
+  const {percent,nominal}=getGlobalPriceSettings();
+  const sample=products[0];
+  if(sample){
+    el.innerHTML=`Contoh <b>${esc(sample.nama||sample.kode||"produk")}</b>: modal ${money(sample.hargaModal)} → harga jual <b>${money(getSellingPrice(sample.hargaModal,percent,nominal))}</b>`;
+  }else{
+    el.innerHTML='Rumus: <b>Harga Jual = Modal + (% × Modal) + Nominal Tambahan</b>. Contoh modal Rp100.000 + 15% + Rp10.000 = <b>Rp125.000</b>.';
+  }
+}
+window.applyGlobalSellingPrice=async function(){
+  if(!uid){toast("Sesi Firebase belum tersedia.");return}
+  const {percent,nominal}=getGlobalPriceSettings();
+  if(percent===0 && nominal===0){toast("Isi % atau nominal tambahan terlebih dahulu.");return}
+  if(!products.length){toast("Belum ada stok untuk diubah.");return}
+  showLoading(true,"Mengubah harga jual seluruh stok...");
+  try{
+    let berhasil=0;
+    for(const p of products){
+      await updateDoc(doc(db,"stok",p.id),{
+        hargaJual:getSellingPrice(p.hargaModal,percent,nominal),
+        hargaJualPercent:percent,
+        hargaJualNominal:nominal,
+        updatedAt:serverTimestamp(),
+        sumberHargaJual:"aturan_harga_global"
+      });
+      berhasil++;
+    }
+    await loadProducts();
+    toast(`Harga jual ${berhasil} produk berhasil diperbarui.`);
+  }catch(e){
+    console.error(e);
+    toast("Gagal mengubah harga jual: "+e.message);
+  }finally{showLoading(false)}
+};
+
+window.saveManual=async()=>{
+  if(!uid){toast("Sesi Firebase belum tersedia.");return}
+  const nama=$("fNama").value.trim(),modal=num($("fModal").value),kode=$("fKode").value.trim();
+  const kategori=$("fCat").value;
+  if(!nama||modal<=0){toast("Nama dan harga modal wajib diisi");return}
+
+  if(!editingId){
+    const candidate={kode,nama,kategori};
+    const duplicate=products.find(p=>isSameProduct(candidate,p));
+    if(duplicate){
+      toast(`Produk sudah ada: ${duplicate.nama||duplicate.kode||"produk"}`);
+      return;
+    }
+  }
+
+  const data={
+    ...identityFields(),kode,nama,kategori,
+    hargaModal:modal,
+    hargaJual:num($("fJual").value)||getSellingPrice(modal,num($("pricePercent").value)||15,num($("priceNominal").value)||0),
+    sisa:Math.max(0,num($("fSisa").value)),
+    merk:$("fMerk").value.trim(),
+    catatan:$("fNote").value.trim(),
+    updatedAt:serverTimestamp(),
+    sumber:"manual"
+  };
+  showLoading(true,editingId?"Memperbarui stok...":"Menyimpan stok...");
+  try{
+    if(editingId){
+      await updateDoc(doc(db,"stok",editingId),data);
+    }else{
+      // Cegah produk ganda: kode sama ATAU nama + kategori sama.
+      const duplicate=products.find(p=>isSameProduct(data,p));
+      if(duplicate){
+        showLoading(false);
+        toast(`Produk sudah ada: ${duplicate.nama||duplicate.kode||"produk"}`);
+        return;
+      }
+      await addDoc(collection(db,"stok"),{...data,createdAt:serverTimestamp()});
+    }
+    closeManual();
+    toast(editingId?"Stok diperbarui":"Stok ditambahkan");
+    await loadProducts();
+  }catch(e){
+    console.error(e);
+    toast("Gagal menyimpan: "+(e.message||e));
+  }finally{showLoading(false)}
+}
+window.deleteProduct=async id=>{
+  const p=products.find(x=>x.id===id);
+  if(!p){toast("Produk tidak ditemukan atau data sudah berubah.");return}
+  const ok=await uiConfirm(
+    `Hapus produk "${p.nama||p.kode||"produk"}" dari Firebase?`,
+    "Hapus Produk",
+    "Hapus"
+  );
+  if(!ok)return;
+
+  showLoading(true,"Menghapus produk...");
+  try{
+    await deleteDoc(doc(db,"stok",id));
+    await loadProducts();
+    toast("Produk berhasil dihapus dari Firebase.");
+  }catch(e){
+    console.error("DELETE STOCK ERROR:",e);
+    const detail=e?.message||String(e);
+    toast(/permission|insufficient|unauthenticated/i.test(detail)
+      ? "Hapus ditolak Firebase Rules. Pastikan akun ini memiliki akses ke dokumen stok."
+      : "Gagal menghapus: "+detail);
+  }finally{
+    showLoading(false);
+  }
+};
+window.resetFilter=()=>{$("search").value="";$("cat").value="";$("status").value="";render()};
+$("search").addEventListener("input",render);$("cat").addEventListener("change",render);$("status").addEventListener("change",render);
+$("pricePercent").addEventListener("input",updatePriceRulePreview);$("priceNominal").addEventListener("input",updatePriceRulePreview);
+
+
+window.uiConfirm=uiConfirm;
+
+// Fungsi yang dipanggil oleh onclick HTML harus diekspos ke window
+// karena script utama menggunakan type="module".
+window.previewCSV = previewCSV;
+window.saveCSVToFirebase = saveCSVToFirebase;
+window.handleExcelUpload = handleExcelUpload;
+window.loadProducts = loadProducts;
+window.openManual = openManual;
+window.closeManual = closeManual;
+window.resetFilter = resetFilter;
+
+
+
+// ===== CEKLIS & HAPUS TERPILIH — Firebase module =====
+async function generateNextStockCode(){
+  if(!uid)return "STK001";
+  const used=new Set();
+  products.forEach(d=>{
+    const k=String(d?.kode||"").trim().toUpperCase();
+    const m=k.match(/^STK(\d+)$/);
+    if(m)used.add(Number(m[1]));
+  });
+  let n=1;while(used.has(n))n++;
+  return "STK"+String(n).padStart(3,"0");
+}
+
+window.setNextStockCode=async function(){
+  const el=$("fKode");
+  if(!el || editingId) return;
+  try{ el.value=await generateNextStockCode(); }
+  catch(e){ console.error("Gagal membuat kode stok:",e); }
+};
+
+window.toggleAllStock=function(checked){
+  document.querySelectorAll(".stockCheck[data-stock-id]").forEach(el=>{
+    el.checked=!!checked;
+  });
+  updateSelectedStockCount();
+};
+
+window.updateSelectedStockCount=function(){
+  // Desktop dan HP menampilkan produk yang sama, jadi deduplikasi berdasarkan ID.
+  const ids=new Set(
+    [...document.querySelectorAll(".stockCheck[data-stock-id]:checked")]
+      .map(el=>el.dataset.stockId)
+      .filter(Boolean)
+  );
+  const info=$("stockSelectedInfo");
+  if(info) info.textContent=`${ids.size} dipilih`;
+};
+
+window.hapusStockTerpilih=async function(){
+  const ids=[...new Set(
+    [...document.querySelectorAll(".stockCheck[data-stock-id]:checked")]
+      .map(el=>el.dataset.stockId).filter(Boolean)
+  )];
+  if(!ids.length){toast("Pilih produk yang akan dihapus.");return}
+
+  if(!(await uiConfirm(
+    `Hapus ${ids.length} produk terpilih dari Firebase?`,
+    "Hapus Produk Terpilih",
+    "Hapus Semua"
+  )))return;
+
+  showLoading(true,`Menghapus ${ids.length} produk...`);
+  try{
+    // Hapus satu per satu agar kegagalan satu dokumen dapat dilaporkan jelas.
+    let sukses=0, gagal=0, pesanGagal=[];
+    for(const id of ids){
+      try{
+        await deleteDoc(doc(db,"stok",id));
+        sukses++;
+      }catch(e){
+        gagal++;
+        if(pesanGagal.length<3)pesanGagal.push(e?.message||String(e));
+      }
+    }
+    await loadProducts();
+    const all=$("stockSelectAll");
+    if(all)all.checked=false;
+    updateSelectedStockCount();
+
+    if(gagal){
+      toast(`${sukses} berhasil dihapus, ${gagal} gagal. ${/permission|insufficient/i.test(pesanGagal[0]||"")?"Periksa Firestore Rules.":""}`);
+    }else{
+      toast(`${sukses} produk berhasil dihapus dari Firebase.`);
+    }
+  }catch(e){
+    console.error("Hapus terpilih gagal:",e);
+    toast("Gagal menghapus: "+(e.message||e));
+  }finally{
+    showLoading(false);
+  }
+};
+
+// ===== SESI FIXZY: TIDAK ADA LOGIN ULANG =====
+async function initFixzyStockSession(user){
+  if(!user){
+    $("listMsg").textContent="Sesi Firebase belum tersedia. Buka halaman ini dari index.html setelah login.";
+    return;
+  }
+  uid=user.uid;
+  currentUser=user;
+  try{
+    const snap=await getDoc(doc(db,"users",uid));
+    if(!snap.exists()) throw new Error("Profil akun tidak ditemukan.");
+    currentProfile=snap.data()||{};
+    const role=String(currentProfile.role||"").toLowerCase();
+    const email=String(user.email||"").toLowerCase();
+
+    isSuperAdmin=role==="superadmin" || email==="servicehpmaja@gmail.com";
+
+    // Owner, Superadmin, dan akun bawahan/karyawan boleh membuka halaman.
+    // Isolasi data ditentukan oleh ownerUid/ownerId seperti Data Servis.
+
+
+    if(String(currentProfile.status||"").toLowerCase()==="blocked" ||
+       String(currentProfile.status||"").toLowerCase()==="rejected"){
+      throw new Error("Akun diblokir / ditolak.");
+    }
+
+    const displayName=currentProfile.namaKonter||currentProfile.namaPemilik||currentProfile.nama||user.email||role;
+    $("headerAccount").textContent=displayName;
+    $("headerRole").textContent=role.toUpperCase();
+    $("headerExp").textContent=formatExp(currentProfile.exp||currentProfile.expAt||currentProfile.expiredAt||currentProfile.tanggalBerakhir);
+    document.body.dataset.stockAuthorized="true";
+
+    // Semua akun hanya memuat stok milik owner aktif.
+    // Superadmin memakai UID sendiri, sehingga tidak ikut melihat stok owner lain.
+    await loadProducts();
+  }catch(e){
+    console.error("FIXZY STOCK ACCESS:",e);
+    document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f4f6;padding:20px;font-family:Arial">
+      <div style="width:min(430px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:25px;text-align:center;box-shadow:0 10px 30px #0002">
+        <div style="font-size:42px">🔒</div>
+        <h2 style="margin:10px 0">Akses Terbatas</h2>
+        <p style="color:#64748b;line-height:1.6">${esc(e.message||"Akses ditolak.")}</p>
+      </div>
+    </div>`;
+  }
+}
+onAuthStateChanged(auth,initFixzyStockSession);
+
+</script></body>
+</html>
