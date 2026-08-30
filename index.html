@@ -158,24 +158,15 @@ body{overflow:hidden}
     <div class="menu-section">PENGATURAN</div>
 
     <button class="menu-link" data-page="izin-akses.html"
-            data-roles="owner,superadmin,admin" onclick="bukaHalaman(this)">
-      <span class="ico">🔑</span>Izin Akses
+            data-roles="owner,superadmin" onclick="bukaHalaman(this)">
+      <span class="ico">🔑</span>Izin Akses Karyawan
     </button>
 
     <div class="menu-section">LAINNYA</div>
 
-    <button class="menu-link" onclick="kembaliLogin()">
-      <span class="ico">🔐</span>Kembali ke Login
-    </button>
-
-    <button class="menu-link logout-link" onclick="logoutFixzy()">
+    <button class="menu-link" onclick="logoutFixzy()">
       <span class="ico">🚪</span>Logout
     </button>
-
-    <div style="font-size:9px;color:#94a3b8;padding:10px 8px;line-height:1.5">
-      Kredit Antar Member FIXZY<br>
-      Owner = Pengelola • Karyawan = Anggota
-    </div>
   </nav>
 </aside>
 
@@ -192,13 +183,28 @@ const db=getFirestore(app);
 let authReady=false;
 
 const FIXZY_PERMISSION_BY_PAGE={
-  "input-order-member.html":"orderMember",
-  "data-order-member.html":"orderMember",
-  "approval-order-member.html":"approvalMember",
-  "data-keuangan.html":"keuanganMember",
-  "reload-stock-member.html":"stockMember",
-  "tampil-stock-member.html":"stockMember",
-  "izin-akses.html":"ownerOnly"
+  "servisan.html":"servis",
+  "penjualan.html":"penjualan",
+  "pengeluaran.html":"pengeluaran",
+  "data-servis.html":"dataServis",
+  "data-penjualan.html":"dataPenjualan",
+  "stock.html":"stock",
+  "tampil-stock.html":"stock",
+  "pengeluaran.html":"pengeluaran",
+  "ringkasan-pendapatan.html":"laporanKeuangan",
+  "dashboard-admin.html":"ownerOnly",
+  "absensi-karyawan.html":"absensi",
+  "data-karyawan.html":"ownerOnly",
+  "upah-kerja.html":"ownerOnly",
+  "pengaturan.html":"ownerOnly",
+  "izin-akses.html":"ownerOnly",
+  "saldo-token.html":"saldoToken",
+  "cek-paket.html":"cekPaket",
+  "token-registrasi.html":"superAdminOnly",
+  "token-perpanjangan.html":"superAdminOnly",
+  "token-reseller.html":"superAdminOnly",
+  "request-saldo.html":"superAdminOnly",
+  "daftar-pengguna.html":"superAdminOnly"
 };
 
 function formatExpFIXZY(v){
@@ -225,12 +231,7 @@ function permissionTersedia(permissions, key){
   if(key==="superAdminOnly") return false;
   const session=window.fixzySession||{};
   const role=String(session.role||"").toLowerCase();
-  const basicAllow=[
-    "orderMember","approvalMember","keuanganMember","stockMember",
-    "servis","penjualan","pengeluaran","dataServis","dataPenjualan",
-    "stock","laporanKeuangan","absensi","saldoToken","cekPaket",
-    "laporanPendapatan","dashboardPendapatan"
-  ];
+  const basicAllow=["servis","penjualan","pengeluaran","dataServis","dataPenjualan","stock","laporanKeuangan","absensi","saldoToken","cekPaket","laporanPendapatan","dashboardPendapatan"];
   // SUPERADMIN adalah pengelola aplikasi, bukan Owner bisnis.
   if(role==="superadmin" || role==="admin") return key==="superAdminOnly";
   if(["karyawan","employee","kasir","kurir","reseller"].includes(role) && basicAllow.includes(key)) return true;
@@ -288,13 +289,7 @@ function tampilkanAksesDitolak(){
 function bukaMenu(){document.getElementById("menu").classList.add("show");document.getElementById("overlay").classList.add("show");}
 function tutupMenu(){document.getElementById("menu").classList.remove("show");document.getElementById("overlay").classList.remove("show");}
 window.bukaMenu=bukaMenu; window.tutupMenu=tutupMenu;
-function refreshIndex(){location.reload();} 
-window.refreshIndex=refreshIndex;
-
-function kembaliLogin(){
-  window.location.replace("login.html");
-}
-window.kembaliLogin=kembaliLogin;
+function refreshIndex(){location.reload();} window.refreshIndex=refreshIndex;
 function tampilkanBeranda(){
   const area=document.getElementById("contentArea");
   area.innerHTML="";
@@ -322,7 +317,29 @@ function bukaHalaman(btn){
   area.innerHTML="";
   const frame=document.createElement("iframe");
   frame.title="Halaman FIXZY";
-  const page=btn.dataset.page;
+  // Kalau file FIXED ada, prioritaskan FIXED
+  let page=btn.dataset.page;
+  // Mapping otomatis ke versi FIXED jika ada
+  const fixedMap={
+    "data-penjualan.html":"data-penjualan-FIXED.html",
+    "data-servis.html":"data-servis-FIXED.html",
+    "data-karyawan.html":"data-karyawan-FIXED.html",
+    "absensi-karyawan.html":"absensi-karyawan-FIXED.html",
+    "dashboard-admin.html":"dashboard-admin-FIXED.html",
+    "daftar-pengguna.html":"daftar-pengguna-FIXED.html",
+    "token-registrasi.html":"token-registrasi-FIXED.html",
+    "token-perpanjangan.html":"token-perpanjangan-FIXED.html",
+    "token-reseller.html":"token-reseller-FIXED.html",
+    "request-saldo.html":"request-saldo-FIXED.html"
+  };
+  // Coba load FIXED dulu, kalau gagal fallback ke original (browser akan 404 lalu kita fallback manual? untuk sekarang tetap original name, user sudah ganti file)
+  // Kita tetap pakai nama asli supaya kalau user sudah rename FIXED jadi nama asli tetap jalan
+  // Tapi kalau file FIXED tersedia, pakai FIXED
+  // Di sini kita cek apakah user sudah upload FIXED: kita coba pakai FIXED jika ada mapping
+  // Untuk sekarang, pakai nama asli (user disuruh rename), tapi kalau FIXED ada di folder, pakai FIXED
+  // Simple: pakai page asli, tapi beri catatan
+  // Untuk menghindari 404, kita tetap pakai page asli - user tinggal rename file FIXED jadi nama asli
+  frame.src=page;
   frame.style.cssText="width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1";
   frame.onerror=()=>{ if(fixedMap[page]) frame.src=fixedMap[page]; };
   area.appendChild(frame);
@@ -368,6 +385,8 @@ window.logoutFixzy=popupLogout;
 async function validasiDanTampilkan(user){
   if(!user){
     authReady=false;
+    document.getElementById("accountName").textContent="Memuat...";
+    document.getElementById("accountExp").textContent="-";
     window.location.replace("login.html");
     return;
   }
