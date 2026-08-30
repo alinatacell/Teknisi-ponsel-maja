@@ -589,18 +589,65 @@ window.deleteOrder=async id=>{
  const canDelete=role==="owner"||role==="superadmin"||String(auth.currentUser?.email||"").toLowerCase()==="servicehpmaja@gmail.com";
  if(!canDelete){notice("Akun ini tidak memiliki hak menghapus data order member.","err");return}
  const nota=r.nomorNota||r.nota||id;
- if(!confirm("Hapus data order member nota "+nota+" secara permanen?\n\nData akan dihapus langsung dari Firebase."))return;
+ if(!confirm("Hapus data order member nota "+nota+" secara permanen?\n\nStok dari pesanan yang sudah di-approval akan DIKEMBALIKAN ke stok.\nPenghapusan dan pengembalian stok dilakukan bersamaan."))return;
  try{
-  notice("Menghapus data order member...");
+  notice("Menghapus order dan mengembalikan stok...");
   const ref=doc(db,"order_member",id);
-  const snap=await getDoc(ref);
-  if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
-  const d=snap.data()||{};
-  const orderOwner=String(d.ownerUid||d.ownerId||d.uid||"").trim();
-  if(orderOwner!==ownerUid && !canDelete)throw Error("Order bukan milik akun ini.");
-  await deleteDoc(ref);
+
+  await runTransaction(db,async tx=>{
+   // 1. Baca order terlebih dahulu.
+   const snap=await tx.get(ref);
+   if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
+
+   const d=snap.data()||{};
+   const orderOwner=String(d.ownerUid||d.ownerId||d.uid||"").trim();
+   if(orderOwner!==ownerUid && !canDelete)throw Error("Order bukan milik akun ini.");
+
+   // 2. Ambil seluruh item order. Qty inilah yang sebelumnya
+   //    sudah dikurangi ketika approval.
+   const items=itemsOf(d).filter(x=>x.produkId && x.qty>0);
+   const qtyMap=new Map();
+   for(const item of items){
+    const pid=String(item.produkId).trim();
+    qtyMap.set(pid,(qtyMap.get(pid)||0)+Number(item.qty||0));
+   }
+
+   // 3. Semua stok dibaca dahulu sebelum ada update/delete.
+   //    Ini wajib untuk transaksi Firestore.
+   const stockRows=[];
+   for(const [pid,qtyKembali] of qtyMap.entries()){
+    const stockRef=doc(db,"stok",pid);
+    const stockSnap=await tx.get(stockRef);
+    if(!stockSnap.exists()){
+     throw Error("Stok produk "+pid+" tidak ditemukan. Order TIDAK dihapus agar stok tidak hilang.");
+    }
+    const sd=stockSnap.data()||{};
+    const stockOwner=String(sd.ownerUid||sd.ownerId||sd.uid||"").trim();
+    if(stockOwner!==ownerUid){
+     throw Error("Stok produk "+pid+" bukan milik akun ini. Order TIDAK dihapus.");
+    }
+    const current=Number(sd.sisa??sd.stok??0)||0;
+    stockRows.push({ref:stockRef,sd,current,qty:Number(qtyKembali)||0});
+   }
+
+   // 4. Kembalikan qty ke stok.
+   for(const x of stockRows){
+    const baru=x.current+x.qty;
+    tx.update(x.ref,{
+     sisa:baru,
+     stok:baru,
+     status:baru>0?"tersedia":"kosong",
+     updatedAt:serverTimestamp()
+    });
+   }
+
+   // 5. Baru hapus order. Jika salah satu langkah gagal,
+   //    seluruh transaksi dibatalkan oleh Firestore.
+   tx.delete(ref);
+  });
+
   await load();
-  notice("Order member berhasil dihapus dari Firebase.","ok");
+  notice("Order member berhasil dihapus dan stok pesanan telah dikembalikan.","ok");
  }catch(e){
   console.error(e);
   notice("Gagal hapus: "+(e?.message||e),"err");
