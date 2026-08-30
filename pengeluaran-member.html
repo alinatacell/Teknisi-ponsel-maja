@@ -3,23 +3,186 @@
 </style></head><body><main class="wrap">
 <div class="card"><h1>💸 Pengeluaran Member</h1><div class="small">Transportasi, acara komunitas, dan lain-lain menggunakan <b>Uang Kas</b>. Pengeluaran Pengelola menggunakan <b>Hasil Pengelola</b>.</div></div>
 <div class="card"><h2>Saldo Saat Ini</h2><div class="balance"><div class="box"><div class="title">UANG KAS</div><div class="num" id="saldoKas">Rp0</div></div><div class="box"><div class="title">HASIL PENGELOLA</div><div class="num" id="saldoPengelola">Rp0</div></div></div><div class="small" style="margin-top:9px">Pemasukan: <b>Rp4.000/pcs</b> untuk kas dan <b>Rp1.000/pcs</b> untuk pengelola, dari order member yang sudah disetujui.</div></div>
-<div class="card"><h2>Input Pengeluaran</h2><div class="grid"><div><label>Tanggal</label><input id="tanggal" type="date"></div><div><label>Sumber Dana</label><select id="sumber"><option value="kas">Uang Kas</option><option value="pengelola">Hasil Pengelola</option></select></div><div><label>Jenis Pengeluaran</label><select id="jenis"><option value="transportasi">Transportasi</option><option value="acara">Acara Komunitas</option><option value="lainlain">Lain-lain</option><option value="pengelola">Pengeluaran Pengelola</option></select></div><div><label>Nominal</label><input id="nominal" type="number" min="1" step="1" placeholder="0"></div></div><div style="margin-top:10px"><label>Keterangan</label><textarea id="keterangan" placeholder="Keterangan pengeluaran"></textarea></div><button id="simpan" class="primary" style="margin-top:10px">Simpan Pengeluaran</button><div id="msg" class="msg"></div></div>
+<div class="card"><h2>Input Pengeluaran</h2><div class="grid"><div><label>Tanggal</label><input id="tanggal" type="date"></div><div><label>Sumber Dana</label><select id="sumber"><option value="kas">Uang Kas</option><option value="pengelola">Hasil Pengelola</option></select></div><div><label>Jenis Pengeluaran</label><select id="jenis"><option value="transportasi">Transportasi</option><option value="acara">Acara Komunitas</option><option value="lainlain">Lain-lain</option><option value="pengelola">Pengeluaran Pengelola</option></select></div><div><label>Nominal</label><input id="nominal" type="tel" inputmode="numeric" autocomplete="off"
+placeholder="Masukkan nominal"></div></div><div style="margin-top:10px"><label>Keterangan</label><textarea id="keterangan" placeholder="Keterangan pengeluaran"></textarea></div><button id="simpan" class="primary" style="margin-top:10px">Simpan Pengeluaran</button><div id="msg" class="msg"></div></div>
 <div class="card"><h2>Riwayat Pengeluaran</h2><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Sumber</th><th>Nominal</th><th>Keterangan</th><th>Oleh</th></tr></thead><tbody id="riwayat"></tbody></table></div></div>
 </main>
 <script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,addDoc,onSnapshot,orderBy,doc,getDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let user=null,profile={},ownerUid="",role="",saldoKas=0,saldoPengelola=0;
-const money=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-const saldoKasEl=document.getElementById("saldoKas"),saldoPengelolaEl=document.getElementById("saldoPengelola");tanggal.value=new Date().toISOString().slice(0,10);
-function ownerOf(d){const r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return user.uid;return String(d.ownerUid||d.ownerId||"").trim()||user.uid}
-function setSaldo(){saldoKas=Math.max(0,saldoKas);saldoPengelola=Math.max(0,saldoPengelola);saldoKasEl.textContent=money(saldoKas);saldoPengelolaEl.textContent=money(saldoPengelola)}
-async function readOwner(name){const s=await getDocs(query(collection(db,name),where("ownerUid","==",ownerUid)));return s.docs}
-async function hitungSaldo(){let pcs=0;try{for(const d of await readOwner("order_member")){const o=d.data()||{},st=String(o.status||"").toLowerCase();if(st!=="order_member")continue;for(const x of (o.items||[]))pcs+=Number(x.qty)||0}}catch(e){console.warn(e)}saldoKas=pcs*4000;saldoPengelola=pcs*1000;try{for(const d of await readOwner("pengeluaranMember")){const e=d.data()||{},n=Number(e.nominal)||0;if(String(e.sumber||"").toLowerCase()==="kas")saldoKas-=n;if(String(e.sumber||"").toLowerCase()==="pengelola")saldoPengelola-=n}}catch(e){console.warn(e)}setSaldo()}
-function tampil(s){const rows=s.docs.map(d=>d.data()).filter(e=>!e.ownerUid||e.ownerUid===ownerUid);riwayat.innerHTML=rows.map(e=>`<tr><td>${esc(e.tanggal)}</td><td>${esc(e.jenisLabel||e.jenis)}</td><td><span class="badge ${e.sumber==="kas"?"badge-kas":"badge-pengelola"}">${e.sumber==="kas"?"Uang Kas":"Hasil Pengelola"}</span></td><td>${money(e.nominal)}</td><td>${esc(e.keterangan)}</td><td>${esc(e.createdByEmail||"")}</td></tr>`).join("")||'<tr><td colspan="6">Belum ada pengeluaran.</td></tr>'}
-onAuthStateChanged(auth,async u=>{if(!u){location.href="login.html";return}user=u;try{const me=await getDoc(doc(db,"users",u.uid));if(!me.exists())throw Error("Profil akun tidak ditemukan.");profile=me.data()||{};role=String(profile.role||"").toLowerCase();ownerUid=ownerOf(profile);if(!["owner","employee","karyawan","admin","superadmin"].includes(role)){document.body.innerHTML="<div style='padding:30px;text-align:center'>Akses ditolak.</div>";return}if(!["owner","admin","superadmin"].includes(role))simpan.style.display="none";const q=query(collection(db,"pengeluaranMember"),where("ownerUid","==",ownerUid),orderBy("createdAt","desc"));onSnapshot(q,s=>{tampil(s);hitungSaldo().catch(console.error)},e=>{console.error(e);msg.textContent="Gagal membaca riwayat. Pastikan akses ownerUid pada Rules."});await hitungSaldo()}catch(e){console.error(e);msg.textContent="Gagal memuat data: "+e.message}});
-jenis.onchange=()=>{sumber.value=jenis.value==="pengelola"?"pengelola":"kas"};
-simpan.onclick=async()=>{msg.textContent="";const n=Number(nominal.value)||0;if(!n)return msg.textContent="Nominal wajib diisi.";const src=jenis.value==="pengelola"?"pengelola":"kas",saldo=src==="kas"?saldoKas:saldoPengelola;if(n>saldo)return msg.textContent="Nominal melebihi saldo yang tersedia.";const labels={transportasi:"Transportasi",acara:"Acara Komunitas",lainlain:"Lain-lain",pengelola:"Pengeluaran Pengelola"};try{await addDoc(collection(db,"pengeluaranMember"),{ownerUid,ownerId:ownerUid,tanggal:tanggal.value,jenis:jenis.value,jenisLabel:labels[jenis.value],sumber:src,nominal:n,keterangan:keterangan.value.trim(),createdBy:user.uid,createdByEmail:user.email||"",createdAt:serverTimestamp()});nominal.value="";keterangan.value="";msg.textContent="Pengeluaran berhasil disimpan."}catch(e){console.error(e);msg.textContent="Gagal menyimpan: "+e.message}};
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,collection,getDocs,addDoc,onSnapshot,query,orderBy,where,doc,getDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};const app=initializeApp(cfg);const auth=getAuth(app);const db=getFirestore(app);
+let user=null,role="",ownerUid="",saldoKas=0,saldoPengelola=0,expenseRows=[];
+const money=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+tanggal.value=new Date().toISOString().slice(0,10);
+const saldoKasEl=document.getElementById("saldoKas"),saldoPengelolaEl=document.getElementById("saldoPengelola");
+const msgEl=document.getElementById("msg");
+
+function setSaldo(){
+  saldoKas=Math.max(0,saldoKas);
+  saldoPengelola=Math.max(0,saldoPengelola);
+  saldoKasEl.textContent=money(saldoKas);
+  saldoPengelolaEl.textContent=money(saldoPengelola);
+}
+
+function renderRiwayat(){
+  const rows=[...expenseRows].sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||"")));
+  riwayat.innerHTML=rows.map(e=>`<tr>
+    <td>${esc(e.tanggal)}</td>
+    <td>${esc(e.jenisLabel||e.jenis)}</td>
+    <td><span class="badge ${String(e.sumberDana||e.sumber||"kas").toLowerCase()==="pengelola"?"badge-pengelola":"badge-kas"}">
+      ${String(e.sumberDana||e.sumber||"kas").toLowerCase()==="pengelola"?"Hasil Pengelola":"Uang Kas"}
+    </span></td>
+    <td>${money(e.nominal)}</td>
+    <td>${esc(e.keterangan)}</td>
+    <td>${esc(e.createdByEmail||"")}</td>
+  </tr>`).join("")||'<tr><td colspan="6">Belum ada pengeluaran.</td></tr>';
+}
+
+async function getOwner(){
+  const me=await getDoc(doc(db,"users",user.uid));
+  const p=me.exists()?me.data():{};
+  ownerUid=p.ownerUid||p.ownerId||user.uid;
+}
+
+async function readOwnerCollection(name){
+  const map=new Map();
+  for(const field of ["ownerUid","ownerId","uid"]){
+    const value=field==="uid"?user.uid:ownerUid;
+    if(!value)continue;
+    try{
+      const s=await getDocs(query(collection(db,name),where(field,"==",value)));
+      s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+    }catch(e){console.warn(name,field,e.message)}
+  }
+  return [...map.values()];
+}
+
+async function hitungSaldo(){
+  const os=await readOwnerCollection("order_member");
+  let pcs=0;
+  os.forEach(o=>{
+    // Semua dokumen di order_member adalah order yang sudah masuk/approved.
+    // Jangan menyaring status agar saldo identik dengan Data Keuangan Member.
+    const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);
+    items.forEach(x=>pcs+=Math.max(0,Number(x.qty||x.jumlah)||0));
+  });
+
+  saldoKas=pcs*4000;
+  saldoPengelola=pcs*1000;
+
+  // DATA LAMA TETAP DIBACA: /pengeluaran (modul:"member")
+  // DATA BARU MEMBER: /pengeluaranMember
+  // Tidak ada data lama yang dihapus atau dipindahkan.
+  const legacy=await readOwnerCollection("pengeluaran");
+  const member=await readOwnerCollection("pengeluaranMember");
+  const legacyMember=legacy.filter(e=>String(e.modul||"").toLowerCase()==="member");
+  // Hindari duplikasi bila suatu saat dokumen lama sudah memiliki id yang sama.
+  const merged=new Map();
+  [...legacyMember,...member].forEach(e=>merged.set(e.id,e));
+  expenseRows=[...merged.values()];
+
+  expenseRows.forEach(e=>{
+    const n=Number(e.nominal)||0;
+    const src=String(e.sumberDana||e.sumber||"kas").toLowerCase();
+    if(src==="pengelola")saldoPengelola-=n;
+    else saldoKas-=n;
+  });
+  setSaldo();
+  renderRiwayat();
+}
+
+async function loadInitial(){
+  await getOwner();
+  await hitungSaldo();
+}
+
+onAuthStateChanged(auth,async u=>{
+  if(!u){location.href="../login.html";return}
+  user=u;
+  try{
+    const me=await getDoc(doc(db,"users",u.uid));
+    const p=me.exists()?me.data():{};
+    role=String(p.role||"").toLowerCase();
+    if(!["owner","employee","karyawan","admin","superadmin"].includes(role)){
+      document.body.innerHTML="<div style='padding:30px;text-align:center'>Akses ditolak.</div>";
+      return;
+    }
+    if(!["owner","admin","superadmin"].includes(role))simpan.style.display="none";
+
+    await loadInitial();
+
+    // Live refresh DATA MEMBER dari koleksi khusus /pengeluaranMember.
+    // Data lama di /pengeluaran tetap dibaca oleh hitungSaldo().
+    // Tanpa orderBy agar tidak membutuhkan composite index tambahan.
+    const value=ownerUid||u.uid;
+    const q=query(collection(db,"pengeluaranMember"),where("ownerUid","==",value));
+    onSnapshot(q,()=>{
+      hitungSaldo().catch(console.error);
+    },e=>{
+      console.warn("Listener pengeluaranMember:",e.message);
+      hitungSaldo().catch(console.error);
+    });
+  }catch(e){
+    console.error(e);
+    msgEl.textContent="Gagal memuat data: "+(e.message||e);
+  }
+});
+
+jenis.onchange=()=>{
+  sumber.value=jenis.value==="pengelola"?"pengelola":"kas";
+};
+sumber.onchange=()=>{
+  if(sumber.value==="pengelola")jenis.value="pengelola";
+  else if(jenis.value==="pengelola")jenis.value="transportasi";
+};
+
+simpan.onclick=async()=>{
+  msgEl.textContent="";
+  const n=Number(String(nominal.value||"").replace(/[^0-9]/g,""))||0;
+  if(!n){msgEl.textContent="Nominal wajib diisi.";return}
+
+  const src=jenis.value==="pengelola"?"pengelola":"kas";
+  const saldo=src==="kas"?saldoKas:saldoPengelola;
+  if(n>saldo){
+    msgEl.textContent="Nominal melebihi saldo yang tersedia.";
+    return;
+  }
+
+  const labels={
+    transportasi:"Transportasi",
+    acara:"Acara Komunitas",
+    lainlain:"Lain-lain",
+    pengelola:"Pengeluaran Pengelola"
+  };
+
+  try{
+    await addDoc(collection(db,"pengeluaranMember"),{
+      // Koleksi khusus Member sesuai rules. Data lama /pengeluaran tetap utuh.
+      modul:"member",
+      uid:user.uid,
+      ownerUid:ownerUid||user.uid,
+      ownerId:ownerUid||user.uid,
+      email:user.email||"",
+      tanggal:tanggal.value,
+      jenis:jenis.value,
+      jenisLabel:labels[jenis.value],
+      sumberDana:src,
+      sumber:src,
+      nominal:n,
+      keterangan:keterangan.value.trim(),
+      createdBy:user.uid,
+      createdByEmail:user.email||"",
+      createdAt:new Date()
+    });
+    nominal.value="";
+    keterangan.value="";
+    msgEl.textContent="Pengeluaran berhasil disimpan.";
+    await hitungSaldo();
+  }catch(e){
+    console.error(e);
+    msgEl.textContent="Gagal menyimpan: "+(e.message||e);
+  }
+};
 </script></body></html>
