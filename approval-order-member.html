@@ -1,4 +1,167 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Approval Order Member</title><link rel="stylesheet" href="member.css"></head><body><main class="member-wrap"><div class="member-card"><h1>Approval Order Member</h1><p>Owner sebagai pengelola melakukan approval.</p></div><div id="list"></div>
-<script type="module">import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, where, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import {getApps,getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";const auth=getAuth(getApps()[0]||getApp()),db=getFirestore(getApps()[0]||getApp());let user,profile,orders=[];const money=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));onAuthStateChanged(auth,async u=>{if(!u){location.href="../login.html";return}user=u;const p=await getDocs(query(collection(db,"users"),where("__name__","==",u.uid)));profile=p.empty?{}:p.docs[0].data();const role=String(profile.role||"").toLowerCase();if(!["owner","admin","superadmin"].includes(role)){document.querySelector("p").textContent="Mode lihat. Approval hanya Owner/Admin."; }onSnapshot(query(collection(db,"orderMember"),orderBy("createdAt","desc")),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()}));render(role)})});function render(role){const can=["owner","admin","superadmin"].includes(role);list.innerHTML=orders.map(o=>`<div class="member-card"><b>${esc(o.nomorNota)}</b> — ${esc(o.namaMember)}<p>${(o.items||[]).map(x=>`${esc(x.name)} × ${x.qty}`).join("<br>")}</p><b>${money(o.total)}</b><p>Status: ${esc(o.status)}</p>${can&&o.status==="menunggu"?`<button class="member-btn member-success" data-ok="${o.id}">Approve</button> <button class="member-btn member-danger" data-no="${o.id}">Tolak</button>`:""}</div>`).join("")||'<div class="member-card">Belum ada order.</div>';list.querySelectorAll("[data-ok]").forEach(b=>b.onclick=()=>updateDoc(doc(db,"orderMember",b.dataset.ok),{status:"disetujui",approvedBy:user.uid,approvedByEmail:user.email||"",approvedAt:serverTimestamp(),updatedAt:serverTimestamp()}));list.querySelectorAll("[data-no]").forEach(b=>b.onclick=()=>updateDoc(doc(db,"orderMember",b.dataset.no),{status:"ditolak",updatedAt:serverTimestamp()}))}</script></main></body></html>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIXZY | Approval Member</title>
+<style>
+*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--green:#16a34a;--red:#dc2626}
+html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107;display:flex;align-items:center}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
+.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:88px 12px 24px}.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
+.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.filters{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px}label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
+input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
+.order{border:2px solid #111827;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}.order-head{padding:12px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-weight:900}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.badge.approved{background:#dcfce7;border-color:#22c55e;color:#166534}.badge.rejected{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+.order-body{padding:12px}.meta{font-size:12px;line-height:1.7}.meta b{color:#111827}.items{margin-top:10px;border:2px solid #111827;border-radius:9px;overflow:hidden}.item{padding:10px;border-bottom:1px solid #e5e7eb}.item:last-child{border-bottom:0}.item-top{display:flex;justify-content:space-between;gap:8px}.item-name{font-weight:900}.stockline{font-size:11px;color:#64748b;margin-top:3px}.stock-ok{color:#15803d;font-weight:900}.stock-no{color:#dc2626;font-weight:900}
+.item-grid{display:grid;grid-template-columns:1fr 120px 120px;gap:8px;align-items:end;margin-top:8px}.item-grid input{box-shadow:none}.qty-label{font-size:10px;color:#64748b;font-weight:800;margin-bottom:4px}
+.summary{margin-top:10px;border:2px solid #111827;border-radius:9px;padding:10px;background:#fffbeb;font-size:12px;line-height:1.8}.summary b{font-size:13px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.primary{background:#111827;color:#fff}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.secondary{background:#e5e7eb}
+.empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body.dark .item{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark label{color:#9ca3af}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .summary{background:#1c1917;border-color:#475569}body.dark .meta b{color:#fff}body.dark .stockline{color:#94a3b8}
+@media(max-width:800px){.filters{grid-template-columns:1fr}.item-grid{grid-template-columns:1fr 100px}.item-grid>div:first-child{grid-column:1/-1}}
+@media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.refresh{padding:8px}.order-head{flex-direction:column}.actions .btn{flex:1;min-width:120px}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<img class="logo" src="logo.png" alt="FIXZY">
+<div class="hi"><h1>Approval Member</h1><span id="email" class="email">-</span></div>
+<div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div>
+</div></header>
+<main>
+<div id="notice" class="notice">Menunggu akun...</div>
+<div class="card"><div class="title">Klarifikasi Pesanan Member</div>
+<div class="filters">
+<div><label>CARI NOTA / MEMBER / KODE MEMBER</label><input id="search" placeholder="Ketik pencarian..."></div>
+<div><label>STATUS</label><select id="filter"><option value="">Menunggu Approval</option><option value="menunggu_approval">Menunggu Approval</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option></select></div>
+<div><label>CATATAN</label><div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Periksa stok aktual. Hanya qty yang disetujui yang dipindahkan ke <b>order_member</b>.</div></div>
+</div></div>
+<div id="list"></div>
+</main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+let uid="",ownerUid="",profile={},role="",rows=[],ready=false;
+const $=id=>document.getElementById(id),rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
+const today=()=>new Date().toISOString().slice(0,10);
+function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
+function getOwner(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid}
+function itemName(x){return String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-")}
+function normalizeItems(r){let a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({...x,nama:itemName(x),produkId:x.produkId||x.id||"",kode:x.kode||x.kodeProduk||"",qty:Number(x.qty||x.jumlah||1),harga:Number(x.harga||x.hargaJual||0),diskon:Number(x.diskon??x.discount??0),modalSatuan:Number(x.modalSatuan??x.modal??0),approvedQty:Number(x.approvedQty??0),stokTersedia:Number(x.stokTersedia??0)}))}
+function member(r){return r.member||r.pelanggan||{}}
+function status(r){return String(r.status||"menunggu_approval").toLowerCase()}
+async function load(){
+ rows=[];
+ if(!ownerUid)return;
+ const qs=[
+  query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
+ ];
+ const map=new Map();
+ for(const q of qs){const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if((x.tipeTransaksi==="member_tempo"||x.jenisTransaksi==="member")&&!map.has(d.id))map.set(d.id,x)})}
+ rows=[...map.values()];
+ render();
+}
+function render(){
+ const key=$("search").value.trim().toLowerCase(),fs=$("filter").value;
+ const list=rows.filter(r=>{
+  const st=status(r),m=member(r);
+  const okStatus=fs?st===fs:st==="menunggu_approval";
+  const text=[r.nomorNota,r.nota,m.nama,m.wa,m.kode].join(" ").toLowerCase();
+  return okStatus&&text.includes(key);
+ });
+ $("list").innerHTML=list.length?list.map(renderOrder).join(""):'<div class="card empty">Tidak ada pesanan member sesuai filter.</div>';
+}
+function renderOrder(r){
+ const m=member(r),items=normalizeItems(r),st=status(r),date=r.tanggal||today();
+ const itemHtml=items.map((x,i)=>`<div class="item" data-order="${r.id}" data-index="${i}">
+ <div class="item-top"><div><div class="item-name">${esc(x.nama)}</div><div class="stockline">Kode: ${esc(x.kode||"-")} • Pesanan: <b>${x.qty}</b> pcs</div></div><div id="stock_${r.id}_${i}" class="stockline">Cek stok...</div></div>
+ <div class="item-grid"><div><div class="qty-label">QTY DISETUJUI</div><input class="approved" type="number" min="0" max="${x.qty}" value="${x.approvedQty||x.qty}"></div><div><div class="qty-label">HARGA/PCS</div><input value="${x.harga||0}" readonly></div><div><div class="qty-label">JUMLAH</div><input class="line" value="0" readonly></div></div>
+ </div>`).join("");
+ return `<div class="order" data-id="${r.id}">
+ <div class="order-head"><div><div class="order-title">${esc(r.nomorNota||r.id)}</div><div style="font-size:11px;color:#64748b;margin-top:3px">${esc(date)} • ${esc(m.nama||"-")} • Kode Member: <b>${esc(m.kode||"-")}</b></div></div><span class="badge ${st}">${esc(st.replaceAll("_"," "))}</span></div>
+ <div class="order-body"><div class="meta"><b>WA:</b> ${esc(m.wa||"-")}<br><b>Alamat:</b> ${esc(m.alamat||"-")}<br><b>Tempo:</b> ${Number(r.tempoHari||0)} hari • <b>Jatuh tempo:</b> ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"-")}</div>
+ <div class="items">${itemHtml}</div>
+ <div class="summary" id="sum_${r.id}">Menghitung...</div>
+ <div class="actions">
+ ${st==="menunggu_approval"?`<button class="btn approve" onclick="approveOrder('${r.id}')">✅ Setujui & Buat Order</button><button class="btn reject" onclick="rejectOrder('${r.id}')">❌ Tolak</button>`:""}
+ <button class="btn wa" onclick="sendWA('${r.id}')">📲 Kirim WA Member</button>
+ </div></div></div>`;
+}
+function recalcOrder(id){
+ const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);if(!card)return;
+ let total=0,approved=0,items=card.querySelectorAll(".item");
+ items.forEach((el,i)=>{const q=Math.max(0,Number(el.querySelector(".approved").value)||0),h=Math.max(0,Number(el.querySelector(".approved").value)*0+Number(el.querySelectorAll("input")[1].value)||0);const original=normalizeItems(rows.find(x=>x.id===id))[i];const line=q*Number(original.harga||0);el.querySelector(".line").value=line;total+=line;approved+=q});
+ const r=rows.find(x=>x.id===id),origTotal=Number(r.total||r.totalBayar||0),origQty=normalizeItems(r).reduce((a,x)=>a+x.qty,0);
+ const ratio=origQty?total/(normalizeItems(r).reduce((a,x)=>a+x.qty*x.harga,0)||1):0;
+ const diskon=Number(r.diskon||0)*Math.min(1,ratio),dp=Number(r.dp||r.uangMuka||0);
+ const newDp=Math.min(dp,total),sisa=Math.max(0,total-dp);
+ $(`sum_${id}`).innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br>DP tercatat: <b>${rp(dp)}</b> • Sisa estimasi: <b>${rp(sisa)}</b><br><small>Jika qty disetujui berbeda, total order akan dihitung ulang dari item yang disetujui.</small>`;
+}
+function checkStock(id){
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ normalizeItems(r).forEach(async(x,i)=>{
+  if(!x.produkId){$(`stock_${id}_${i}`).textContent="Produk manual";return}
+  try{const s=await getDoc(doc(db,"stok",x.produkId));if(!s.exists()){$(`stock_${id}_${i}`).innerHTML='<span class="stock-no">STOK TIDAK ADA</span>';return}
+   const d=s.data()||{},own=String(d.ownerUid||d.ownerId||"");const st=Number(d.sisa??d.stok??0)||0;
+   $(`stock_${id}_${i}`).innerHTML=own===ownerUid?`<span class="${st>=x.qty?"stock-ok":"stock-no"}">Stok: ${st} • ${st>=x.qty?"TERSEDIA":"KURANG"}</span>`:'<span class="stock-no">BUKAN STOK AKUN</span>';
+  }catch(e){$(`stock_${id}_${i}`).textContent="Gagal cek stok"}
+ });
+}
+window.approveOrder=async id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);const original=normalizeItems(r);const approved=original.map((x,i)=>({...x,approvedQty:Math.max(0,Math.min(x.qty,Number(card.querySelectorAll(".item")[i].querySelector(".approved").value)||0))})).filter(x=>x.approvedQty>0);
+ if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
+ const ref=doc(db,"penjualan",id);
+ try{
+  msg("Memeriksa stok dan membuat order member...");
+  const result=await runTransaction(db,async tx=>{
+   const fresh=await tx.get(ref);if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
+   const freshData=fresh.data()||{};if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
+   if(String(freshData.status||"")!=="menunggu_approval")throw Error("Pesanan sudah diproses.");
+   const stockSnaps=[];
+   for(const x of approved){if(!x.produkId)throw Error("Produk manual tidak dapat diproses approval stok.");stockSnaps.push({x,s:await tx.get(doc(db,"stok",x.produkId))})}
+   const changes=[];
+   for(const z of stockSnaps){if(!z.s.exists())throw Error(`Stok ${z.x.nama} tidak ditemukan.`);const d=z.s.data()||{},own=String(d.ownerUid||d.ownerId||"");if(own!==ownerUid)throw Error(`Stok ${z.x.nama} bukan milik akun ini.`);const old=Number(d.sisa??d.stok??0)||0;if(old<z.x.approvedQty)throw Error(`Stok ${z.x.nama} hanya ${old}, disetujui ${z.x.approvedQty}.`);changes.push({ref:doc(db,"stok",z.x.produkId),old,baru:old-z.x.approvedQty})}
+   for(const c of changes)tx.update(c.ref,{sisa:c.baru,stok:c.baru,status:c.baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
+   const total=approved.reduce((a,x)=>a+(x.harga*x.approvedQty-Math.min(x.diskon,x.harga*x.approvedQty)),0);
+   const dp=Math.min(Number(freshData.dp||freshData.uangMuka||0),total),sisa=Math.max(0,total-dp);
+   const orderRef=doc(collection(db,"order_member"));
+   const order={ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,nomorNota:freshData.nomorNota||id,tipeOrder:"member_tempo",status:"order_member",member:freshData.member||freshData.pelanggan||{},items:approved.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.approvedQty,harga:x.harga,diskon:Math.min(x.diskon,x.harga*x.approvedQty),modalSatuan:x.modalSatuan||0,total:x.harga*x.approvedQty-Math.min(x.diskon,x.harga*x.approvedQty)})),subtotal:total,diskon:approved.reduce((a,x)=>a+Math.min(x.diskon,x.harga*x.approvedQty),0),total,totalBayar:total,dp,sisa,sisaBayar:sisa,piutang:sisa,tempoHari:Number(freshData.tempoHari||0),jatuhTempo:freshData.jatuhTempo||freshData.tanggalJatuhTempo||"",approvedAt:serverTimestamp(),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),stokDikurangi:true};
+   tx.set(orderRef,order);
+   tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:order.items,approvedTotal:total,approvedDp:dp,approvedSisa:sisa,orderMemberId:orderRef.id,updatedAt:serverTimestamp()});
+   return{orderId:orderRef.id,order};
+  });
+  msg("Stok sesuai pesanan yang disetujui sudah masuk Data Order Member.","ok");
+  await load();
+  sendWAData(result.order,"approved");
+ }catch(e){console.error(e);msg("Gagal approval: "+e.message,"err")}
+};
+window.rejectOrder=async id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;const alasan=prompt("Alasan penolakan / stok kosong:","Stok tidak tersedia");if(alasan===null)return;
+ try{await runTransaction(db,async tx=>{const ref=doc(db,"penjualan",id),s=await tx.get(ref);if(!s.exists())throw Error("Pesanan tidak ditemukan.");const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Bukan akun ini.");tx.update(ref,{status:"rejected",approvalStatus:"rejected",alasanApproval:alasan,approvedBy:uid,updatedAt:serverTimestamp()})});msg("Pesanan ditolak. Tidak ada stok yang dikurangi.","ok");await load();}catch(e){msg("Gagal menolak: "+e.message,"err")}
+};
+function buildMessage(r,items,statusText){
+ const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id;
+ let text=`Halo Kak ${m.nama||""} 👋\n\n`;
+ if(statusText==="approved"){text+=`Pesanan member *${nota}* sudah kami cek.\n\n`;text+=`✅ Produk yang tersedia dan disetujui:\n`;items.forEach(x=>text+=`• ${x.nama} x${x.qty} — ${rp(x.total||x.harga*x.qty)}\n`);text+=`\n💰 Total: ${rp(r.total)}\n💵 DP: ${rp(r.dp)}\n📌 Sisa: ${rp(r.sisa)}\n📅 Jatuh tempo: ${r.jatuhTempo||"-"}\n\nPesanan yang sudah disetujui akan diproses di *Data Order Member*.\n\nTerima kasih 🙏\n*${nama}*`;
+ }else{text+=`Pesanan member *${nota}* sudah kami cek.\n\n❌ Mohon maaf, stok yang dipesan belum tersedia / belum mencukupi.\n\n${r.alasanApproval||""}\n\nSilakan konfirmasi kembali kepada kami untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;}
+ return text;
+}
+function sendWAData(r,statusText){const m=member(r);const url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(buildMessage(r,r.items||[],statusText))}`;window.open(url,"_blank")}
+window.sendWA=id=>{const r=rows.find(x=>x.id===id);if(r)sendWAData(r,status(r)==="approved"? "approved":"rejected")};
+$("search").oninput=render;$("filter").onchange=render;
+$("list").addEventListener("input",e=>{if(e.target.classList.contains("approved"))recalcOrder(e.target.closest(".order").dataset.id)});
+$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};role=String(profile.role||"").toLowerCase();ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;await load();msg("Akun aktif • periksa stok sebelum approval.","ok");document.querySelectorAll(".order").forEach(x=>checkStock(x.dataset.id))}catch(e){console.error(e);msg(e.message,"err")}});
+</script>
+</body>
+</html>
