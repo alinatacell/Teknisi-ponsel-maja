@@ -1,23 +1,128 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Input Pesanan Member</title><link rel="stylesheet" href="member.css"></head><body><main class="member-wrap">
-<div class="member-card"><h1>Input Pesanan Member</h1><div class="member-grid">
-<div><label>Nomor Nota</label><input id="nota" class="member-input" readonly></div>
-<div><label>Tanggal</label><input id="tanggal" type="date" class="member-input"></div>
-<div><label>Nama Member / Pelanggan</label><input id="nama" class="member-input"></div>
-<div><label>No. WhatsApp</label><input id="wa" class="member-input"></div>
-</div><div style="margin-top:12px"><label>Alamat</label><textarea id="alamat" class="member-textarea"></textarea></div></div>
-<div class="member-card"><h2>Load Produk Member</h2><div class="member-grid"><select id="produk" class="member-select"><option value="">Pilih produk member</option></select><input id="qty" class="member-input" type="number" min="1" value="1"></div><button id="add" class="member-btn member-primary" style="margin-top:10px">Tambah</button></div>
-<div class="member-card"><h2>Rincian Pesanan</h2><div class="member-table-wrap"><table class="member-table"><thead><tr><th>Produk</th><th>Qty</th><th>Harga</th><th>Subtotal</th><th></th></tr></thead><tbody id="items"></tbody></table></div><div id="total" class="member-total">Rp0</div><button id="save" class="member-btn member-success">Simpan Order Member</button><p id="msg"></p></div>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIXZY | Input Member Tempo</title>
+<style>
+*{box-sizing:border-box} :root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6}
+html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107;display:flex;align-items:center}
+.head{width:100%;max-width:920px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px}.email{font-size:11px;color:#9ca3af;font-weight:700}.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:11px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:920px;margin:auto;padding:88px 12px 20px}.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-bottom:5px}
+input,select,textarea{width:100%;padding:11px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}textarea{min-height:70px}
+.info{border:2px solid #111827;border-radius:9px;overflow:hidden}.row{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eee;font-size:12px}.row:last-child{border:0}.row span{color:#667085;font-weight:700}
+.search{position:relative}.results{display:none;position:absolute;z-index:20;left:0;right:0;top:100%;max-height:250px;overflow:auto;background:#fff;border:1px solid #ddd;box-shadow:0 7px 18px #0002}.results.show{display:block}.result{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eee;padding:10px;cursor:pointer}.pname{font-weight:900}.meta{font-size:11px;color:#667085;margin-top:3px}
+.selected{margin-top:7px;padding:9px;border:1px dashed #16a34a;background:#f0fdf4;border-radius:8px;font-size:12px}.empty{border-color:#d1d5db;background:#f8fafc;color:#667085}
+.money{font-size:12px;color:#667085;line-height:1.8}.money b{color:#111827}.tempo{border:2px solid #111827;border-radius:10px;padding:12px;background:#fffbeb}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.quick button{padding:9px;border:2px solid #111827;border-radius:8px;background:#fff;font-weight:900;box-shadow:2px 2px 0 #111827}.quick button.active{background:#ffc107}
+.notice{font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.primary{background:#111827;color:#fff}.secondary{background:#e5e7eb}
+.popup{display:none;position:fixed;inset:0;background:#0008;z-index:10000;align-items:center;justify-content:center;padding:12px}.popup.show{display:flex}.popbox{width:min(500px,100%);background:#fff;border:3px solid #111827;border-radius:16px;box-shadow:8px 8px 0 #111827;padding:16px}.popbox h3{margin-top:0}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .popbox{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark input,body.dark select,body.dark textarea{background:#0f172a;color:#e5e7eb;border-color:#475569}body.dark .tempo{background:#1c1917;border-color:#475569}body.dark .results,body.dark .result{background:#111827;color:#e5e7eb;border-color:#334155}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.head h1{font-size:16px}header{height:68px}main{padding-top:80px}.refresh{padding:8px}.quick{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<img class="logo" src="logo.png" alt="FIXZY">
+<div class="hi"><h1>Input Member Tempo</h1><span id="email" class="email">-</span></div>
+<div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div>
+</div></header>
+
+<main>
+<div id="notice" class="notice">Menunggu akun...</div>
+
+<div class="card"><div class="title">Informasi Transaksi</div>
+<div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis</span><b>MEMBER • TEMPO</b></div></div>
+</div>
+
+<div class="card"><div class="title">Data Member</div><div class="grid">
+<div><label>NAMA MEMBER *</label><input id="nama" placeholder="Nama member"></div>
+<div><label>NO. WA *</label><input id="wa" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+<div><label>KODE MEMBER</label><input id="kode"></div>
+<div><label>CATATAN</label><input id="catatan"></div>
+<div class="full"><label>ALAMAT</label><textarea id="alamat"></textarea></div>
+</div></div>
+
+<div class="card"><div class="title">Produk</div><div class="grid">
+<div class="full"><label>CARI PRODUK STOK *</label><div class="search"><input id="cari" placeholder="Ketik nama/kode produk..."><div id="hasil" class="results"></div></div><div id="terpilih" class="selected empty">Belum memilih produk.</div></div>
+<div><label>QTY *</label><input id="qty" value="1" inputmode="numeric"></div>
+<div><label>HARGA JUAL / PCS *</label><input id="harga" inputmode="numeric" placeholder="0"></div>
+<div><label>DISKON</label><input id="diskon" value="0" inputmode="numeric"></div>
+<div><label>MODAL / PCS</label><input id="modal" value="0" inputmode="numeric"></div>
+<div class="full"><div class="money">Subtotal: <b id="sub">Rp 0</b><br>Diskon: <b id="dis">Rp 0</b><br>Total Tagihan: <b id="total">Rp 0</b></div></div>
+</div></div>
+
+<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid">
+<div><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div>
+<div><label>SISA TAGIHAN</label><input id="sisa" readonly></div>
+<div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px">
+<button onclick="tempo(7,this)">7 Hari</button><button onclick="tempo(14,this)">14 Hari</button><button onclick="tempo(30,this)">30 Hari</button>
+</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div>
+</div></div>
+
+<div class="card"><div class="title">Simpan</div><div class="actions">
+<button class="btn secondary" onclick="simpan()">💾 Simpan Member Tempo</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button>
+</div><div id="save" class="notice">Menunggu akun...</div></div>
+</main>
+
+<div id="popup" class="popup"><div class="popbox"><h3>✅ Member Tempo Tersimpan</h3><div id="hasilSimpan"></div><div class="actions" style="margin-top:14px"><button class="btn secondary" onclick="closePop()">Tutup</button><button class="btn primary" onclick="dataPenjualan()">📋 Data Penjualan</button></div></div></div>
+
 <script type="module">
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, where, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import {getApps,getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-const auth=getAuth(getApps()[0]||getApp()); const db=getFirestore(getApps()[0]||getApp());
-let user=null, products=[], cart=[];
-const money=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-const gen=()=>{const d=new Date();return "OM-"+d.toISOString().slice(0,10).replaceAll("-","")+"-"+Math.random().toString(36).slice(2,6).toUpperCase()};
-onAuthStateChanged(auth,async u=>{if(!u){location.href="../login.html";return}user=u;nota.value=gen();tanggal.value=new Date().toISOString().slice(0,10);const s=await getDocs(collection(db,"stokMember"));products=s.docs.map(d=>({id:d.id,...d.data()}));produk.innerHTML='<option value="">Pilih produk member</option>'+products.map(p=>`<option value="${esc(p.id)}">${esc(p.nama||p.name||p.namaProduk||"Produk")} — ${money(p.harga||p.price||0)} — stok ${p.stok??p.stock??0}</option>`).join("")});
-add.onclick=()=>{const p=products.find(x=>x.id===produk.value),n=Math.max(1,Number(qty.value)||1);if(!p)return msg.textContent="Pilih produk.";const st=Number(p.stok??p.stock??0);if(n>st)return msg.textContent="Stok member tidak cukup.";const name=p.nama||p.name||p.namaProduk||"Produk";const price=Number(p.harga??p.price)||0;const old=cart.find(x=>x.productId===p.id);if(old)old.qty+=n;else cart.push({productId:p.id,name,price,qty:n});render()};
-function render(){items.innerHTML=cart.map((x,i)=>`<tr><td>${esc(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(x.qty*x.price)}</td><td><button class="member-btn member-danger" data-i="${i}">Hapus</button></td></tr>`).join("");items.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.i,1);render()});total.textContent=money(cart.reduce((a,x)=>a+x.qty*x.price,0))}
-save.onclick=async()=>{if(!nama.value.trim()||!wa.value.trim()||!alamat.value.trim()||!cart.length)return msg.textContent="Lengkapi data member dan minimal satu produk.";const totalValue=cart.reduce((a,x)=>a+x.qty*x.price,0);await addDoc(collection(db,"orderMember"),{nomorNota:nota.value,tanggal:tanggal.value,namaMember:nama.value.trim(),noWa:wa.value.trim(),alamat:alamat.value.trim(),items:cart,total:totalValue,status:"menunggu",createdBy:user.uid,createdByEmail:user.email||"",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});msg.textContent="Order tersimpan dan menunggu approval.";cart=[];render();nota.value=gen();nama.value=wa.value=alamat.value=""};
-</script></main></body></html>
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+let uid=null,businessUid=null,products=[],selected=null,ready=false;
+
+const $=x=>document.getElementById(x),num=x=>Number(String($(x).value||"").replace(/[^\d]/g,""))||0,rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+const today=()=>new Date().toISOString().slice(0,10);
+function nota(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MBR-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+String(d.getMilliseconds()).padStart(3,"0")}
+function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
+function business(d){let r=String(d.role||"").toLowerCase();if(r==="owner")return uid;return String(d.ownerUid||d.ownerId||uid)}
+function calc(){let q=Math.max(1,num("qty")),h=num("harga"),sub=q*h,dis=Math.min(num("diskon"),sub),tot=Math.max(0,sub-dis),dp=Math.min(num("dp"),tot),s=Math.max(0,tot-dp);$("sub").textContent=rp(sub);$("dis").textContent=rp(dis);$("total").textContent=rp(tot);$("sisa").value=s;return{q,h,sub,dis,tot,dp,s}}
+["qty","harga","diskon","dp"].forEach(x=>$(x).addEventListener("input",calc));
+
+async function loadProducts(){
+ let map=new Map();
+ for(const q of[query(collection(db,"stok"),where("ownerUid","==",businessUid)),query(collection(db,"stok"),where("ownerId","==",businessUid))]){
+  let s=await getDocs(q);s.forEach(d=>{let x=d.data()||{},p={id:d.id,...x,_stok:Number(x.sisa??x.stok??0)||0},k=String(x.kode||x.nama||d.id).toLowerCase();if(!map.has(k)||p._stok>map.get(k)._stok)map.set(k,p)})
+ }
+ products=[...map.values()]
+}
+const pn=p=>String(p.nama||p.namaProduk||"-"),pk=p=>String(p.kode||p.kodeProduk||""),price=p=>Number(p.hargaJual??p.harga??p.hargaMember??0)||0,modal=p=>Number(p.hargaModal??p.modal??0)||0;
+function filter(q=""){let k=q.toLowerCase(),list=products.filter(p=>pn(p).toLowerCase().includes(k)||pk(p).toLowerCase().includes(k)).slice(0,50);$("hasil").innerHTML=list.length?list.map(p=>`<button class="result" data-id="${p.id}"><div class="pname">${pn(p)}</div><div class="meta">Kode: ${pk(p)||"-"} • Stok: ${p._stok} • Harga: ${rp(price(p))}</div></button>`).join(""):"<div class='result'>Tidak ada produk.</div>";$("hasil").classList.add("show")}
+$("cari").oninput=e=>filter(e.target.value);$("cari").onfocus=e=>filter(e.target.value);
+$("hasil").onclick=e=>{let b=e.target.closest("[data-id]");if(!b)return;selected=products.find(p=>p.id===b.dataset.id);$("cari").value=pn(selected);$("harga").value=price(selected)||"";$("modal").value=modal(selected)||"";$("terpilih").className="selected";$("terpilih").textContent=`${pn(selected)} • Stok: ${selected._stok}`;$("hasil").classList.remove("show");calc()};
+document.onclick=e=>{if(!e.target.closest(".search"))$("hasil").classList.remove("show")};
+
+function setDue(days){let d=new Date();d.setDate(d.getDate()+Number(days));$("lama").value=days;$("jatuh").value=d.toISOString().slice(0,10);due()}
+function due(){let v=$("jatuh").value;$("due").textContent=v?"Jatuh tempo: "+new Date(v+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}):"Jatuh tempo: -"}
+window.tempo=(d,b)=>{document.querySelectorAll(".quick button").forEach(x=>x.classList.remove("active"));b.classList.add("active");setDue(d)}
+$("lama").oninput=()=>setDue(Math.max(1,Number($("lama").value)||1));$("jatuh").onchange=due;
+
+function build(){
+ let nama=$("nama").value.trim(),wa=$("wa").value.trim(),t=calc(),jat=$("jatuh").value;
+ if(!nama)throw Error("Nama member wajib diisi.");if(!wa)throw Error("Nomor WA wajib diisi.");if(!selected)throw Error("Pilih produk dari stok.");if(t.h<=0)throw Error("Harga jual belum diisi.");if(t.q>selected._stok)throw Error("Stok tidak mencukupi.");if(!jat)throw Error("Jatuh tempo wajib diisi.");
+ return{ownerUid:businessUid,uid:businessUid,createdBy:uid,nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:"member_tempo",jenisTransaksi:"penjualan",sumber:"member",status:"tagihan",
+ member:{kode:$("kode").value.trim(),nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},
+ produk:{produkId:selected.id,nama:pn(selected),kode:pk(selected),qty:t.q,hargaJual:t.h,hargaModal:num("modal"),totalModal:num("modal")*t.q},
+ items:[{produkId:selected.id,nama:pn(selected),kode:pk(selected),qty:t.q,harga:t.h,hargaJual:t.h,modalSatuan:num("modal"),total:t.h*t.q}],
+ produkDigunakan:pn(selected),produkList:[{produkId:selected.id,nama:pn(selected),kode:pk(selected),qty:t.q}],
+ subtotal:t.sub,subtotalSebelumDiskon:t.sub,diskon:t.dis,total:t.tot,totalBayar:t.tot,dp:t.dp,uangMuka:t.dp,sisa:t.s,sisaBayar:t.s,tempoHari:Number($("lama").value)||0,jatuhTempo:jat,tanggalJatuhTempo:jat,piutang:t.s,pendapatan:t.dp,modal:num("modal"),totalModal:num("modal")*t.q,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}
+}
+async function save(d){
+ let ref=doc(collection(db,"penjualan")),sr=doc(db,"stok",d.produk.produkId);
+ await runTransaction(db,async tx=>{let s=await tx.get(sr);if(!s.exists())throw Error("Stok tidak ditemukan.");let x=s.data()||{},own=String(x.ownerUid||x.ownerId||"");if(own!==businessUid)throw Error("Stok bukan milik akun ini.");let old=Number(x.sisa??x.stok??0),q=d.produk.qty;if(old<q)throw Error("Stok tidak mencukupi.");tx.update(sr,{sisa:old-q,stok:old-q,status:old-q>0?"tersedia":"kosong",updatedAt:serverTimestamp()});tx.set(ref,{...d,stokDikurangi:true,stokSebelum:old,stokSesudah:old-q})});return ref.id
+}
+window.simpan=async()=>{if(!ready)return msg("Halaman belum siap.","err");try{let d=build();$("save").textContent="Menyimpan...";await save(d);$("save").textContent="Berhasil disimpan.";msg("Member tempo berhasil disimpan.","ok");$("hasilSimpan").innerHTML=`Member: <b>${d.member.nama}</b><br>Nota: <b>${d.nomorNota}</b><br>Total: <b>${rp(d.total)}</b><br>DP: ${rp(d.dp)}<br>Sisa tagihan: <b>${rp(d.sisa)}</b><br>Jatuh tempo: <b>${new Date(d.jatuhTempo+"T00:00:00").toLocaleDateString("id-ID")}</b>`;$("popup").classList.add("show");resetForm()}catch(e){$("save").textContent="Gagal: "+e.message;msg("Gagal: "+e.message,"err")}};
+window.resetForm=()=>{["nama","wa","kode","catatan","alamat","cari","harga","modal"].forEach(x=>$(x).value="");$("qty").value=1;$("diskon").value=0;$("dp").value=0;selected=null;$("terpilih").className="selected empty";$("terpilih").textContent="Belum memilih produk.";$("nota").textContent=nota();$("tgl").textContent=today();setDue(30);calc()};
+window.closePop=()=>$("popup").classList.remove("show");window.dataPenjualan=()=>location.href=new URL("data-penjualan.html",location.href).href;
+$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+
+onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;let s=await getDocs(query(collection(db,"users"),where("__name__","==",uid)));if(s.empty)throw Error("Profil akun tidak ditemukan.");let d=s.docs[0].data()||{};businessUid=business(d);$("email").textContent=u.email||"-";resetForm();await loadProducts();ready=true;$("save").textContent=`${products.length} produk • akun terisolasi`;msg("Akun aktif • data dibatasi ke owner ini.","ok")}catch(e){msg(e.message,"err")}})
+</script>
+</body>
+</html>
