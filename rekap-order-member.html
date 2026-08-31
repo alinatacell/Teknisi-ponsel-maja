@@ -70,7 +70,7 @@ body.dark td{border-color:#334155}
 <main><div id="notice" class="notice">Menunggu akun...</div>
 <div class="card"><div class="title">REKAP ORDER MEMBER</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
 <div class="summary-grid"><div class="metric blue"><div class="label">Jumlah Order</div><div class="value" id="orderCount">0</div><div class="sub">Order member</div></div><div class="metric"><div class="label">Qty Order</div><div class="value" id="qtyTotal">0 pcs</div><div class="sub">Total seluruh pcs</div></div><div class="metric orange"><div class="label">Nilai Barang</div><div class="value" id="nilaiTotal">Rp 0</div><div class="sub">Total nilai barang</div></div><div class="metric green"><div class="label">UP Pengelola</div><div class="value" id="upTotal">Rp 0</div><div class="sub">Rp 1.000 × pcs</div></div><div class="metric red"><div class="label">Tabungan Member</div><div class="value" id="tabunganTotal">Rp 0</div><div class="sub">Tabungan sesuai order/member</div></div><div class="metric"><div class="label">Uang Kas Bulanan</div><div class="value" id="kasTotal">Rp 0</div><div class="sub">Iuran bulanan member</div></div></div>
-<div class="card"><div class="title">DAFTAR ORDER MEMBER</div><div class="money-total">Total Sisa Tagihan: <b id="sisaTotal">Rp 0</b></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="10" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+<div class="card"><div class="title">DAFTAR ORDER MEMBER</div><div class="money-total">Total Sisa Tagihan: <b id="sisaTotal">Rp 0</b></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -96,8 +96,17 @@ function ownerOf(d){
  return String(d.ownerUid||d.ownerId||"").trim()||uid;
 }
 
+function isCashOrder(r){
+ const vals=[r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,r.metodePembayaran,r.jenisPembayaran,r.caraBayar]
+   .map(v=>String(v??"").trim().toLowerCase());
+ return vals.some(v=>["member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"].includes(v));
+}
+
 function orderStatus(r){
- return String(r.status||"tagihan").toLowerCase()==="lunas"?"lunas":"tagihan";
+ // CASH/TUNAI selalu lunas dan tidak mempunyai piutang/jatuh tempo.
+ if(isCashOrder(r))return "lunas";
+ const st=String(r.status||r.approvalStatus||"tagihan").trim().toLowerCase();
+ return ["lunas","paid","dibayar","selesai"].includes(st)?"lunas":"tagihan";
 }
 
 function itemList(r){
@@ -114,6 +123,7 @@ function itemList(r){
 }
 
 function dueDate(r){
+ if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
  if(!raw)return null;
  if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
@@ -165,8 +175,26 @@ function renderRekap(){
  const search=$("search").value.trim().toLowerCase();
  const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return !search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
  let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
- const rows=data.map(r=>{const items=itemList(r),q=items.reduce((a,x)=>a+x.qty,0),value=items.reduce((a,x)=>a+x.total,0);const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);const st=String(r.status||"tagihan").toLowerCase()==="lunas"?"lunas":"tagihan";qty+=q;nilai+=value;up+=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??1000)||0),0);tabungan+=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??4000)||0),0);kas+=Number(r.kasBulanan??r.uangKasBulanan??0)||0;sisaTotal+=sisa;const m=r.member||r.pelanggan||{},due=dueDate(r);return `<tr><td><b>${esc(r.nomorNota||r.id)}</b></td><td>${esc(m.nama||"-")}</td><td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td><td>${due?due.toLocaleDateString("id-ID"):"-"}</td><td class="num">${q.toLocaleString("id-ID")}</td><td class="num">${rp(value)}</td><td class="num">${rp(items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??1000)||0),0))}</td><td class="num">${rp(items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??4000)||0),0))}</td><td class="num">${rp(Number(r.kasBulanan??r.uangKasBulanan??0)||0)}</td><td class="num">${rp(sisa)}</td></tr>`;}).join("");
- $("orderCount").textContent=data.length.toLocaleString("id-ID");$("qtyTotal").textContent=qty.toLocaleString("id-ID")+" pcs";$("nilaiTotal").textContent=rp(nilai);$("upTotal").textContent=rp(up);$("tabunganTotal").textContent=rp(tabungan);$("kasTotal").textContent=rp(kas);$("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="9" class="empty">Belum ada order member pada periode ini.</td></tr>';
+ const rows=data.map(r=>{
+  const items=itemList(r);
+  const q=items.reduce((a,x)=>a+x.qty,0);
+  const value=items.reduce((a,x)=>a+x.total,0);
+  const cash=isCashOrder(r);
+  const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
+  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
+  // CASH tidak boleh mempunyai tagihan, walaupun data lama menyimpan sisa/DP.
+  const sisa=cash?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
+  const st=orderStatus(r);
+  const jenis=cash?"CASH":"TEMPO";
+  const upRow=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??1000)||0),0);
+  const tabRow=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??4000)||0),0);
+  const kasRow=Number(r.kasBulanan??r.uangKasBulanan??0)||0;
+  qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
+  const m=r.member||r.pelanggan||{};
+  const due=dueDate(r);
+  return `<tr><td><b>${esc(r.nomorNota||r.id)}</b></td><td>${esc(m.nama||"-")}</td><td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td><td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td><td>${due?due.toLocaleDateString("id-ID"):"-"}</td><td class="num">${q.toLocaleString("id-ID")}</td><td class="num">${rp(value)}</td><td class="num">${rp(upRow)}</td><td class="num">${rp(tabRow)}</td><td class="num">${rp(kasRow)}</td><td class="num">${rp(sisa)}</td></tr>`;
+ }).join("");
+ $("orderCount").textContent=data.length.toLocaleString("id-ID");$("qtyTotal").textContent=qty.toLocaleString("id-ID")+" pcs";$("nilaiTotal").textContent=rp(nilai);$("upTotal").textContent=rp(up);$("tabunganTotal").textContent=rp(tabungan);$("kasTotal").textContent=rp(kas);$("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
 }
 function renderAll(){if(!ready)return;renderRekap();}
 $("periode").onchange=renderAll;$("search").oninput=renderAll;$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
