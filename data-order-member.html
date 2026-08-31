@@ -679,22 +679,41 @@ $("dark").onclick=()=>{
  $("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
 };
 
-onAuthStateChanged(auth,async u=>{
- if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return}
+let authHandled=false;
+async function startSession(u){
+ if(authHandled)return;
+ if(!u){
+  authHandled=true;
+  notice("Belum login. Silakan login melalui FIXZY.","err");
+  return;
+ }
  try{
   uid=u.uid;
   const s=await getDoc(doc(db,"users",uid));
-  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+  if(!s.exists())throw Error("Profil akun tidak ditemukan di Firebase.");
   profile=s.data()||{};
   ownerUid=ownerOf(profile);
-  $("email").textContent=u.email||"-";
+  $("email").textContent=u.email||profile.email||"-";
   await load();
+  authHandled=true;
   notice("Akun aktif • menampilkan Data Order Member milik Owner ini.","ok");
  }catch(e){
-  console.error(e);
-  notice("Gagal memuat Data Order Member: "+e.message,"err");
+  console.error("FIXZY SESSION ERROR",e);
+  authHandled=true;
+  notice("Gagal memuat Data Order Member: "+(e?.message||e),"err");
  }
-});
+}
+
+// Firebase Auth biasanya mengirim sesi tersimpan melalui observer.
+// Fallback ini mencegah halaman berhenti di "Menunggu akun..." jika observer terlambat.
+onAuthStateChanged(auth,startSession);
+setTimeout(()=>{
+ if(!authHandled){
+  const u=auth.currentUser;
+  if(u)startSession(u);
+  else notice("Sesi login belum ditemukan. Silakan buka FIXZY dari halaman utama/login.","err");
+ }
+},5000);
 </script>
 </body>
 </html>
