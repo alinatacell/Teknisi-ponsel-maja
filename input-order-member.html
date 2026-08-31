@@ -44,7 +44,6 @@ num=x=>Number(String($(x)?.value||"").replace(/[^\d]/g,""))||0,
 rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),
 today=()=>new Date().toISOString().slice(0,10);
 
-let uid="",businessUid="",products=[],cart=[],ready=false;
 
 function nota(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MBR-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+String(d.getMilliseconds()).padStart(3,"0")}
 function kodeMember(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MEM-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+(Math.floor(Math.random()*9000)+1000)}
