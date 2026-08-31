@@ -15,7 +15,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
 <div class="card"><div class="title">Informasi Pesanan</div><div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis</span><b>MEMBER • TEMPO • MENUNGGU APPROVAL</b></div></div></div>
-<div class="card"><div class="title">Data Member</div><div class="grid"><div><label>NAMA MEMBER *</label><input id="nama"></div><div><label>NO. WA *</label><input id="wa" inputmode="tel"></div><div><label>KODE MEMBER (OTOMATIS)</label><input id="kode" readonly></div><div><label>CATATAN</label><input id="catatan"></div><div class="full"><label>ALAMAT</label><textarea id="alamat"></textarea></div></div></div>
+<div class="card"><div class="title">Data Member</div><div class="grid"><div><label>PILIH MEMBER</label><select id="memberSelect"><option value="">-- Pilih Member --</option></select></div><div><label>NAMA MEMBER *</label><input id="nama"></div><div><label>NO. WA *</label><input id="wa" inputmode="tel"></div><div><label>KODE MEMBER (OTOMATIS)</label><input id="kode" readonly></div><div><label>CATATAN</label><input id="catatan"></div><div class="full"><label>ALAMAT</label><textarea id="alamat"></textarea></div></div></div>
 <div class="card"><div class="title">🛒 Keranjang Order Member</div>
   <div class="notice">Produk dimasukkan langsung dari <b>Stok Produk</b>. Tambah produk dari halaman stok, lalu keranjang ini digunakan untuk mengatur qty sebelum order diajukan.</div>
   <div class="actions" style="margin-bottom:10px">
@@ -30,7 +30,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
     Total pesanan: <b id="total">Rp 0</b>
   </div>
 </div>
-<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid"><div><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div><label>UP PENGELOLA / PCS</label><input id="upPengelolaPcs" type="number" min="0" step="100" value="1000" inputmode="numeric"></div><div><label>TABUNGAN MEMBER / PCS</label><input id="tabunganPerPcs" type="number" min="0" step="100" value="4000" inputmode="numeric"></div><div class="full"><div id="iuranPreview" style="font-size:11px;font-weight:800;color:#64748b;margin-top:4px">Tabungan member: Rp 4.000/pcs • UP pengelola: Rp 1.000/pcs</div></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
+<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
 <div class="card"><div class="title">Simpan Pesanan</div><div style="font-size:11px;color:#64748b;line-height:1.7;margin-bottom:10px">Pesanan <b>belum mengurangi stok</b>. Setelah disimpan, Admin melakukan <b>Approval Member</b> untuk mencocokkan stok. Hanya produk/qty yang disetujui yang mengurangi stok dan masuk ke <b>Data Order Member</b>.</div><div class="actions"><button class="btn secondary" onclick="simpan()">💾 Simpan Pesanan</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button></div><div id="save" class="notice">Menunggu akun...</div></div>
 </main>
 <script type="module">
@@ -38,7 +38,7 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-ap
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let uid="",businessUid="",products=[],selected=null,cart=[],ready=false;
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let uid="",businessUid="",products=[],selected=null,cart=[],ready=false,members=[],selectedMember=null,ownerSettings={up:1000,kas:0};
 const $=x=>document.getElementById(x),
 num=x=>Number(String($(x)?.value||"").replace(/[^\d]/g,""))||0,
 rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),
@@ -76,28 +76,17 @@ function saveCartStorage(){
   }catch(e){console.error("Cart storage:",e)}
 }
 
+function activeBasePrice(p){const tempo=Number(p.hargaTempo??p.hargaJual??p.harga??0)||0;const cash=Number(p.hargaCash??Math.round(tempo*0.98))||Math.round(tempo*0.98);return $("paymentType")?.value==="cash"?cash:tempo}
+function composedPrice(p){return activeBasePrice(p)+Number(selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??4000)+Number(ownerSettings.up??1000)}
 function syncCartWithStock(){
-  const map=new Map(products.map(p=>[p.id,p]));
-  cart.forEach(x=>{
-    const p=map.get(x.produkId);
-    if(p){
-      x.nama=String(p.nama||x.nama||"-");
-      x.kode=String(p.kode||x.kode||"");
-      x.kategori=String(p.kategori||x.kategori||"");
-      x.harga=Number(p.hargaJual)||Number(p.harga)||Number(p.hargaMember)||Number(x.harga)||0;
-      x.modalSatuan=Number(p.hargaModal??p.modal??x.modalSatuan??0)||0;
-      x.stok=Number(p.sisa??p.stok??0)||0;
-    }else{
-      x.stok=0;
-    }
-  });
-  saveCartStorage();
-  const masalah=cart.filter(x=>Number(x.qty)>Number(x.stok||0));
-  $("stockSyncMsg").textContent=masalah.length
-    ? "⚠️ Ada qty di keranjang yang melebihi stok terbaru. Kurangi qty sebelum menyimpan."
-    : (cart.length ? "✓ Stok terbaru sudah dicocokkan dengan keranjang." : "");
-  $("stockSyncMsg").className="notice "+(masalah.length?"err":"ok");
+ const map=new Map(products.map(p=>[p.id,p]));
+ cart.forEach(x=>{const p=map.get(x.produkId);if(p){x.nama=String(p.nama||x.nama||"-");x.kode=String(p.kode||x.kode||"");x.kategori=String(p.kategori||x.kategori||"");x.hargaDasar=activeBasePrice(p);x.harga=x.hargaDasar+Number(selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??4000)+Number(ownerSettings.up??1000);x.hargaTempo=Number(p.hargaTempo??p.hargaJual??p.harga??0)||0;x.hargaCash=Number(p.hargaCash??Math.round(x.hargaTempo*0.98))||0;x.tabunganPerPcs=Number(selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??4000)||0;x.upPengelolaPerPcs=Number(ownerSettings.up??1000)||0;x.modalSatuan=Number(p.hargaModal??p.modal??x.modalSatuan??0)||0;x.stok=Number(p.sisa??p.stok??0)||0}else x.stok=0});
+ saveCartStorage();
+ const masalah=cart.filter(x=>Number(x.qty)>Number(x.stok||0));
+ $("stockSyncMsg").textContent=masalah.length?"⚠️ Ada qty di keranjang yang melebihi stok terbaru.":(cart.length?"✓ Stok terbaru sudah dicocokkan dengan keranjang.":"");
+ $("stockSyncMsg").className="notice "+(masalah.length?"err":"ok");
 }
+
 
 function calc(){
   let sub=cart.reduce((a,x)=>a+(Number(x.lineTotal)||0),0),
@@ -236,26 +225,11 @@ $("lama").oninput=()=>{
   if([7,14,30].includes(d))setDue(d);else{due();updateTempoRules()}
 };
 $("jatuh").onchange=due;
-function updateIuranPreview(){
- const up=Math.max(0,Number($("upPengelolaPcs").value)||0);
- const tab=Math.max(0,Number($("tabunganPerPcs").value)||0);
- const q=totalQtyCart();
- $("iuranPreview").textContent=`Tabungan member: ${rp(tab)}/pcs • UP pengelola: ${rp(up)}/pcs • Total: ${rp(q*(tab+up))}`;
-}
-$("upPengelolaPcs").oninput=updateIuranPreview;
-$("tabunganPerPcs").oninput=updateIuranPreview;
 function build(){let nama=$("nama").value.trim(),wa=$("wa").value.trim(),c=calc(),jat=$("jatuh").value,tempoHari=Number($("lama").value)||0;if(!nama)throw Error("Nama member wajib diisi.");if(!wa)throw Error("Nomor WA wajib diisi.");if(!cart.length)throw Error("Keranjang produk masih kosong.");if(!jat)throw Error("Pilih jatuh tempo sesuai minimal jumlah pcs.");if(![7,14,30].includes(tempoHari))throw Error("Tempo hanya boleh 7, 14, atau 30 hari.");const totalQty=totalQtyCart(),minTempo=minQtyTempo(tempoHari);if(totalQty<minTempo)throw Error(`Tempo ${tempoHari} Hari minimal order ${minTempo} pcs. Total keranjang saat ini ${totalQty} pcs.`);for(const x of cart){
   if(x.qty<1)throw Error(`Qty ${x.nama} minimal 1.`);
   if(Number(x.stok)<=0)throw Error(`Produk ${x.nama} sudah tidak memiliki stok.`);
   if(x.qty>x.stok)throw Error(`Pesanan ${x.nama} melebihi stok terbaru ${x.stok} pcs.`);
-}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:"member_tempo",jenisTransaksi:"penjualan",sumber:"member",status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:c.dp,uangMuka:c.dp,sisa:c.sisa,sisaBayar:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tanggalJatuhTempo:jat,piutang:c.sisa,pendapatan:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),
-upPengelolaPerPcs:Math.max(0,Number($("upPengelolaPcs").value)||0),
-tabunganPerPcs:Math.max(0,Number($("tabunganPerPcs").value)||0),
-upPengelola:totalQty*Math.max(0,Number($("upPengelolaPcs").value)||0),
-tabunganMember:totalQty*Math.max(0,Number($("tabunganPerPcs").value)||0),
-totalIuranMember:totalQty*(Math.max(0,Number($("tabunganPerPcs").value)||0)+Math.max(0,Number($("upPengelolaPcs").value)||0)),
-skemaIuran:"baru_tabungan_member",
-stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
+}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:c.dp,uangMuka:c.dp,sisa:c.sisa,sisaBayar:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:Number(selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??4000)||0,upPengelolaPerPcs:Number(ownerSettings.up??1000)||0,kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??0)||0,tanggalJatuhTempo:jat,piutang:c.sisa,pendapatan:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
 window.simpan=async()=>{
   if(!ready)return msg("Halaman belum siap.","err");
   try{
@@ -277,13 +251,10 @@ window.resetForm=()=>{
   ["nama","wa","catatan","alamat"].forEach(x=>$(x).value="");
   $("kode").value=kodeMember();
   $("dp").value=0;
-  $("upPengelolaPcs").value=1000;
-  $("tabunganPerPcs").value=4000;
   loadCartStorage();
   $("nota").textContent=nota();
   $("tgl").textContent=today();
   renderCart();
-  updateIuranPreview();
   const q=totalQtyCart();
   if(q>=10)setDue(30,true);
   else if(q>=5)setDue(14,true);
@@ -292,7 +263,14 @@ window.resetForm=()=>{
   calc();
 };
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
-onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;let s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");let d=s.data()||{};businessUid=business(d);$("email").textContent=u.email||"-";resetForm();await loadProducts();ready=true;$("save").textContent=`${products.length} produk • pesanan tidak mengurangi stok sampai approval`;msg("Akun aktif • pesanan akan diperiksa melalui Approval Member.","ok")}catch(e){console.error(e);msg(e.message,"err")}});
+async function loadMemberSettings(){
+ try{const s=await getDocs(query(collection(db,"users"),where("ownerUid","==",businessUid)));members=s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>["reseller","member","employee"].includes(String(x.role||"").toLowerCase())&&String(x.status||"aktif").toLowerCase()!=="nonaktif");
+ const sel=$("memberSelect");sel.innerHTML='<option value="">-- Pilih Member --</option>'+members.map(m=>`<option value="${esc(m.id)}">${esc(m.nama||m.namaKaryawan||m.name||m.email)}</option>`).join("");
+ }catch(e){console.warn("Member load",e)}
+}
+$("memberSelect")?.addEventListener("change",()=>{selectedMember=members.find(m=>m.id===$("memberSelect").value)||null;if(selectedMember){$("nama").value=selectedMember.nama||selectedMember.namaKaryawan||selectedMember.name||"";$("wa").value=selectedMember.noWA||selectedMember.wa||selectedMember.noWa||"";$("kode").value=selectedMember.kodeMember||selectedMember.kode||kodeMember();}syncCartWithStock();renderCart();});
+$("paymentType")?.addEventListener("change",()=>{syncCartWithStock();renderCart();});
+onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;let s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");let d=s.data()||{};businessUid=business(d);ownerSettings={up:Number(d.upPengelolaPerPcs??d.upPengelola??1000)||1000,kas:Number(d.kasBulananDefault??0)||0};$("email").textContent=u.email||"-";await loadMemberSettings();resetForm();await loadProducts();ready=true;$("save").textContent=`${products.length} produk • pesanan tidak mengurangi stok sampai approval`;msg("Akun aktif • pesanan akan diperiksa melalui Approval Member.","ok")}catch(e){console.error(e);msg(e.message,"err")}});
 window.addEventListener("storage",e=>{
   if(e.key===cartKey()){
     loadCartStorage();

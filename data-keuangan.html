@@ -130,78 +130,78 @@ body.dark td{border-color:#334155}
   <!-- PANEL ATAS: NILAI STOCK SEBELUM UP PENGELOLA + UANG KAS -->
   <div class="summary-grid top-stock-summary">
    <div class="metric blue">
-    <div class="label">Total Stock Sebelum UP + Tabungan Member</div>
+    <div class="label">Total Stock Sebelum UP + Kas</div>
     <div class="value" id="preFeeStockTotalQty">0 pcs</div>
     <div class="sub" id="preFeeStockTotalNominal">Rp 0</div>
    </div>
    <div class="metric orange">
-    <div class="label">Stock Di Order Sebelum UP + Tabungan Member</div>
+    <div class="label">Stock Di Order Sebelum UP + Kas</div>
     <div class="value" id="preFeeOrderStockQty">0 pcs</div>
     <div class="sub" id="preFeeOrderStockNominal">Rp 0</div>
    </div>
    <div class="metric green">
-    <div class="label">Sisa Stock Sebelum UP + Tabungan Member</div>
+    <div class="label">Sisa Stock Sebelum UP + Kas</div>
     <div class="value" id="preFeeRemainingStockQty">0 pcs</div>
     <div class="sub" id="preFeeRemainingStockNominal">Rp 0</div>
    </div>
    <div class="metric">
-    <div class="label">Nilai Modal Sebelum UP + Tabungan Member</div>
+    <div class="label">Nilai Modal Sebelum UP + Kas</div>
     <div class="value" id="preFeeModalTotal">Rp 0</div>
-    <div class="sub">Nilai stock tanpa UP Pengelola + Tabungan Member</div>
+    <div class="sub">Nilai stock tanpa UP Pengelola + Uang Kas</div>
    </div>
   </div>
 
   <div class="summary-grid">
    <div class="metric blue">
-    <div class="label">Jumlah Stock Total + UP + Tabungan Member</div>
+    <div class="label">Jumlah Stock Total + UP + Kas</div>
     <div class="value" id="stockTotalQty">0 pcs</div>
     <div class="sub" id="stockTotalNominal">Rp 0</div>
    </div>
    <div class="metric orange">
-    <div class="label">Stock Di Order + UP + Tabungan Member</div>
+    <div class="label">Stock Di Order + UP + Kas</div>
     <div class="value" id="orderStockQty">0 pcs</div>
     <div class="sub" id="orderStockNominal">Rp 0</div>
    </div>
    <div class="metric green">
-    <div class="label">Sisa Stock + UP + Tabungan Member</div>
+    <div class="label">Sisa Stock + UP + Kas</div>
     <div class="value" id="remainingStockQty">0 pcs</div>
     <div class="sub" id="remainingStockNominal">Rp 0</div>
    </div>
    <div class="metric">
-    <div class="label">Nilai Total + UP + Tabungan Member</div>
+    <div class="label">Nilai Total + UP + Kas</div>
     <div class="value" id="modalTotal">Rp 0</div>
-    <div class="sub">Nilai stock + UP Pengelola + Tabungan Member</div>
+    <div class="sub">Nilai stock + UP Pengelola + Uang Kas</div>
    </div>
   </div>
  </div>
 <div class="card">
-  <div class="title">UANG PENGELOLA & TABUNGAN MEMBER</div>
+  <div class="title">UANG PENGELOLA & UANG KAS</div>
   <div class="section-note">
    Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
-   <br>• <b>UP Pengelola = Rp 1.000 / pcs</b>
-   <br>• <b>Tabungan Member = Rp 4.000 / pcs</b>
-   <br>• Total iuran = <b>Rp 5.000 / pcs</b>
+   <br>• <b>UP Pengelola</b> mengikuti pengaturan Pengelola / pcs
+   <br>• <b>Tabungan Member</b> mengikuti pengaturan masing-masing Member / pcs
+   <br>• <b>Uang Kas</b> adalah iuran bulanan per Member
   </div>
   <div class="summary-grid">
    <div class="metric blue">
     <div class="label">Stock Di Order</div>
     <div class="value" id="feeQty">0 pcs</div>
-    <div class="sub">Dasar perhitungan UP + Tabungan Member</div>
+    <div class="sub">Dasar perhitungan UP + Kas</div>
    </div>
    <div class="metric">
     <div class="label">UP Pengelola</div>
     <div class="value" id="upPengelola">Rp 0</div>
-    <div class="sub">Sesuai UP / pcs pada order</div>
+    <div class="sub">Rp 1.000 × pcs order</div>
    </div>
    <div class="metric green">
     <div class="label">Tabungan Member</div>
     <div class="value" id="uangKas">Rp 0</div>
-    <div class="sub">Rp 4.000 × pcs sesuai order order</div>
+    <div class="sub">Tabungan sesuai tarif Member</div>
    </div>
    <div class="metric orange">
-    <div class="label">Total UP + Tabungan Member</div>
+    <div class="label">Total UP + Tabungan</div>
     <div class="value" id="totalFee">Rp 0</div>
-    <div class="sub">Rp 5.000 × pcs order</div>
+    <div class="sub">UP + Tabungan sesuai order</div>
    </div>
   </div>
   <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
@@ -210,12 +210,12 @@ body.dark td{border-color:#334155}
  <div class="card">
   <div class="title">PENGELUARAN</div>
   <div class="section-note">
-   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Tabungan Member</b>.
+   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
    <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
   </div>
   <div class="expense-grid">
    <div class="metric green">
-    <div class="label">Pengeluaran Tabungan Member</div>
+    <div class="label">Pengeluaran Uang Kas</div>
     <div class="value" id="expenseKas">Rp 0</div>
     <div class="sub">Transportasi + acara + lain-lain</div>
    </div>
@@ -227,11 +227,11 @@ body.dark td{border-color:#334155}
    <div class="metric red">
     <div class="label">Total Pengeluaran</div>
     <div class="value" id="expenseTotal">Rp 0</div>
-    <div class="sub">Tabungan member + pengelola</div>
+    <div class="sub">Kas + pengelola</div>
    </div>
   </div>
   <div class="money-total">
-   Saldo Tabungan Member: <b id="saldoKasAkhir">Rp 0</b>
+   Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
    &nbsp; | &nbsp;
    Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
   </div>
@@ -292,7 +292,7 @@ body.dark td{border-color:#334155}
    <table>
     <thead><tr>
      <th>Nota</th><th>Member</th><th>Status</th><th>Jatuh Tempo</th>
-     <th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Sisa Tagihan</th>
+     <th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Uang Kas</th><th class="num">Sisa Tagihan</th>
     </tr></thead>
     <tbody id="orderTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
    </table>
@@ -477,7 +477,7 @@ function renderExpenses(){
     const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
 
     // Kompatibel dengan data lama:
-    // "Tabungan Member", "Kas", "Hasil Pengelola", "Pengelola",
+    // "Uang Kas", "Kas", "Hasil Pengelola", "Pengelola",
     // serta data yang hanya membedakan lewat jenis.
     const isPengelola =
       source.includes("pengelola") ||
@@ -488,15 +488,9 @@ function renderExpenses(){
             jenis.includes("acara") || jenis.includes("lain")) kas+=n;
   }
 
-  const feeTotals=currentOrders().reduce((a,r)=>{
-    const q=itemList(r).reduce((b,x)=>b+x.qty,0);
-    const upPcs=Math.max(0,Number(r.upPengelolaPerPcs??1000)||0);
-    const tabPcs=Object.prototype.hasOwnProperty.call(r,"tabunganPerPcs")
-      ? Math.max(0,Number(r.tabunganPerPcs)||0) : 0;
-    return {tabungan:a.tabungan+q*tabPcs,up:a.up+q*upPcs};
-  },{tabungan:0,up:0});
-  const kasMasuk=feeTotals.tabungan;
-  const upMasuk=feeTotals.up;
+  const qty=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty,0),0);
+  const kasMasuk=qty*4000;
+  const upMasuk=qty*1000;
 
   $("expenseKas").textContent=rp(kas);
   $("expensePengelola").textContent=rp(pengelola);
@@ -571,7 +565,7 @@ function renderStock(){
  const orderNom=data.reduce((a,x)=>a+x.nominalOrder,0);
  const sisaNom=data.reduce((a,x)=>a+x.nominalSisa,0);
 
- // Panel atas = nilai dasar sebelum UP Pengelola + Tabungan Member.
+ // Panel atas = nilai dasar sebelum UP Pengelola + Uang Kas.
  // Menggunakan perhitungan stock yang sama persis dengan panel lama.
  $("preFeeStockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
  $("preFeeStockTotalNominal").textContent=rp(totalNom);
@@ -581,17 +575,12 @@ function renderStock(){
  $("preFeeRemainingStockNominal").textContent=rp(sisaNom);
  $("preFeeModalTotal").textContent=rp(totalNom);
 
- // Panel lama = NILAI SETELAH ditambah UP Pengelola + Tabungan Member.
+ // Panel lama = NILAI SETELAH ditambah UP Pengelola + Uang Kas.
  // Dasar fee: qty order member x Rp5.000.
- const feeSummaryForStock = currentOrders().reduce((a,r)=>{
-  const q=itemList(r).reduce((b,x)=>b+x.qty,0);
-  const upPcs=Math.max(0,Number(r.upPengelolaPerPcs??1000)||0);
-  const tabPcs=Object.prototype.hasOwnProperty.call(r,"tabunganPerPcs")?Math.max(0,Number(r.tabunganPerPcs)||0):0;
-  return {up:a.up+q*upPcs,tab:a.tab+q*tabPcs};
- },{up:0,tab:0});
- const upForStock=feeSummaryForStock.up;
- const kasForStock=feeSummaryForStock.tab;
- const totalFeeForStock=upForStock+kasForStock;
+ const feeQtyForStock = orderQty;
+ const upForStock = feeQtyForStock * 1000;
+ const kasForStock = feeQtyForStock * 4000;
+ const totalFeeForStock = upForStock + kasForStock;
 
  $("stockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
  $("stockTotalNominal").textContent=rp(totalNom + totalFeeForStock);
@@ -681,9 +670,7 @@ function renderOrders(){
   const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
   const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
   const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
-  const upPcs=Math.max(0,Number(r.upPengelolaPerPcs??1000)||0);
-  const tabPcs=Object.prototype.hasOwnProperty.call(r,"tabunganPerPcs")?Math.max(0,Number(r.tabunganPerPcs)||0):0;
-  qty+=q;up+=q*upPcs;kas+=q*tabPcs;
+  qty+=q;up+=q*1000;kas+=q*4000;
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
   return `<tr>
@@ -693,8 +680,8 @@ function renderOrders(){
    <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
    <td class="num">${q.toLocaleString("id-ID")}</td>
    <td class="num">${rp(value)}</td>
-   <td class="num">${rp(q*upPcs)}</td>
-   <td class="num">${rp(q*tabPcs)}</td>
+   <td class="num">${rp(q*1000)}</td>
+   <td class="num">${rp(q*4000)}</td>
    <td class="num">${rp(sisa)}</td>
   </tr>`;
  });

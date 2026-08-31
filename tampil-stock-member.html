@@ -549,7 +549,9 @@ function tutupHalaman(){
     <div class="field"><label>KATEGORI</label><select id="fCat"><option>LCD</option><option>BATTERY</option><option>FLEXI</option><option>SPAREPART</option><option>ACCESSORIES</option><option>LAINNYA</option></select></div>
     <div class="field full"><label>NAMA PRODUK *</label><input id="fNama" placeholder="Nama barang"></div>
     <div class="field"><label>HARGA MODAL *</label><input id="fModal" type="number" min="0"></div>
-    <div class="field"><label>HARGA JUAL</label><input id="fJual" type="number" min="0" placeholder="Otomatis"></div>
+    <div class="field"><label>HARGA TEMPO *</label><input id="fTempo" type="number" min="0" placeholder="Harga tempo"></div>
+<div class="field"><label>HARGA CASH</label><input id="fCash" type="number" min="0" placeholder="Otomatis = tempo - 2%"></div>
+<div class="field"><label>HARGA JUAL LAMA (DATA LAMA)</label><input id="fJual" type="number" min="0" placeholder="Fallback data lama"></div>
     <div class="field"><label>JUMLAH STOK *</label><input id="fSisa" type="number" min="0" step="1" value="1"></div>
     <div class="field"><label>MERK / SUPPLIER</label><input id="fMerk" placeholder="Zevan"></div>
     <div class="field full"><label>CATATAN</label><input id="fNote" placeholder="Opsional"></div>
@@ -1370,11 +1372,11 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 
 window.openManual=async()=>{$("manualModal").classList.add("show");editingId=null;$("modalTitle").textContent="Tambah Stok Baru";$("manualSave").textContent="SIMPAN STOK";clearForm();await setNextStockCode()};
 window.closeManual=()=>{$("manualModal").classList.remove("show")};
-function clearForm(){["fKode","fNama","fModal","fJual","fSisa","fMerk","fNote"].forEach(id=>$(id).value="");$("fSisa").value=1;$("fCat").value="LCD"}
+function clearForm(){["fKode","fNama","fModal","fTempo","fCash","fJual","fSisa","fMerk","fNote"].forEach(id=>$(id).value="");$("fSisa").value=1;$("fCat").value="LCD"}
 window.editProduct=async id=>{
   const p=products.find(x=>x.id===id);if(!p)return;
   editingId=id;$("modalTitle").textContent="Edit Stok";$("manualSave").textContent="UPDATE STOK";
-  $("fKode").value=p.kode||"";$("fNama").value=p.nama||"";$("fCat").value=p.kategori||"LAINNYA";$("fModal").value=p.hargaModal||0;$("fJual").value=p.hargaJual||0;$("fSisa").value=p.sisa??0;$("fMerk").value=p.merk||"";$("fNote").value=p.catatan||"";
+  $("fKode").value=p.kode||"";$("fNama").value=p.nama||"";$("fCat").value=p.kategori||"LAINNYA";$("fModal").value=p.hargaModal||0;$("fTempo").value=Number(p.hargaTempo??p.hargaTempoMember??p.hargaJual??0)||0;$("fCash").value=Number(p.hargaCash??((Number(p.hargaTempo??p.hargaJual??0)||0)*0.98))||0;$("fJual").value=p.hargaJual||0;$("fSisa").value=p.sisa??0;$("fMerk").value=p.merk||"";$("fNote").value=p.catatan||"";
   $("manualModal").classList.add("show");
 }
 function getSellingPrice(modal, percent, nominal){
@@ -1442,7 +1444,9 @@ window.saveManual=async()=>{
   const data={
     ...identityFields(),kode,nama,kategori,
     hargaModal:modal,
-    hargaJual:num($("fJual").value)||getSellingPrice(modal,num($("pricePercent").value)||15,num($("priceNominal").value)||0),
+    hargaTempo:num($("fTempo").value)||num($("fJual").value)||getSellingPrice(modal,num($("pricePercent").value)||15,num($("priceNominal").value)||0),
+    hargaCash:num($("fCash").value)||Math.round((num($("fTempo").value)||num($("fJual").value)||getSellingPrice(modal,num($("pricePercent").value)||15,num($("priceNominal").value)||0))*0.98),
+    hargaJual:num($("fTempo").value)||num($("fJual").value)||getSellingPrice(modal,num($("pricePercent").value)||15,num($("priceNominal").value)||0),
     sisa:Math.max(0,num($("fSisa").value)),
     merk:$("fMerk").value.trim(),
     catatan:$("fNote").value.trim(),
