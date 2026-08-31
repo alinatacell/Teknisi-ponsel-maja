@@ -95,6 +95,37 @@ tr:hover td{background:#fffdf5}
 .dup-info{margin-top:9px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb;color:#475569;font-size:10px;line-height:1.5;display:none}
 .dup-info.show{display:block}
 @media(max-width:600px){.excel-import{grid-template-columns:1fr}.import-actions .btn{width:100%}}
+
+/* ===== ORDER MEMBER DARI STOK ===== */
+.member-cart-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;margin:0 0 14px;padding:12px 14px;
+  border:2px solid #111827;border-radius:14px;background:#fffbeb;
+  box-shadow:0 4px 12px #17203308;
+}
+.member-cart-info{font-size:12px;font-weight:900;color:#172033}
+.member-cart-info span{color:#b45309}
+.member-cart-actions{display:flex;gap:8px;flex-wrap:wrap}
+.member-cart-btn{
+  border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer;
+  background:#111827;color:#fff;
+}
+.member-cart-btn.primary{background:#ffc107;color:#111827}
+.order-add-btn{
+  border:0;border-radius:8px;padding:7px 10px;font-size:9px;font-weight:900;
+  background:#ffc107;color:#111827;cursor:pointer;
+}
+.order-add-btn:disabled{background:#e5e7eb;color:#94a3b8;cursor:not-allowed}
+.order-added{background:#16a34a;color:#fff}
+.order-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+@media(max-width:600px){.order-actions{width:100%}.order-actions .order-add-btn{width:100%}}
+@media(max-width:600px){
+  .member-cart-bar{align-items:stretch}
+  .member-cart-actions{width:100%}
+  .member-cart-actions button{flex:1}
+  .order-add-btn{width:100%;margin-top:7px}
+}
+
 </style>
 <style id="price-rule-style">
 .price-rule-box{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:13px;background:#f8fafc}
@@ -468,6 +499,14 @@ function tutupHalaman(){
       </div>
     </div>
   </section>
+
+  <div class="member-cart-bar">
+    <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
+    <div class="member-cart-actions">
+      <button type="button" class="member-cart-btn" onclick="clearMemberCart()">Kosongkan</button>
+      <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
+    </div>
+  </div>
 
   <section class="card">
     <div class="title">🔎 Cari Stok</div>
@@ -1127,7 +1166,7 @@ async function loadProducts(){
     $("listMsg").textContent=products.length
       ? `${products.length} produk tersimpan di Firebase.`
       : "Belum ada data stok.";
-    fillCategories();render();
+    fillCategories();render();updateMemberCartBadge();
   }catch(e){
     console.error(e);
     $("listMsg").textContent="Gagal membaca stok: "+e.message;
@@ -1154,9 +1193,106 @@ function render(){
   let ready=0,empty=0,value=0;
   products.forEach(p=>{const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++});
   $("total").textContent=products.length;$("ready").textContent=ready;$("empty").textContent=empty;$("value").textContent=money(value);
-  $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="8" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
+  $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="9" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
   $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>';
   const sa=document.getElementById("stockSelectAll");if(sa)sa.checked=false;updateSelectedStockCount();updatePriceRulePreview();
+}
+
+function getMemberCartKey(){
+  const owner=String(
+    (currentProfile?.role||"").toLowerCase()==="owner" ||
+    (currentProfile?.role||"").toLowerCase()==="superadmin" ||
+    isSuperAdmin ? uid : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
+  ).trim();
+  return owner ? "fixzy_member_cart_"+owner : "fixzy_member_cart";
+}
+
+function readMemberCart(){
+  try{
+    const raw=localStorage.getItem(getMemberCartKey());
+    const data=raw?JSON.parse(raw):[];
+    return Array.isArray(data)?data:[];
+  }catch(e){console.warn("Cart read:",e);return[]}
+}
+
+function writeMemberCart(cart){
+  try{
+    localStorage.setItem(getMemberCartKey(),JSON.stringify(cart||[]));
+    updateMemberCartBadge();
+  }catch(e){console.error("Cart write:",e);toast("Keranjang tidak bisa disimpan di browser.");}
+}
+
+function updateMemberCartBadge(){
+  const cart=readMemberCart();
+  const pcs=cart.reduce((a,x)=>a+(Number(x.qty)||0),0);
+  const el=$("memberCartCount");
+  if(el)el.textContent=`${cart.length} produk • ${pcs} pcs`;
+}
+
+window.bukaKeranjangMember=function(){
+  window.location.href="input-order-member.html";
+};
+
+window.clearMemberCart=async function(){
+  const cart=readMemberCart();
+  if(!cart.length){toast("Keranjang member masih kosong.");return}
+  const ok=await uiConfirm(
+    "Kosongkan seluruh keranjang order member?",
+    "Kosongkan Keranjang",
+    "Kosongkan"
+  );
+  if(!ok)return;
+  localStorage.removeItem(getMemberCartKey());
+  updateMemberCartBadge();
+  render();
+  toast("Keranjang member dikosongkan.");
+};
+
+window.addToMemberCart=function(id){
+  const p=products.find(x=>x.id===id);
+  if(!p){toast("Produk tidak ditemukan.");return}
+  const stok=num(p.sisa);
+  if(stok<=0){toast(`${p.nama||"Produk"} sedang kosong.`);return}
+
+  const cart=readMemberCart();
+  const ex=cart.find(x=>x.produkId===p.id);
+  const harga=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
+  const modalSatuan=num(p.hargaModal);
+
+  if(ex){
+    if((Number(ex.qty)||0)+1>stok){
+      toast(`Qty ${p.nama||"produk"} maksimal ${stok} pcs.`);
+      return;
+    }
+    ex.qty=(Number(ex.qty)||0)+1;
+    ex.harga=harga;
+    ex.modalSatuan=modalSatuan;
+    ex.stok=stok;
+  }else{
+    cart.push({
+      produkId:p.id,
+      nama:String(p.nama||"-"),
+      kode:String(p.kode||""),
+      kategori:String(p.kategori||""),
+      qty:1,
+      harga,
+      diskon:0,
+      modalSatuan,
+      stok
+    });
+  }
+  writeMemberCart(cart);
+  render();
+  toast(`${p.nama||"Produk"} masuk ke keranjang.`);
+};
+
+function orderButtonHTML(p){
+  const st=num(p.sisa);
+  const cart=readMemberCart();
+  const ex=cart.find(x=>x.produkId===p.id);
+  if(st<=0)return `<button class="order-add-btn" disabled>Stok Habis</button>`;
+  if(ex)return `<button class="order-add-btn order-added" onclick="addToMemberCart('${p.id}')">🛒 Keranjang • ${Number(ex.qty)||0}</button>`;
+  return `<button class="order-add-btn" onclick="addToMemberCart('${p.id}')">🛒 + Keranjang</button>`;
 }
 
 function rowHTML(p){
@@ -1178,10 +1314,13 @@ function rowHTML(p){
     <td class="price">${money(jual)}</td>
     <td>${st}</td>
     <td>${stat}</td>
-    <td><div class="acts">
-      <button class="mini edit" onclick="editProduct('${p.id}')">Edit</button>
-      <button class="mini del" onclick="deleteProduct('${p.id}')">Hapus</button>
-    </div></td>
+    <td>
+      <div class="order-actions">${orderButtonHTML(p)}</div>
+      <div class="acts">
+        <button class="mini edit" onclick="editProduct('${p.id}')">Edit</button>
+        <button class="mini del" onclick="deleteProduct('${p.id}')">Hapus</button>
+      </div>
+    </td>
   </tr>`;
 }
 
@@ -1211,6 +1350,7 @@ function mobileHTML(p){
       <div><b>Harga Jual</b><span class="price">${money(jual)}</span></div>
       <div><b>Sisa</b>${st} pcs</div>
     </div>
+    <div class="order-actions" style="margin-top:9px">${orderButtonHTML(p)}</div>
     <div class="acts" style="margin-top:9px">
       <button class="mini edit" onclick="editProduct('${p.id}')">Edit</button>
       <button class="mini del" onclick="deleteProduct('${p.id}')">Hapus</button>
@@ -1495,6 +1635,7 @@ async function initFixzyStockSession(user){
     </div>`;
   }
 }
+window.addEventListener("storage",e=>{ if(e.key===getMemberCartKey()){ updateMemberCartBadge(); render(); } });
 onAuthStateChanged(auth,initFixzyStockSession);
 
 </script></body>
