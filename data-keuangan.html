@@ -108,9 +108,20 @@ body.dark td{border-color:#334155}
    </div>
   </div>
  </div>
-
+<div class="card">
+  <div class="title">RINCIAN STOCK PER PRODUK</div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr>
+     <th>Produk</th><th>Kode</th><th class="num">Stock Total</th><th class="num">Di Order</th><th class="num">Sisa Stock</th>
+     <th class="num">Modal/PCS</th><th class="num">Nominal Total</th><th class="num">Nominal Order</th><th class="num">Nominal Sisa</th>
+    </tr></thead>
+    <tbody id="stockTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
  <div class="card">
-  <div class="title">1. STOCK MEMBER</div>
+  <div class="title">STOCK MEMBER</div>
   <div class="section-note">
    <b>Stock total</b> dihitung sebagai stock yang masih tersedia + stock yang sudah masuk order member.
    Nilai nominal stock menggunakan <b>modal/pcs</b> dari data stock/order.
@@ -163,7 +174,7 @@ body.dark td{border-color:#334155}
   </div>
  </div>
 <div class="card">
-  <div class="title">3. UANG PENGELOLA & UANG KAS</div>
+  <div class="title">UANG PENGELOLA & UANG KAS</div>
   <div class="section-note">
    Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
    <br>• <b>UP Pengelola = Rp 1.000 / pcs</b>
@@ -196,7 +207,7 @@ body.dark td{border-color:#334155}
  </div>
 
  <div class="card">
-  <div class="title">4. PENGELUARAN MEMBER</div>
+  <div class="title">PENGELUARAN</div>
   <div class="section-note">
    <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
    <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
@@ -232,18 +243,7 @@ body.dark td{border-color:#334155}
    </table>
   </div>
  </div>
- <div class="card">
-  <div class="title">RINCIAN STOCK PER PRODUK</div>
-  <div class="table-wrap">
-   <table>
-    <thead><tr>
-     <th>Produk</th><th>Kode</th><th class="num">Stock Total</th><th class="num">Di Order</th><th class="num">Sisa Stock</th>
-     <th class="num">Modal/PCS</th><th class="num">Nominal Total</th><th class="num">Nominal Order</th><th class="num">Nominal Sisa</th>
-    </tr></thead>
-    <tbody id="stockTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
+ 
 
  <div class="card">
   <div class="title">2. NOMINAL MASING-MASING TAGIHAN MEMBER</div>
