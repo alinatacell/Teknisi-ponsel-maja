@@ -36,7 +36,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
     Total pesanan: <b id="total">Rp 0</b>
   </div>
 </div>
-<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
+<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
 <div class="card"><div class="title">Simpan Pesanan</div><div style="font-size:11px;color:#64748b;line-height:1.7;margin-bottom:10px">Pesanan <b>belum mengurangi stok</b>. Setelah disimpan, Admin melakukan <b>Approval Member</b> untuk mencocokkan stok. Hanya produk/qty yang disetujui yang mengurangi stok dan masuk ke <b>Data Order Member</b>.</div><div class="actions"><button class="btn secondary" onclick="simpan()">💾 Simpan Pesanan</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button></div><div id="save" class="notice">Menunggu akun...</div></div>
 </main>
 <script type="module">
@@ -120,15 +120,16 @@ function syncCartWithStock(){
 }
 
 function calc(){
-  let sub=cart.reduce((a,x)=>a+(Number(x.lineTotal)||0),0),
-      di=cart.reduce((a,x)=>a+(Number(x.diskon)||0),0),
-      dp=Math.min(num("dp"),sub),
-      s=Math.max(0,sub-dp);
+  const sub=cart.reduce((a,x)=>a+(Number(x.lineTotal)||0),0);
+  const di=cart.reduce((a,x)=>a+(Number(x.diskon)||0),0);
+  const cash=$("paymentType")?.value==="cash";
+  const dp=cash?sub:Math.min(num("dp"),sub);
+  const s=cash?0:Math.max(0,sub-dp);
   $("sub").textContent=rp(sub+di);
   $("disItem").textContent=rp(di);
   $("total").textContent=rp(sub);
-  $("sisa").value=s;
-  return{subtotal:sub+di,diskonItem:di,total:sub,dp,sisa:s}
+  if($("sisa"))$("sisa").value=s;
+  return{subtotal:sub+di,diskonItem:di,total:sub,dp,sisa:s};
 }
 
 async function loadProducts(){
@@ -277,7 +278,7 @@ function build(){
   if(x.qty<1)throw Error(`Qty ${x.nama} minimal 1.`);
   if(Number(x.stok)<=0)throw Error(`Produk ${x.nama} sudah tidak memiliki stok.`);
   if(x.qty>x.stok)throw Error(`Pesanan ${x.nama} melebihi stok terbaru ${x.stok} pcs.`);
-}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:c.dp,uangMuka:c.dp,sisa:c.sisa,sisaBayar:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:c.sisa,pendapatan:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
+}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:jenisHarga==="cash"?c.total:c.dp,uangMuka:jenisHarga==="cash"?c.total:c.dp,sisa:jenisHarga==="cash"?0:c.sisa,sisaBayar:jenisHarga==="cash"?0:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:jenisHarga==="cash"?0:c.sisa,pendapatan:jenisHarga==="cash"?c.total:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
 window.simpan=async()=>{
   if(!ready)return msg("Halaman belum siap.","err");
   try{
@@ -326,13 +327,17 @@ function isiMemberDariAkun(d){
   $("kode").value=d.kodeMember||d.kode||kodeMember();
   $("memberAutoInfo").textContent=`✓ Member otomatis: ${namaAkun} • Tabungan ${rp(getTabunganMember())}/pcs`;
 }
-$("paymentType")?.addEventListener("change",()=>{
-  const cash=$("paymentType").value==="cash";
+function syncPaymentMode(){
+  const cash=$("paymentType")?.value==="cash";
   document.querySelectorAll(".quick button").forEach(b=>b.disabled=cash);
-  $("tempoRule").style.display=cash?"none":"block";
-  if(cash){$("lama").value="";$("jatuh").value="";due();}
-  syncCartWithStock(); renderCart();
-});
+  const tempoPanel=document.querySelector(".tempo");
+  if(tempoPanel)tempoPanel.style.display=cash?"none":"block";
+  if($("dpWrap"))$("dpWrap").style.display=cash?"none":"block";
+  if($("sisaWrap"))$("sisaWrap").style.display=cash?"none":"block";
+  if(cash){$("lama").value="";$("jatuh").value="";due();$("dp").value=0;}
+  calc();
+}
+$("paymentType")?.addEventListener("change",()=>{syncPaymentMode();syncCartWithStock();renderCart();});
 onAuthStateChanged(auth,async u=>{
   if(!u){msg("Belum login.","err");return}
   try{
