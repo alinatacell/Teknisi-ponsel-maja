@@ -22,7 +22,7 @@ main{max-width:1100px;margin:auto;padding:88px 12px 30px}
 .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
 label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
 input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.top-stock-summary{margin-bottom:12px}.top-stock-summary .metric{min-height:92px}
 .metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:3px 3px 0 #111827}
 .metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}
 .metric .value{font-size:20px;font-weight:900;margin-top:5px}
@@ -115,6 +115,30 @@ body.dark td{border-color:#334155}
    <b>Stock total</b> dihitung sebagai stock yang masih tersedia + stock yang sudah masuk order member.
    Nilai nominal stock menggunakan <b>modal/pcs</b> dari data stock/order.
   </div>
+  <!-- PANEL ATAS: NILAI STOCK SEBELUM UP PENGELOLA + UANG KAS -->
+  <div class="summary-grid top-stock-summary">
+   <div class="metric blue">
+    <div class="label">Total Stock Sebelum UP + Kas</div>
+    <div class="value" id="preFeeStockTotalQty">0 pcs</div>
+    <div class="sub" id="preFeeStockTotalNominal">Rp 0</div>
+   </div>
+   <div class="metric orange">
+    <div class="label">Stock Di Order Sebelum UP + Kas</div>
+    <div class="value" id="preFeeOrderStockQty">0 pcs</div>
+    <div class="sub" id="preFeeOrderStockNominal">Rp 0</div>
+   </div>
+   <div class="metric green">
+    <div class="label">Sisa Stock Sebelum UP + Kas</div>
+    <div class="value" id="preFeeRemainingStockQty">0 pcs</div>
+    <div class="sub" id="preFeeRemainingStockNominal">Rp 0</div>
+   </div>
+   <div class="metric">
+    <div class="label">Nilai Modal Sebelum UP + Kas</div>
+    <div class="value" id="preFeeModalTotal">Rp 0</div>
+    <div class="sub">Nilai stock tanpa UP Pengelola + Uang Kas</div>
+   </div>
+  </div>
+
   <div class="summary-grid">
    <div class="metric blue">
     <div class="label">Jumlah Stock Total</div>
@@ -176,82 +200,79 @@ body.dark td{border-color:#334155}
    </table>
   </div>
  </div>
-  <div class="card">
-   <div class="title">3. UANG PENGELOLA, UANG KAS & PENGELUARAN MEMBER</div>
 
-   <div class="section-note">
-    <b>UANG PENGELOLA & UANG KAS</b><br>
-    Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
-    <br>• <b>UP Pengelola = Rp 1.000 / pcs</b>
-    <br>• <b>Uang Kas = Rp 4.000 / pcs</b>
-    <br>• Total pungutan = <b>Rp 5.000 / pcs</b>
+ <div class="card">
+  <div class="title">3. UANG PENGELOLA & UANG KAS</div>
+  <div class="section-note">
+   Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
+   <br>• <b>UP Pengelola = Rp 1.000 / pcs</b>
+   <br>• <b>Uang Kas = Rp 4.000 / pcs</b>
+   <br>• Total pungutan = <b>Rp 5.000 / pcs</b>
+  </div>
+  <div class="summary-grid">
+   <div class="metric blue">
+    <div class="label">Stock Di Order</div>
+    <div class="value" id="feeQty">0 pcs</div>
+    <div class="sub">Dasar perhitungan UP + Kas</div>
    </div>
-
-   <div class="summary-grid">
-    <div class="metric blue">
-     <div class="label">Stock Di Order</div>
-     <div class="value" id="feeQty">0 pcs</div>
-     <div class="sub">Dasar perhitungan UP + Kas</div>
-    </div>
-    <div class="metric">
-     <div class="label">UP Pengelola</div>
-     <div class="value" id="upPengelola">Rp 0</div>
-     <div class="sub">Rp 1.000 × pcs order</div>
-    </div>
-    <div class="metric green">
-     <div class="label">Uang Kas</div>
-     <div class="value" id="uangKas">Rp 0</div>
-     <div class="sub">Rp 4.000 × pcs order</div>
-    </div>
-    <div class="metric orange">
-     <div class="label">Total UP + Kas</div>
-     <div class="value" id="totalFee">Rp 0</div>
-     <div class="sub">Rp 5.000 × pcs order</div>
-    </div>
+   <div class="metric">
+    <div class="label">UP Pengelola</div>
+    <div class="value" id="upPengelola">Rp 0</div>
+    <div class="sub">Rp 1.000 × pcs order</div>
    </div>
-
-   <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
-
-   <div class="section-note" style="margin-top:16px;padding-top:12px;border-top:2px solid #111827">
-    <b>PENGELUARAN MEMBER</b><br>
-    <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
-    <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
+   <div class="metric green">
+    <div class="label">Uang Kas</div>
+    <div class="value" id="uangKas">Rp 0</div>
+    <div class="sub">Rp 4.000 × pcs order</div>
    </div>
-
-   <div class="expense-grid">
-    <div class="metric green">
-     <div class="label">Pengeluaran Uang Kas</div>
-     <div class="value" id="expenseKas">Rp 0</div>
-     <div class="sub">Transportasi + acara + lain-lain</div>
-    </div>
-    <div class="metric orange">
-     <div class="label">Pengeluaran Pengelola</div>
-     <div class="value" id="expensePengelola">Rp 0</div>
-     <div class="sub">Dari hasil pengelola</div>
-    </div>
-    <div class="metric red">
-     <div class="label">Total Pengeluaran</div>
-     <div class="value" id="expenseTotal">Rp 0</div>
-     <div class="sub">Kas + pengelola</div>
-    </div>
-   </div>
-
-   <div class="money-total">
-    Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
-    &nbsp; | &nbsp;
-    Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
-   </div>
-
-   <div class="table-wrap expense-table">
-    <table>
-     <thead><tr>
-      <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
-     </tr></thead>
-     <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
-    </table>
+   <div class="metric orange">
+    <div class="label">Total UP + Kas</div>
+    <div class="value" id="totalFee">Rp 0</div>
+    <div class="sub">Rp 5.000 × pcs order</div>
    </div>
   </div>
-<div class="card">
+  <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
+ </div>
+
+ <div class="card">
+  <div class="title">4. PENGELUARAN MEMBER</div>
+  <div class="section-note">
+   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
+   <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
+  </div>
+  <div class="expense-grid">
+   <div class="metric green">
+    <div class="label">Pengeluaran Uang Kas</div>
+    <div class="value" id="expenseKas">Rp 0</div>
+    <div class="sub">Transportasi + acara + lain-lain</div>
+   </div>
+   <div class="metric orange">
+    <div class="label">Pengeluaran Pengelola</div>
+    <div class="value" id="expensePengelola">Rp 0</div>
+    <div class="sub">Dari hasil pengelola</div>
+   </div>
+   <div class="metric red">
+    <div class="label">Total Pengeluaran</div>
+    <div class="value" id="expenseTotal">Rp 0</div>
+    <div class="sub">Kas + pengelola</div>
+   </div>
+  </div>
+  <div class="money-total">
+   Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
+   &nbsp; | &nbsp;
+   Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
+  </div>
+  <div class="table-wrap expense-table">
+   <table>
+    <thead><tr>
+     <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
+    </tr></thead>
+    <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
+
+ <div class="card">
   <div class="title">REKAP PER ORDER MEMBER</div>
   <div class="table-wrap">
    <table>
@@ -529,6 +550,16 @@ function renderStock(){
  const totalNom=data.reduce((a,x)=>a+x.nominalTotal,0);
  const orderNom=data.reduce((a,x)=>a+x.nominalOrder,0);
  const sisaNom=data.reduce((a,x)=>a+x.nominalSisa,0);
+
+ // Panel atas = nilai dasar sebelum UP Pengelola + Uang Kas.
+ // Menggunakan perhitungan stock yang sama persis dengan panel lama.
+ $("preFeeStockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
+ $("preFeeStockTotalNominal").textContent=rp(totalNom);
+ $("preFeeOrderStockQty").textContent=orderQty.toLocaleString("id-ID")+" pcs";
+ $("preFeeOrderStockNominal").textContent=rp(orderNom);
+ $("preFeeRemainingStockQty").textContent=sisaQty.toLocaleString("id-ID")+" pcs";
+ $("preFeeRemainingStockNominal").textContent=rp(sisaNom);
+ $("preFeeModalTotal").textContent=rp(totalNom);
 
  $("stockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
  $("stockTotalNominal").textContent=rp(totalNom);
