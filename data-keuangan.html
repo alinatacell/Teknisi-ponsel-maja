@@ -28,12 +28,7 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .metric .value{font-size:20px;font-weight:900;margin-top:5px}
 .metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}
 .metric.blue{background:#eff6ff}.metric.orange{background:#fffbeb}.metric.green{background:#f0fdf4}.metric.red{background:#fef2f2}
-.metric-combined{background:#f8fafc}
-.combined-values{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
-.combined-item{border-top:1px solid #cbd5e1;padding-top:5px}
-.combined-item .small-label{font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase}
-.combined-item .small-value{font-size:15px;font-weight:900;margin-top:2px}
-body.dark .combined-item{border-color:#475569}
+
 .money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
 table{width:100%;border-collapse:collapse;min-width:0}
@@ -259,19 +254,23 @@ body.dark td{border-color:#334155}
     <div class="value" id="billCount">0</div>
     <div class="sub">Order member belum lunas</div>
    </div>
-   <div class="metric metric-combined">
-    <div class="label">Nominal Tagihan & Lunas</div>
-    <div class="combined-values">
-     <div class="combined-item">
-      <div class="small-label">Nominal Tagihan</div>
-      <div class="small-value" id="billTotal">Rp 0</div>
-     </div>
-     <div class="combined-item">
-      <div class="small-label">Sudah Lunas</div>
-      <div class="small-value" id="paidTotal">Rp 0</div>
-     </div>
-    </div>
-    <div class="sub">Tagihan = sisa pembayaran • Lunas = nominal yang sudah dibayar</div>
+
+   <div class="metric orange">
+    <div class="label">Nominal Tagihan</div>
+    <div class="value" id="billTotal">Rp 0</div>
+    <div class="sub">Total sisa tagihan member</div>
+   </div>
+
+   <div class="metric green">
+    <div class="label">Sudah Lunas</div>
+    <div class="value" id="paidTotal">Rp 0</div>
+    <div class="sub">Total nominal yang sudah dibayar</div>
+   </div>
+
+   <div class="metric blue">
+    <div class="label">Total Pembayaran</div>
+    <div class="value" id="paymentTotal">Rp 0</div>
+    <div class="sub">Nominal tagihan + sudah lunas</div>
    </div>
   </div>
   <div class="table-wrap" style="margin-top:12px">
@@ -608,16 +607,20 @@ function renderStock(){
 
 function renderBills(){
  const all=currentOrders();
- const data=all.filter(x=>orderStatus(x)==="tagihan");
- let total=0;
- let paidTotal=0;
 
- // Nominal sudah lunas dari order berstatus LUNAS.
+ // Tagihan = order yang masih memiliki sisa pembayaran.
+ const data=all.filter(x=>orderStatus(x)==="tagihan");
+
+ let totalTagihan=0;
+ let totalLunas=0;
+
+ // Hitung nominal yang sudah lunas dari order berstatus LUNAS.
  for(const r of all){
   const totalOrder=Math.max(0,Number(r.totalBayar??r.total??0)||0);
   const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
+
   if(orderStatus(r)==="lunas"){
-   paidTotal += paid > 0 ? paid : totalOrder;
+   totalLunas += paid > 0 ? paid : totalOrder;
   }
  }
 
@@ -626,10 +629,13 @@ function renderBills(){
   const dp=Math.max(0,Number(r.dp??r.uangMuka??0)||0);
   const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??dp)||0);
   const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(totalOrder-paid))||0);
-  total+=sisa;
+
+  totalTagihan += sisa;
+
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
   const dueText=due?due.toLocaleDateString("id-ID"):"-";
+
   return `<tr>
    <td><b>${esc(r.nomorNota||r.id)}</b></td>
    <td>${esc(m.nama||"-")}<br><small>${esc(m.kode||r.kodeMember||"")}</small></td>
@@ -641,10 +647,17 @@ function renderBills(){
    <td class="num">${rp(sisa)}</td>
   </tr>`;
  });
+
+ const totalPembayaran=totalTagihan+totalLunas;
+
  $("billCount").textContent=data.length.toLocaleString("id-ID");
- $("billTotal").textContent=rp(total);
- $("paidTotal").textContent=rp(paidTotal);
- $("billTable").innerHTML=rows.join("")||`<tr><td colspan="8" class="empty">Tidak ada tagihan pada periode ini.</td></tr>`;
+ $("billTotal").textContent=rp(totalTagihan);
+ $("paidTotal").textContent=rp(totalLunas);
+ $("paymentTotal").textContent=rp(totalPembayaran);
+
+ $("billTable").innerHTML=
+  rows.join("")||
+  `<tr><td colspan="8" class="empty">Tidak ada tagihan pada periode ini.</td></tr>`;
 }
 
 function renderOrders(){
