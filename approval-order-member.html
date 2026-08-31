@@ -37,7 +37,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <div class="card"><div class="title">Klarifikasi Pesanan Member</div>
 <div class="filters">
 <div><label>CARI NOTA / MEMBER / KODE MEMBER</label><input id="search" placeholder="Ketik pencarian..."></div>
-<div><label>STATUS</label><select id="filter"><option value="menunggu_approval">Menunggu Approval</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option></select></div>
+<div><label>STATUS</label><select id="filter"><option value="">Menunggu Approval</option><option value="menunggu_approval">Menunggu Approval</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option></select></div>
 <div><label>CATATAN</label><div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Periksa stok aktual. Hanya qty yang disetujui yang dipindahkan ke <b>order_member</b>.</div></div>
 </div></div>
 <div id="list"></div>
@@ -57,13 +57,14 @@ function getOwner(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r===
 function itemName(x){return String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-")}
 function normalizeItems(r){let a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({...x,nama:itemName(x),produkId:x.produkId||x.id||"",kode:x.kode||x.kodeProduk||"",qty:Number(x.qty||x.jumlah||1),harga:Number(x.harga||x.hargaJual||0),diskon:Number(x.diskon??x.discount??0),modalSatuan:Number(x.modalSatuan??x.modal??0),approvedQty:Number(x.approvedQty??0),stokTersedia:Number(x.stokTersedia??0)}))}
 function member(r){return r.member||r.pelanggan||{}}
-function status(r){return String(r.status||"menunggu_approval").toLowerCase()}
+function status(r){return String(r.status||r.approvalStatus||"menunggu_approval").toLowerCase().trim().replace(/[ -]+/g,"_")}
 async function load(){
  rows=[];
  if(!ownerUid)return;
  const qs=[
   query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
+  query(collection(db,"penjualan"),where("ownerId","==",ownerUid)),
+  query(collection(db,"penjualan"),where("uid","==",ownerUid))
  ];
  const map=new Map();
  for(const q of qs){const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if((x.tipeTransaksi==="member_tempo"||x.jenisTransaksi==="member")&&!map.has(d.id))map.set(d.id,x)})}
