@@ -176,79 +176,82 @@ body.dark td{border-color:#334155}
    </table>
   </div>
  </div>
+  <div class="card">
+   <div class="title">3. UANG PENGELOLA, UANG KAS & PENGELUARAN MEMBER</div>
 
- <div class="card">
-  <div class="title">3. UANG PENGELOLA & UANG KAS</div>
-  <div class="section-note">
-   Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
-   <br>• <b>UP Pengelola = Rp 1.000 / pcs</b>
-   <br>• <b>Uang Kas = Rp 4.000 / pcs</b>
-   <br>• Total pungutan = <b>Rp 5.000 / pcs</b>
-  </div>
-  <div class="summary-grid">
-   <div class="metric blue">
-    <div class="label">Stock Di Order</div>
-    <div class="value" id="feeQty">0 pcs</div>
-    <div class="sub">Dasar perhitungan UP + Kas</div>
+   <div class="section-note">
+    <b>UANG PENGELOLA & UANG KAS</b><br>
+    Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
+    <br>• <b>UP Pengelola = Rp 1.000 / pcs</b>
+    <br>• <b>Uang Kas = Rp 4.000 / pcs</b>
+    <br>• Total pungutan = <b>Rp 5.000 / pcs</b>
    </div>
-   <div class="metric">
-    <div class="label">UP Pengelola</div>
-    <div class="value" id="upPengelola">Rp 0</div>
-    <div class="sub">Rp 1.000 × pcs order</div>
-   </div>
-   <div class="metric green">
-    <div class="label">Uang Kas</div>
-    <div class="value" id="uangKas">Rp 0</div>
-    <div class="sub">Rp 4.000 × pcs order</div>
-   </div>
-   <div class="metric orange">
-    <div class="label">Total UP + Kas</div>
-    <div class="value" id="totalFee">Rp 0</div>
-    <div class="sub">Rp 5.000 × pcs order</div>
-   </div>
-  </div>
-  <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
- </div>
 
- <div class="card">
-  <div class="title">4. PENGELUARAN MEMBER</div>
-  <div class="section-note">
-   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
-   <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
-  </div>
-  <div class="expense-grid">
-   <div class="metric green">
-    <div class="label">Pengeluaran Uang Kas</div>
-    <div class="value" id="expenseKas">Rp 0</div>
-    <div class="sub">Transportasi + acara + lain-lain</div>
+   <div class="summary-grid">
+    <div class="metric blue">
+     <div class="label">Stock Di Order</div>
+     <div class="value" id="feeQty">0 pcs</div>
+     <div class="sub">Dasar perhitungan UP + Kas</div>
+    </div>
+    <div class="metric">
+     <div class="label">UP Pengelola</div>
+     <div class="value" id="upPengelola">Rp 0</div>
+     <div class="sub">Rp 1.000 × pcs order</div>
+    </div>
+    <div class="metric green">
+     <div class="label">Uang Kas</div>
+     <div class="value" id="uangKas">Rp 0</div>
+     <div class="sub">Rp 4.000 × pcs order</div>
+    </div>
+    <div class="metric orange">
+     <div class="label">Total UP + Kas</div>
+     <div class="value" id="totalFee">Rp 0</div>
+     <div class="sub">Rp 5.000 × pcs order</div>
+    </div>
    </div>
-   <div class="metric orange">
-    <div class="label">Pengeluaran Pengelola</div>
-    <div class="value" id="expensePengelola">Rp 0</div>
-    <div class="sub">Dari hasil pengelola</div>
-   </div>
-   <div class="metric red">
-    <div class="label">Total Pengeluaran</div>
-    <div class="value" id="expenseTotal">Rp 0</div>
-    <div class="sub">Kas + pengelola</div>
-   </div>
-  </div>
-  <div class="money-total">
-   Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
-   &nbsp; | &nbsp;
-   Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
-  </div>
-  <div class="table-wrap expense-table">
-   <table>
-    <thead><tr>
-     <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
-    </tr></thead>
-    <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
 
- <div class="card">
+   <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
+
+   <div class="section-note" style="margin-top:16px;padding-top:12px;border-top:2px solid #111827">
+    <b>PENGELUARAN MEMBER</b><br>
+    <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
+    <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
+   </div>
+
+   <div class="expense-grid">
+    <div class="metric green">
+     <div class="label">Pengeluaran Uang Kas</div>
+     <div class="value" id="expenseKas">Rp 0</div>
+     <div class="sub">Transportasi + acara + lain-lain</div>
+    </div>
+    <div class="metric orange">
+     <div class="label">Pengeluaran Pengelola</div>
+     <div class="value" id="expensePengelola">Rp 0</div>
+     <div class="sub">Dari hasil pengelola</div>
+    </div>
+    <div class="metric red">
+     <div class="label">Total Pengeluaran</div>
+     <div class="value" id="expenseTotal">Rp 0</div>
+     <div class="sub">Kas + pengelola</div>
+    </div>
+   </div>
+
+   <div class="money-total">
+    Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
+    &nbsp; | &nbsp;
+    Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
+   </div>
+
+   <div class="table-wrap expense-table">
+    <table>
+     <thead><tr>
+      <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
+     </tr></thead>
+     <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
+    </table>
+   </div>
+  </div>
+<div class="card">
   <div class="title">REKAP PER ORDER MEMBER</div>
   <div class="table-wrap">
    <table>
