@@ -105,8 +105,15 @@ function isCashOrder(r){
 function orderStatus(r){
  // CASH/TUNAI selalu lunas dan tidak mempunyai piutang/jatuh tempo.
  if(isCashOrder(r))return "lunas";
- const st=String(r.status||r.approvalStatus||"tagihan").trim().toLowerCase();
- return ["lunas","paid","dibayar","selesai"].includes(st)?"lunas":"tagihan";
+ const p=r._paymentSource||{};
+ const states=[r.status,r.approvalStatus,r.statusPembayaran,r.paymentStatus,p.status,p.statusPembayaran,p.paymentStatus]
+   .map(v=>String(v??"").trim().toLowerCase());
+ if(states.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v)))return "lunas";
+ const total=Math.max(0,Number(r.totalBayar??r.total??0)||0);
+ const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,
+   Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
+ const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
+ return (sisa<=0 || (total>0 && paid>=total))?"lunas":"tagihan";
 }
 
 function itemList(r){
@@ -168,7 +175,23 @@ async function loadOrders(){
    if(!map.has(d.id))map.set(d.id,x);
   });
  }
- orders=[...map.values()];
+ // Sinkronkan informasi pembayaran dari dokumen penjualan asal bila tersedia.
+ // Ini penting untuk order lama: pembayaran bisa diperbarui di penjualan,
+ // sedangkan order_member menyimpan snapshot saat approval.
+ const arr=[...map.values()];
+ await Promise.all(arr.map(async x=>{
+  const sid=String(x.sourcePenjualanId||"").trim();
+  if(!sid)return;
+  try{
+   const ps=await getDoc(doc(db,"penjualan",sid));
+   if(!ps.exists())return;
+   const p=ps.data()||{};
+   const own=String(p.ownerUid||p.ownerId||"").trim();
+   if(own && own!==ownerUid)return;
+   x._paymentSource=p;
+  }catch(e){console.warn("Sinkron pembayaran order",x.id,e.message)}
+ }));
+ orders=arr;
 }
 
 function renderRekap(){
@@ -181,9 +204,19 @@ function renderRekap(){
   const value=items.reduce((a,x)=>a+x.total,0);
   const cash=isCashOrder(r);
   const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
-  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
-  // CASH tidak boleh mempunyai tagihan, walaupun data lama menyimpan sisa/DP.
-  const sisa=cash?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
+  const p=r._paymentSource||{};
+  const paid=Math.max(0,
+    Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,
+    Number(p.totalDibayar??p.pembayaran??p.dp??0)||0
+  );
+  // CASH tidak boleh mempunyai tagihan. Untuk TEMPO, jika sumber pembayaran
+  // sudah mencatat lunas/terbayar penuh, gunakan pembayaran tersebut.
+  const explicitPaid=[r.statusPembayaran,r.paymentStatus,p.statusPembayaran,p.paymentStatus]
+    .map(v=>String(v??"").trim().toLowerCase());
+  const sourceTotal=Math.max(0,Number(p.totalBayar??p.total??0)||0);
+  const paidFull=explicitPaid.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v))
+    || (sourceTotal>0 && paid>=sourceTotal);
+  const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
   const st=orderStatus(r);
   const jenis=cash?"CASH":"TEMPO";
   const upRow=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??1000)||0),0);
