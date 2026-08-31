@@ -503,7 +503,7 @@ function tutupHalaman(){
   <div class="member-cart-bar">
     <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
     <div class="member-cart-actions">
-      <button type="button" class="member-cart-btn" onclick="clearMemberCart()">Kosongkan</button>
+      <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
       <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
     </div>
   </div>
@@ -1233,19 +1233,27 @@ window.bukaKeranjangMember=function(){
   window.location.href="input-order-member.html";
 };
 
-window.clearMemberCart=async function(){
-  const cart=readMemberCart();
-  if(!cart.length){toast("Keranjang member masih kosong.");return}
-  const ok=await uiConfirm(
-    "Kosongkan seluruh keranjang order member?",
-    "Kosongkan Keranjang",
-    "Kosongkan"
-  );
-  if(!ok)return;
-  localStorage.removeItem(getMemberCartKey());
-  updateMemberCartBadge();
-  render();
-  toast("Keranjang member dikosongkan.");
+window.clearMemberCart=function(){
+  try{
+    const key=getMemberCartKey();
+    const cart=readMemberCart();
+    if(!cart.length){
+      updateMemberCartBadge();
+      toast("Keranjang member masih kosong.");
+      return;
+    }
+
+    // Hapus hanya keranjang milik owner yang sedang login.
+    localStorage.removeItem(key);
+
+    // Sinkronkan seluruh tampilan setelah keranjang dihapus.
+    updateMemberCartBadge();
+    render();
+    toast("Keranjang member berhasil dikosongkan.");
+  }catch(e){
+    console.error("CLEAR MEMBER CART ERROR:",e);
+    toast("Keranjang gagal dikosongkan: "+(e?.message||e));
+  }
 };
 
 window.addToMemberCart=function(id){
