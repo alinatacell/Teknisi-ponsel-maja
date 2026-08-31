@@ -84,7 +84,6 @@ const cfg={
  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
