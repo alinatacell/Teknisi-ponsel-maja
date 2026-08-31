@@ -89,10 +89,11 @@ function activeBasePrice(p){
   return $("paymentType")?.value==="cash"?cash:tempo;
 }
 function getTabunganMember(){
-  return Number(selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??0)||0;
+  const v=selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??selectedMember?.tabunganMemberPerPcs;
+  return Number(v??4000)||4000;
 }
 function getUpPengelola(){
-  return Number(ownerSettings.up??0)||0;
+  return Number(ownerSettings.up??1000)||1000;
 }
 function composedPrice(p){return activeBasePrice(p)+getTabunganMember()+getUpPengelola()}
 function syncCartWithStock(){
@@ -316,11 +317,12 @@ window.resetForm=()=>{
   else if(q>=2)setDue(7,true);
   else {$("lama").value="";$("jatuh").value="";due();updateTempoRules();}
   calc();
+  if(selectedMember) isiMemberDariAkun(selectedMember);
 };
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 function isiMemberDariAkun(d){
   selectedMember={id:uid,...d};
-  const namaAkun=d.nama||d.namaKaryawan||d.name||window._loginDisplayName||"";
+  const namaAkun=d.nama||d.namaKaryawan||d.name||window._loginDisplayName||d.displayName||d.email||"";
   const wa=d.noWA||d.wa||d.noWa||d.noHp||"";
   $("nama").value=namaAkun;
   $("wa").value=wa;
@@ -352,7 +354,7 @@ onAuthStateChanged(auth,async u=>{
       if(os.exists())ownerDoc=os.data()||{};
     }
     ownerSettings={
-      up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??0)||0,
+      up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??1000)||1000,
       kas:Number(ownerDoc.kasBulananDefault??0)||0
     };
     window._loginDisplayName=u.displayName||"";
