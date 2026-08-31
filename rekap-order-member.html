@@ -1,0 +1,175 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FIXZY | Rekap Order Member</title><style>
+*{box-sizing:border-box}
+:root{--b:#0b0f14;--b2:#111827;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626;--blue:#2563eb;--orange:#f59e0b}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
+.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
+.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
+.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:88px 12px 30px}
+.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
+.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
+.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
+input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:3px 3px 0 #111827}
+.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}
+.metric .value{font-size:20px;font-weight:900;margin-top:5px}
+.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}
+.metric.blue{background:#eff6ff}.metric.orange{background:#fffbeb}.metric.green{background:#f0fdf4}.metric.red{background:#fef2f2}
+.money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
+.table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
+table{width:100%;border-collapse:collapse;min-width:0}
+@media(max-width:650px){
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:680px}
+  .expense-table table{min-width:620px}
+  th,td{padding:8px 7px;font-size:10px}
+  th{font-size:9px}
+}
+th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
+th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
+td.num{text-align:right;font-weight:800}
+tr:last-child td{border-bottom:0}
+.total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}
+.section-note{font-size:11px;color:#64748b;line-height:1.6;margin-bottom:10px}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
+.badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
+.empty{text-align:center;padding:25px;color:#64748b;font-size:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.primary{background:#111827;color:#fff}
+.secondary{background:#e5e7eb;color:#111827}
+body.dark{background:#0b1220;color:#e5e7eb}
+body.dark .card,body.dark .metric{background:#111827;color:#e5e7eb;border-color:#475569}
+body.dark .title{border-color:#475569}
+body.dark label{color:#9ca3af}
+body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
+body.dark .metric.blue,body.dark .metric.orange,body.dark .metric.green,body.dark .metric.red{background:#1e293b}
+body.dark .money-total,body.dark .total-row td{background:#1c1917}
+body.dark th{background:#020617}
+body.dark td{border-color:#334155}
+.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.expense-table{margin-top:12px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
+@media(max-width:650px){
+      header{height:68px}
+      .hi h1{font-size:16px}
+      main{padding:80px 8px 24px}
+      .summary-grid{grid-template-columns:1fr}
+      .filters{grid-template-columns:1fr}
+      .acts .btn{padding:8px}
+      .metric .value{font-size:18px}
+      .card{padding:12px}
+    }
+</style><style>.summary-grid{grid-template-columns:repeat(5,1fr)}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}}@media(max-width:650px){.summary-grid{grid-template-columns:1fr}}</style></head><body>
+<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Rekap Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
+<main><div id="notice" class="notice">Menunggu akun...</div>
+<div class="card"><div class="title">REKAP ORDER MEMBER</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
+<div class="summary-grid"><div class="metric blue"><div class="label">Jumlah Order</div><div class="value" id="orderCount">0</div><div class="sub">Order member</div></div><div class="metric"><div class="label">Qty Order</div><div class="value" id="qtyTotal">0 pcs</div><div class="sub">Total seluruh pcs</div></div><div class="metric orange"><div class="label">Nilai Barang</div><div class="value" id="nilaiTotal">Rp 0</div><div class="sub">Total nilai barang</div></div><div class="metric green"><div class="label">UP Pengelola</div><div class="value" id="upTotal">Rp 0</div><div class="sub">Rp 1.000 × pcs</div></div><div class="metric red"><div class="label">Uang Kas</div><div class="value" id="kasTotal">Rp 0</div><div class="sub">Rp 4.000 × pcs</div></div></div>
+<div class="card"><div class="title">DAFTAR ORDER MEMBER</div><div class="money-total">Total Sisa Tagihan: <b id="sisaTotal">Rp 0</b></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Uang Kas</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const cfg={
+ apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+ authDomain:"fixzy-update.firebaseapp.com",
+ projectId:"fixzy-update",
+ storageBucket:"fixzy-update.firebasestorage.app",
+ messagingSenderId:"995892519622",
+ appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>Number(v)||0;
+function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
+let uid="",ownerUid="",profile={},orders=[],ready=false;
+function ownerOf(d){
+ const role=String(d.role||"").toLowerCase();
+ if(role==="owner"||role==="superadmin")return uid;
+ return String(d.ownerUid||d.ownerId||"").trim()||uid;
+}
+
+function orderStatus(r){
+ return String(r.status||"tagihan").toLowerCase()==="lunas"?"lunas":"tagihan";
+}
+
+function itemList(r){
+ const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
+ return a.map(x=>({
+  produkId:String(x.produkId||x.id||""),
+  nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
+  kode:String(x.kode||x.kodeProduk||""),
+  qty:Math.max(0,Number(x.qty||x.jumlah||0)||0),
+  harga:Math.max(0,Number(x.harga||x.hargaJual||0)||0),
+  modal:Math.max(0,Number(x.modalSatuan??x.modal??0)||0),
+  total:Math.max(0,Number(x.total??((Number(x.harga||x.hargaJual||0)*Number(x.qty||x.jumlah||0))-Number(x.diskon||0)))||0)
+ }));
+}
+
+function dueDate(r){
+ const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
+ if(!raw)return null;
+ if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
+ const s=String(raw);
+ if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+  const [y,m,d]=s.split("-").map(Number);
+  return new Date(y,m-1,d);
+ }
+ if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+  const [d,m,y]=s.split("/").map(Number);
+  return new Date(y,m-1,d);
+ }
+ const d=new Date(s);
+ return isNaN(d.getTime())?null:d;
+}
+
+function inPeriod(r){
+ const p=$("periode").value;
+ if(p==="all")return true;
+ const raw=r.approvedAt||r.createdAt||r.tanggal||"";
+ let d=null;
+ if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
+ else if(String(raw).match(/^\d{4}-\d{2}-\d{2}$/))d=new Date(String(raw)+"T00:00:00");
+ else if(raw)d=new Date(raw);
+ if(!d||isNaN(d.getTime()))return true;
+ const now=new Date();
+ if(p==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+ if(p==="year")return d.getFullYear()===now.getFullYear();
+ return true;
+}
+
+async function loadOrders(){
+ const map=new Map();
+ const qs=[
+  query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of qs){
+  const s=await getDocs(q);
+  s.forEach(d=>{
+   const x={id:d.id,...d.data()};
+   if(!map.has(d.id))map.set(d.id,x);
+  });
+ }
+ orders=[...map.values()];
+}
+
+function renderRekap(){
+ const search=$("search").value.trim().toLowerCase();
+ const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return !search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
+ let qty=0,nilai=0,up=0,kas=0,sisaTotal=0;
+ const rows=data.map(r=>{const items=itemList(r),q=items.reduce((a,x)=>a+x.qty,0),value=items.reduce((a,x)=>a+x.total,0);const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);const st=String(r.status||"tagihan").toLowerCase()==="lunas"?"lunas":"tagihan";qty+=q;nilai+=value;up+=q*1000;kas+=q*4000;sisaTotal+=sisa;const m=r.member||r.pelanggan||{},due=dueDate(r);return `<tr><td><b>${esc(r.nomorNota||r.id)}</b></td><td>${esc(m.nama||"-")}</td><td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td><td>${due?due.toLocaleDateString("id-ID"):"-"}</td><td class="num">${q.toLocaleString("id-ID")}</td><td class="num">${rp(value)}</td><td class="num">${rp(q*1000)}</td><td class="num">${rp(q*4000)}</td><td class="num">${rp(sisa)}</td></tr>`;}).join("");
+ $("orderCount").textContent=data.length.toLocaleString("id-ID");$("qtyTotal").textContent=qty.toLocaleString("id-ID")+" pcs";$("nilaiTotal").textContent=rp(nilai);$("upTotal").textContent=rp(up);$("kasTotal").textContent=rp(kas);$("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="9" class="empty">Belum ada order member pada periode ini.</td></tr>';
+}
+function renderAll(){if(!ready)return;renderRekap();}
+$("periode").onchange=renderAll;$("search").oninput=renderAll;$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+onAuthStateChanged(auth,async u=>{if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};ownerUid=ownerOf(profile);$("email").textContent=u.email||"-";await loadOrders();ready=true;renderAll();notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");}catch(e){console.error(e);notice("Gagal memuat Rekap Order Member: "+e.message,"err");}});
+</script></body></html>
