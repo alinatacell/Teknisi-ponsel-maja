@@ -141,24 +141,24 @@ body.dark td{border-color:#334155}
 
   <div class="summary-grid">
    <div class="metric blue">
-    <div class="label">Jumlah Stock Total</div>
+    <div class="label">Jumlah Stock Total + UP + Kas</div>
     <div class="value" id="stockTotalQty">0 pcs</div>
     <div class="sub" id="stockTotalNominal">Rp 0</div>
    </div>
    <div class="metric orange">
-    <div class="label">Stock Di Order</div>
+    <div class="label">Stock Di Order + UP + Kas</div>
     <div class="value" id="orderStockQty">0 pcs</div>
     <div class="sub" id="orderStockNominal">Rp 0</div>
    </div>
    <div class="metric green">
-    <div class="label">Sisa Stock</div>
+    <div class="label">Sisa Stock + UP + Kas</div>
     <div class="value" id="remainingStockQty">0 pcs</div>
     <div class="sub" id="remainingStockNominal">Rp 0</div>
    </div>
    <div class="metric">
-    <div class="label">Nilai Modal Total</div>
+    <div class="label">Nilai Total + UP + Kas</div>
     <div class="value" id="modalTotal">Rp 0</div>
-    <div class="sub">Stock total + stock yang sudah di-order</div>
+    <div class="sub">Nilai stock + UP Pengelola + Uang Kas</div>
    </div>
   </div>
  </div>
@@ -561,13 +561,20 @@ function renderStock(){
  $("preFeeRemainingStockNominal").textContent=rp(sisaNom);
  $("preFeeModalTotal").textContent=rp(totalNom);
 
+ // Panel lama = NILAI SETELAH ditambah UP Pengelola + Uang Kas.
+ // Dasar fee: qty order member x Rp5.000.
+ const feeQtyForStock = orderQty;
+ const upForStock = feeQtyForStock * 1000;
+ const kasForStock = feeQtyForStock * 4000;
+ const totalFeeForStock = upForStock + kasForStock;
+
  $("stockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
- $("stockTotalNominal").textContent=rp(totalNom);
+ $("stockTotalNominal").textContent=rp(totalNom + totalFeeForStock);
  $("orderStockQty").textContent=orderQty.toLocaleString("id-ID")+" pcs";
- $("orderStockNominal").textContent=rp(orderNom);
+ $("orderStockNominal").textContent=rp(orderNom + totalFeeForStock);
  $("remainingStockQty").textContent=sisaQty.toLocaleString("id-ID")+" pcs";
  $("remainingStockNominal").textContent=rp(sisaNom);
- $("modalTotal").textContent=rp(totalNom);
+ $("modalTotal").textContent=rp(totalNom + totalFeeForStock);
 
  $("stockTable").innerHTML=filtered.length?filtered.map(x=>`
   <tr>
