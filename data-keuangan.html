@@ -162,46 +162,7 @@ body.dark td{border-color:#334155}
    </div>
   </div>
  </div>
-
- <div class="card">
-  <div class="title">RINCIAN STOCK PER PRODUK</div>
-  <div class="table-wrap">
-   <table>
-    <thead><tr>
-     <th>Produk</th><th>Kode</th><th class="num">Stock Total</th><th class="num">Di Order</th><th class="num">Sisa Stock</th>
-     <th class="num">Modal/PCS</th><th class="num">Nominal Total</th><th class="num">Nominal Order</th><th class="num">Nominal Sisa</th>
-    </tr></thead>
-    <tbody id="stockTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
-
- <div class="card">
-  <div class="title">2. NOMINAL MASING-MASING TAGIHAN MEMBER</div>
-  <div class="summary-grid">
-   <div class="metric red">
-    <div class="label">Jumlah Tagihan</div>
-    <div class="value" id="billCount">0</div>
-    <div class="sub">Order member belum lunas</div>
-   </div>
-   <div class="metric orange">
-    <div class="label">Total Piutang</div>
-    <div class="value" id="billTotal">Rp 0</div>
-    <div class="sub">Akumulasi sisa tagihan</div>
-   </div>
-  </div>
-  <div class="table-wrap" style="margin-top:12px">
-   <table>
-    <thead><tr>
-     <th>Nota</th><th>Member</th><th>Jatuh Tempo</th><th>Status</th>
-     <th class="num">Total Order</th><th class="num">DP</th><th class="num">Dibayar</th><th class="num">Sisa Tagihan</th>
-    </tr></thead>
-    <tbody id="billTable"><tr><td colspan="8" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
-
- <div class="card">
+<div class="card">
   <div class="title">3. UANG PENGELOLA & UANG KAS</div>
   <div class="section-note">
    Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
@@ -262,6 +223,45 @@ body.dark td{border-color:#334155}
    &nbsp; | &nbsp;
    Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
   </div>
+ <div class="card">
+  <div class="title">RINCIAN STOCK PER PRODUK</div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr>
+     <th>Produk</th><th>Kode</th><th class="num">Stock Total</th><th class="num">Di Order</th><th class="num">Sisa Stock</th>
+     <th class="num">Modal/PCS</th><th class="num">Nominal Total</th><th class="num">Nominal Order</th><th class="num">Nominal Sisa</th>
+    </tr></thead>
+    <tbody id="stockTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
+
+ <div class="card">
+  <div class="title">2. NOMINAL MASING-MASING TAGIHAN MEMBER</div>
+  <div class="summary-grid">
+   <div class="metric red">
+    <div class="label">Jumlah Tagihan</div>
+    <div class="value" id="billCount">0</div>
+    <div class="sub">Order member belum lunas</div>
+   </div>
+   <div class="metric orange">
+    <div class="label">Total Piutang</div>
+    <div class="value" id="billTotal">Rp 0</div>
+    <div class="sub">Akumulasi sisa tagihan</div>
+   </div>
+  </div>
+  <div class="table-wrap" style="margin-top:12px">
+   <table>
+    <thead><tr>
+     <th>Nota</th><th>Member</th><th>Jatuh Tempo</th><th>Status</th>
+     <th class="num">Total Order</th><th class="num">DP</th><th class="num">Dibayar</th><th class="num">Sisa Tagihan</th>
+    </tr></thead>
+    <tbody id="billTable"><tr><td colspan="8" class="empty">Memuat...</td></tr></tbody>
+   </table>
+  </div>
+ </div>
+
+ 
   <div class="table-wrap expense-table">
    <table>
     <thead><tr>
