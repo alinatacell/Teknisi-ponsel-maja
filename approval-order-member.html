@@ -143,15 +143,55 @@ function recalcOrder(id){
  const sum=$("sum_"+id);
  if(sum)sum.innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br>DP tercatat: <b>${rp(dp)}</b> • Sisa estimasi: <b>${rp(sisa)}</b><br><small>Total dihitung otomatis dari QTY yang disetujui.</small>`;
 }
-function checkStock(id){
+function stockNumber(d){
+ return Number(d?.sisa ?? d?.sisaStok ?? d?.stokTersedia ?? d?.stokAkhir ?? d?.pcs ?? d?.ready ?? d?.stok ?? d?.qty ?? d?.jumlah ?? d?.stock ?? 0)||0;
+}
+function stockMatch(x,d,docId){
+ const xid=String(x.produkId||x.id||"").trim().toLowerCase();
+ const xkode=String(x.kode||x.kodeProduk||"").trim().toLowerCase();
+ const xbar=String(x.barcode||x.kodeBarcode||"").trim().toLowerCase();
+ const xname=String(x.nama||x.namaProduk||x.name||"").trim().toLowerCase();
+ const did=String(docId||"").trim().toLowerCase();
+ const dkode=String(d.kode||d.kodeProduk||d.sku||d.code||"").trim().toLowerCase();
+ const dbar=String(d.barcode||d.kodeBarcode||d.sku||"").trim().toLowerCase();
+ const dname=String(d.nama||d.namaProduk||d.name||"").trim().toLowerCase();
+ return (xid&&(xid===did||xid===dkode||xid===dbar)) || (xkode&&(xkode===did||xkode===dkode||xkode===dbar)) || (xbar&&(xbar===did||xbar===dbar)) || (xname&&xname===dname);
+}
+async function findStockDoc(x){
+ const candidates=[];
+ const seen=new Set();
+ const qs=[
+  query(collection(db,"stok"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"stok"),where("ownerId","==",ownerUid)),
+  query(collection(db,"stok"),where("uid","==",ownerUid)),
+  query(collection(db,"stok"),where("owner","==",ownerUid))
+ ];
+ for(const q of qs){
+  try{const snap=await getDocs(q);snap.forEach(ds=>{if(!seen.has(ds.id)){seen.add(ds.id);candidates.push(ds)}})}catch(e){}
+ }
+ // Sama seperti halaman Stok: bila query owner tidak menemukan dokumen, coba baca koleksi stok.
+ if(!candidates.length){
+  try{const snap=await getDocs(collection(db,"stok"));snap.forEach(ds=>{if(!seen.has(ds.id)){seen.add(ds.id);candidates.push(ds)}})}catch(e){}
+ }
+ const matched=candidates.filter(ds=>stockMatch(x,ds.data()||{},ds.id));
+ if(!matched.length)return null;
+ // Jika ada dokumen duplikat produk, pilih stok aktif terbesar; ini mencegah dokumen lama 0 menutupi stok aktual 7.
+ matched.sort((a,b)=>stockNumber(b.data())-stockNumber(a.data()));
+ return matched[0];
+}
+async function checkStock(id){
  const r=rows.find(x=>x.id===id);if(!r)return;
- normalizeItems(r).forEach(async(x,i)=>{
-  if(!x.produkId){$(`stock_${id}_${i}`).textContent="Produk manual";return}
-  try{const s=await getDoc(doc(db,"stok",x.produkId));if(!s.exists()){$(`stock_${id}_${i}`).innerHTML='<span class="stock-no">STOK TIDAK ADA</span>';return}
-   const d=s.data()||{},own=String(d.ownerUid||d.ownerId||"");const st=Number(d.sisa??d.stok??0)||0;
-   $(`stock_${id}_${i}`).innerHTML=own===ownerUid?`<span class="${st>=x.qty?"stock-ok":"stock-no"}">Stok: ${st} • ${st>=x.qty?"TERSEDIA":"KURANG"}</span>`:'<span class="stock-no">BUKAN STOK AKUN</span>';
-  }catch(e){$(`stock_${id}_${i}`).textContent="Gagal cek stok"}
- });
+ for(const [i,x] of normalizeItems(r).entries()){
+  const el=$(`stock_${id}_${i}`);
+  if(!el)continue;
+  if(!x.produkId && !x.kode && !x.nama){el.textContent="Produk manual";continue}
+  try{
+   const s=await findStockDoc(x);
+   if(!s){el.innerHTML='<span class="stock-no">STOK TIDAK ADA</span>';continue}
+   const d=s.data()||{},own=String(d.ownerUid||d.ownerId||d.uid||d.owner||"");const st=stockNumber(d);
+   el.innerHTML=(!own||own===ownerUid)?`<span class="${st>=x.qty?"stock-ok":"stock-no"}">Stok: ${st} • ${st>=x.qty?"TERSEDIA":"KURANG"}</span>`:'<span class="stock-no">BUKAN STOK AKUN</span>';
+  }catch(e){console.error("Cek stok",e);el.textContent="Gagal cek stok"}
+ }
 }
 window.approveOrder=async id=>{
  const r=rows.find(x=>x.id===id);if(!r)return;
@@ -164,10 +204,28 @@ window.approveOrder=async id=>{
    const fresh=await tx.get(ref);if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
    const freshData=fresh.data()||{};if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
    if(String(freshData.status||"")!=="menunggu_approval")throw Error("Pesanan sudah diproses.");
-   const stockSnaps=[];
-   for(const x of approved){if(!x.produkId)throw Error("Produk manual tidak dapat diproses approval stok.");stockSnaps.push({x,s:await tx.get(doc(db,"stok",x.produkId))})}
+   // Cari dokumen stok yang benar berdasarkan produk/kode/nama, bukan hanya ID produk.
+   // Halaman Stok juga memakai pola ini karena dapat ada dokumen duplikat dengan nilai stok berbeda.
+   const stockRefs=[];
+   for(const x of approved){
+    if(!x.produkId && !x.kode && !x.nama)throw Error("Produk manual tidak dapat diproses approval stok.");
+    const found=await findStockDoc(x);
+    if(!found)throw Error(`Stok ${x.nama} (${x.kode||x.produkId||"-"}) tidak ditemukan.`);
+    stockRefs.push({x,ref:found.ref});
+   }
    const changes=[];
-   for(const z of stockSnaps){if(!z.s.exists())throw Error(`Stok ${z.x.nama} tidak ditemukan.`);const d=z.s.data()||{},own=String(d.ownerUid||d.ownerId||"");if(own!==ownerUid)throw Error(`Stok ${z.x.nama} bukan milik akun ini.`);const old=Number(d.sisa??d.stok??0)||0;if(old<z.x.approvedQty)throw Error(`Stok ${z.x.nama} hanya ${old}, disetujui ${z.x.approvedQty}.`);changes.push({ref:doc(db,"stok",z.x.produkId),old,baru:old-z.x.approvedQty})}
+   const used=new Set();
+   for(const z of stockRefs){
+    if(used.has(z.ref.path))throw Error(`Produk ${z.x.nama} terduplikasi pada stok.`);
+    used.add(z.ref.path);
+    const s=await tx.get(z.ref);
+    if(!s.exists())throw Error(`Stok ${z.x.nama} tidak ditemukan.`);
+    const d=s.data()||{},own=String(d.ownerUid||d.ownerId||d.uid||d.owner||"");
+    if(own && own!==ownerUid)throw Error(`Stok ${z.x.nama} bukan milik akun ini.`);
+    const old=stockNumber(d);
+    if(old<z.x.approvedQty)throw Error(`Stok ${z.x.nama} hanya ${old}, disetujui ${z.x.approvedQty}.`);
+    changes.push({ref:z.ref,old,baru:old-z.x.approvedQty});
+   }
    for(const c of changes)tx.update(c.ref,{sisa:c.baru,stok:c.baru,status:c.baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
    const total=approved.reduce((a,x)=>a+(x.harga*x.approvedQty-Math.min(x.diskon,x.harga*x.approvedQty)),0);
    const dp=Math.min(Number(freshData.dp||freshData.uangMuka||0),total),sisa=Math.max(0,total-dp);
