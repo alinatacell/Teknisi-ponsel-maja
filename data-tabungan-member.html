@@ -29,6 +29,8 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 <div class="metric blue"><div class="label">Total Member</div><div class="value" id="totalMember">0</div><div class="sub">Akun member pada owner ini</div></div>
 <div class="metric green"><div class="label">Total Tabungan</div><div class="value" id="totalTabungan">Rp 0</div><div class="sub">Dihitung dari order yang sudah approved</div></div>
 <div class="metric orange"><div class="label">Total Qty</div><div class="value" id="totalQty">0 pcs</div><div class="sub">Qty order yang masuk tabungan</div></div>
+<div class="metric green"><div class="label">Total UP Pengelola</div><div class="value" id="totalUp">Rp 0</div><div class="sub">UP/Pcs × qty approved</div></div>
+<div class="metric orange"><div class="label">Total Kas Bulanan</div><div class="value" id="totalKas">Rp 0</div><div class="sub">1× per member per bulan kalender</div></div>
 <div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Saat ini belum ada transaksi pengambilan</div></div>
 </div>
 <div class="card"><div class="title">SALDO PER MEMBER</div>
@@ -55,14 +57,70 @@ function kode(a){return String(a.kodeMember||a.kode||"")}
 function tabunganDefault(a){const v=a.tabunganPerPcs??a.tabunganMember??a.tabunganMemberPerPcs;return Number(v??4000)||4000}
 function orderDate(r){const v=r.createdAt||r.approvedAt||r.updatedAt;if(v?.toDate)return v.toDate();if(v instanceof Date)return v;const raw=r.tanggal||r.date||r.created_at||'';const d=new Date(raw);return isNaN(d)?new Date():d;}
 function monthKey(r){const d=orderDate(r);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
-function itemList(r){const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({qty:Math.max(0,num(x.qty??x.jumlah)),tab:Number(x.tabunganPerPcs??r.tabunganPerPcs??r.tabunganMember??0)||0,up:Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??r.upPengelola??0)||0}));}
+function itemList(r){const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({qty:Math.max(0,num(x.qty??x.jumlah??x.quantity)),tab:Number(x.tabunganPerPcs??x.tabunganMember??r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??0)||0,up:Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0}));}
 function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||''),email:String(r.memberEmail||m.email||''),kode:String(m.kode||m.kodeMember||r.kodeMember||''),nama:String(m.nama||m.namaMember||r.memberNama||'')}}
-async function loadMembers(){const map=new Map();const qs=[query(collection(db,'users'),where('ownerUid','==',ownerUid))];for(const q of qs){const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...(d.data()||{})};const r=norm(x.role);if(['employee','reseller','member'].includes(r)&&!map.has(d.id))map.set(d.id,x)})}members=[...map.values()];}
-async function loadOrders(){const map=new Map();const qs=[query(collection(db,'order_member'),where('ownerUid','==',ownerUid)),query(collection(db,'order_member'),where('ownerId','==',ownerUid))];for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...(d.data()||{})})})}catch(e){console.warn('order_member',e)}}orders=[...map.values()].filter(r=>{const st=norm(r.status||r.approvalStatus||'');return st==='order_member'||st==='approved'||r.stokDikurangi===true});}
-function aggregate(){const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();members.forEach(m=>{const rec={member:m,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);byName.set(norm(nama(m)),rec)});function findRec(r){const k=orderMemberKey(r);return byId.get(k.uid)||byEmail.get(norm(k.email))||byCode.get(norm(k.kode))||byName.get(norm(k.nama))||null}orders.forEach(r=>{const rec=findRec(r);if(!rec)return;const items=itemList(r);const fallbackTab=Number(r.tabunganPerPcs??r.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??0)||0;const fallbackUp=Number(r.upPengelolaPerPcs??r.upPengelola??rec.member.upPengelolaPerPcs??rec.member.upPengelola??0)||0;items.forEach(x=>{const q=x.qty;const tab=x.tab||fallbackTab;const up=x.up||fallbackUp;rec.qty+=q;rec.total+=q*tab;rec.up+=q*up;if(q>0&&up>0)rec.upPcs=up});const kas=Number(r.kasBulanan??r.uangKasBulanan??rec.member.kasBulanan??rec.member.uangKasBulanan??0)||0;if(kas>0){const mk=monthKey(r);if(!rec.kasMonths.has(mk)){rec.kasMonths.add(mk);rec.kas+=kas}}});return[...byId.values()];}
-function render(){if(!ready)return;const search=norm($('search').value),sf=norm($('statusFilter').value);const data=aggregate().filter(r=>{const a=r.member;const text=[nama(a),email(a),wa(a),kode(a)].map(norm).join(' ');return(!search||text.includes(search))&&(!sf||norm(a.status||'aktif')===sf)});let total=0,up=0,kas=0,withdraw=0;data.forEach(r=>{total+=r.total;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});$('totalMember').textContent=data.length.toLocaleString('id-ID');$('totalTabungan').textContent=rp(total);$('totalUp').textContent=rp(up);$('totalKas').textContent=rp(kas);$('saldoTabungan').textContent=rp(total-withdraw);$('tbody').innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const upPcs=r.upPcs||Number(a.upPengelolaPerPcs??a.upPengelola??0)||0;const months=[...r.kasMonths].sort().join(', ')||'-';return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||'-')}</div></td><td>${esc(email(a)||'-')}</td><td>${esc(wa(a)||'-')}</td><td>${esc(kode(a)||'-')}</td><td class="num">${rp(tabunganDefault(a))}</td><td class="num">${r.qty.toLocaleString('id-ID')}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==='nonaktif'?'off':'active'}">${esc(a.status||'aktif')}</span></td></tr>`}).join(''):'<tr><td colspan="15" class="empty">Belum ada data member/order yang sesuai.</td></tr>';}
-async function load(){if(!ownerUid)return;notice('Memuat data member dan order...','ok');await Promise.all([loadMembers(),loadOrders()]);ready=true;render();notice(`Akun aktif • ${members.length} member • ${orders.length} order approved.`,'ok')}
+async function loadMembers(){
+ const map=new Map();
+ // Users adalah sumber identitas member bila aturan Firestore mengizinkan query owner.
+ // Jika query users ditolak, jangan hentikan halaman: identitas akan dibangun dari order_member.
+ try{
+   const qs=[query(collection(db,'users'),where('ownerUid','==',ownerUid)),query(collection(db,'users'),where('ownerId','==',ownerUid))];
+   for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...(d.data()||{})};const r=norm(x.role);if(['employee','karyawan','reseller','member'].includes(r)&&!map.has(d.id))map.set(d.id,x)})}catch(e){console.warn('users query dilewati:',e)}}
+ }catch(e){console.warn('users load:',e)}
+ members=[...map.values()];
+}
+async function loadOrders(){const map=new Map();const qs=[query(collection(db,'order_member'),where('ownerUid','==',ownerUid)),query(collection(db,'order_member'),where('ownerId','==',ownerUid))];for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...(d.data()||{})})})}catch(e){console.warn('order_member',e)}}orders=[...map.values()].filter(r=>{const ap=norm(r.approvalStatus||'');const st=norm(r.status||'');return ap==='approved'||['order_member','approved','tagihan','lunas'].includes(st);});}
+function aggregate(){
+ const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
+ members.forEach(m=>{const rec={member:m,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);byName.set(norm(nama(m)),rec)});
+ function findRec(r){const k=orderMemberKey(r);return byId.get(k.uid)||byEmail.get(norm(k.email))||byCode.get(norm(k.kode))||byName.get(norm(k.nama))||null}
+ orders.forEach(r=>{
+   const rec=findRec(r);if(!rec)return;
+   const fallbackTab=Number(r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??0)||0;
+   const fallbackUp=Number(r.upPengelolaPerPcs??r.upPengelola??0)||0;
+   const items=itemList(r);
+   if(items.length){items.forEach(x=>{const q=x.qty,tab=x.tab||fallbackTab,up=x.up||fallbackUp;rec.qty+=q;rec.total+=q*tab;rec.up+=q*up;if(q>0&&up>0)rec.upPcs=up});}
+   else{const q=Math.max(0,num(r.totalQty??r.qty??r.jumlah));rec.qty+=q;rec.total+=Number(r.totalTabunganOrder??0)||q*fallbackTab;rec.up+=Number(r.totalUpPengelolaOrder??0)||q*fallbackUp;if(q>0&&fallbackUp>0)rec.upPcs=fallbackUp;}
+   const kas=Number(r.kasBulanan??r.uangKasBulanan??rec.member.kasBulanan??rec.member.uangKasBulanan??0)||0;
+   if(kas>0){const mk=monthKey(r);if(!rec.kasMonths.has(mk)){rec.kasMonths.add(mk);rec.kas+=kas}}
+ });
+ return[...byId.values()];
+}
+function render(){if(!ready)return;const search=norm($('search').value),sf=norm($('statusFilter').value);const data=aggregate().filter(r=>{const a=r.member;const text=[nama(a),email(a),wa(a),kode(a)].map(norm).join(' ');return(!search||text.includes(search))&&(!sf||norm(a.status||'aktif')===sf)});let total=0,up=0,kas=0,withdraw=0;data.forEach(r=>{total+=r.total;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});$('totalMember').textContent=data.length.toLocaleString('id-ID');$('totalTabungan').textContent=rp(total);$('totalQty').textContent=data.reduce((a,r)=>a+r.qty,0).toLocaleString('id-ID')+' pcs';$('totalUp').textContent=rp(up);$('totalKas').textContent=rp(kas);$('saldoTabungan').textContent=rp(total-withdraw);$('tbody').innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const upPcs=r.upPcs||Number(a.upPengelolaPerPcs??a.upPengelola??0)||0;const months=[...r.kasMonths].sort().join(', ')||'-';return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||'-')}</div></td><td>${esc(email(a)||'-')}</td><td>${esc(wa(a)||'-')}</td><td>${esc(kode(a)||'-')}</td><td class="num">${rp(tabunganDefault(a))}</td><td class="num">${r.qty.toLocaleString('id-ID')}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==='nonaktif'?'off':'active'}">${esc(a.status||'aktif')}</span></td></tr>`}).join(''):'<tr><td colspan="15" class="empty">Belum ada data member/order yang sesuai.</td></tr>';}
+async function load(){
+ if(!ownerUid)return;
+ notice('Menghubungkan Firebase FIXZY...','ok');
+ await Promise.all([loadMembers(),loadOrders()]);
+ // Bila collection users tidak bisa di-query, bentuk daftar member dari order approved.
+ if(!members.length){
+   const map=new Map();
+   orders.forEach(r=>{
+     const m=r.member||r.pelanggan||{};
+     const k=String(r.memberUid||r.memberId||m.uid||m.userId||r.memberEmail||m.email||m.kode||m.kodeMember||m.nama||'').trim().toLowerCase();
+     if(!k)return;
+     if(!map.has(k))map.set(k,{id:String(r.memberUid||r.memberId||m.uid||m.userId||k),...m,email:r.memberEmail||m.email||'',kodeMember:m.kodeMember||m.kode||r.kodeMember||'',nama:m.nama||m.namaMember||r.memberNama||'-',role:'member',status:m.status||'aktif'});
+   });
+   members=[...map.values()];
+ }
+ ready=true;render();notice(`Firebase FIXZY terhubung • ${members.length} member • ${orders.length} order approved.`,'ok')
+}
 window.muatUlang=async()=>{if(!ready)return;await load()};window.resetFilter=()=>{$('search').value='';$('statusFilter').value='';render()};$('search').oninput=render;$('statusFilter').onchange=render;$('dark').onclick=()=>{document.body.classList.toggle('dark');$('dark').textContent=document.body.classList.contains('dark')?'☀️':'🌙'};
-onAuthStateChanged(auth,async u=>{if(!u){notice('Belum login. Silakan login melalui FIXZY.','err');return}try{uid=u.uid;const s=await getDoc(doc(db,'users',uid));if(!s.exists())throw Error('Profil akun tidak ditemukan.');profile=s.data()||{};ownerUid=ownerOf(profile);$('email').textContent=u.email||'-';await load()}catch(e){console.error(e);notice('Gagal memuat Data Tabungan Member: '+e.message,'err')}});
+onAuthStateChanged(auth,async u=>{
+ if(!u){notice('Menunggu sesi login FIXZY...');return}
+ try{
+   uid=u.uid;
+   const s=await getDoc(doc(db,'users',uid));
+   if(!s.exists())throw Error('Profil akun tidak ditemukan di users/'+uid);
+   profile=s.data()||{};
+   const role=norm(profile.role||profile.profileRole);
+   if(role==='superadmin'||role==='super_admin'||norm(u.email)==='servicehpmaja@gmail.com')throw Error('SUPERADMIN tidak memiliki akses data bisnis Owner.');
+   ownerUid=(role==='owner'||profile.isOwner===true)?uid:String(profile.ownerUid||profile.ownerId||'').trim();
+   if(!ownerUid)throw Error('ownerUid/ownerId pemilik akun tidak ditemukan.');
+   $('email').textContent=u.email||profile.email||'-';
+   await load();
+ }catch(e){console.error(e);notice('Gagal memuat Data Tabungan Member: '+(e?.message||e),'err')}
+});
+// Android/iframe: beri waktu Firebase Auth memulihkan sesi yang sudah tersimpan.
+[500,1500,3000,5000].forEach(ms=>setTimeout(()=>{if(auth.currentUser&&!ready)onAuthStateChanged(auth,()=>{})},ms));
 </script>
 </body></html>
