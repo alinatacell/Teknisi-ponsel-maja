@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FIXZY | Gabungan Order Member</title>
+<style>
+*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--green:#16a34a;--red:#dc2626;--muted:#64748b}
+html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:88px 12px 30px}.notice{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:10px}.notice.ok{color:#15803d}.notice.err{color:#dc2626}
+.card{background:#fff;border:2px solid #111827;border-radius:14px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}.title{font-size:18px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:10px;margin-bottom:12px}.sub{font-size:12px;color:var(--muted);line-height:1.6}
+.filters{display:grid;grid-template-columns:1.5fr 1fr;gap:10px}label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}input,select{width:100%;padding:11px;border:2px solid #111827;border-radius:9px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.stat{background:#fff;border:2px solid #111827;border-radius:12px;padding:12px;box-shadow:3px 3px 0 #111827}.stat small{display:block;color:var(--muted);font-size:10px;font-weight:900}.stat b{display:block;font-size:20px;margin-top:5px}
+.member{background:#fff;border:2px solid #111827;border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:4px 4px 0 #111827}.member-head{background:#0b0f14;color:#fff;padding:13px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.member-name{font-size:17px;font-weight:900}.member-meta{font-size:11px;color:#cbd5e1;line-height:1.6;margin-top:3px}.count{background:#ffc107;color:#111827;border:2px solid #111827;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;white-space:nowrap}
+.member-body{padding:12px}.order{border:2px solid #111827;border-radius:11px;margin-bottom:10px;overflow:hidden}.order:last-child{margin-bottom:0}.order-head{padding:10px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px}.nota{font-weight:900}.date{font-size:10px;color:var(--muted);margin-top:3px}.pay{font-size:10px;font-weight:900;padding:5px 8px;border-radius:999px;border:1px solid #f59e0b;background:#fef3c7;white-space:nowrap}.pay.cash{background:#dcfce7;border-color:#22c55e;color:#166534}.items{padding:0}.item{padding:9px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;gap:10px}.item:last-child{border-bottom:0}.item-name{font-weight:900;font-size:13px}.item-meta{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.5}.item-price{font-weight:900;font-size:12px;white-space:nowrap;text-align:right}.summary{padding:10px;background:#fffbeb;border-top:2px solid #111827;display:flex;justify-content:space-between;gap:8px;font-size:11px}.summary b{font-size:13px}.member-total{margin-top:10px;padding:11px;border:2px dashed #64748b;border-radius:9px;background:#f8fafc;font-size:12px;line-height:1.7}.member-total strong{font-size:14px}.empty{text-align:center;padding:30px;color:var(--muted);font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.linkbtn{display:inline-block;text-decoration:none;background:#ffc107;color:#111827;border:2px solid #111827;border-radius:9px;padding:10px 13px;font-weight:900;box-shadow:3px 3px 0 #111827}.waSupplier{display:inline-block;text-decoration:none;background:#16a34a;color:#fff;border:2px solid #111827;border-radius:9px;padding:10px 13px;font-weight:900;box-shadow:3px 3px 0 #111827;cursor:pointer}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .stat,body.dark .member,body.dark .order{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .member-total{background:#0f172a;border-color:#64748b}body.dark .sub,body.dark .date,body.dark .item-meta,body.dark label,body.dark .stat small{color:#94a3b8}
+@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr}}
+@media(max-width:600px){header{height:68px}.logo{width:48px;height:48px}.hi h1{font-size:16px}main{padding-top:80px}.member-head,.order-head{flex-direction:column}.count,.pay{align-self:flex-start}.stats{gap:8px}.stat b{font-size:18px}}
+</style>
+</head>
+<body>
+<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Gabungan Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="load()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
+<main>
+<div id="notice" class="notice">Menghubungkan akun FIXZY...</div>
+<div class="card"><div class="title">Gabungan Pesanan Member — Belum Approval</div><div class="sub">Semua pesanan member yang masih <b>menunggu approval</b> digabung berdasarkan member. CASH dan TEMPO tetap dibedakan dan tidak mengubah data asli di <b>penjualan</b>.</div><div class="filters" style="margin-top:12px"><div><label>CARI MEMBER / EMAIL / KODE / NOTA / PRODUK</label><input id="search" placeholder="Ketik pencarian..."></div><div><label>URUTKAN</label><select id="sort"><option value="latest">Order terbaru</option><option value="member">Nama member</option><option value="qty">Qty terbesar</option><option value="total">Nilai terbesar</option></select></div></div></div>
+<div id="stats" class="stats"></div><div id="list"></div>
+</main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e35b5d6dc7"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let uid="",ownerUid="",profile={},role="",rows=[];
+const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])),rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+function msg(t,c=""){$("notice").textContent=t;$('notice').className="notice "+c}
+function getOwner(d){const r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid}
+function memberOf(r){return r.member||r.pelanggan||{}}
+function itemName(x){return String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-")}
+function itemsOf(r){const a=Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]);return a.map(x=>({...x,nama:itemName(x),kode:x.kode||x.kodeProduk||"-",qty:Number(x.qty??x.jumlah??1)||0,harga:Number(x.harga??x.hargaJual??0)||0,diskon:Number(x.diskon??x.discount??0)||0}))}
+function paymentType(r){const t=String(r.jenisHarga||r.tipeTransaksi||r.tipeOrder||"").toLowerCase();return(t.includes("cash")||t.includes("tunai"))?"CASH":"TEMPO"}
+function orderTotal(r){if(Number.isFinite(Number(r.total))&&Number(r.total)>0)return Number(r.total);return itemsOf(r).reduce((a,x)=>a+(x.harga*x.qty-Math.min(x.diskon,x.harga*x.qty)),0)}
+function dateValue(r){const v=r.createdAt||r.tanggal||r.updatedAt||"";if(v?.seconds)return v.seconds*1000;const d=new Date(v);return isNaN(d)?0:d.getTime()}
+async function load(){
+ if(!ownerUid){msg("Owner belum ditemukan.","err");return}
+ msg("Memuat order member yang belum approval...");
+ const map=new Map();
+ const qs=[query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),query(collection(db,"penjualan"),where("ownerId","==",ownerUid))];
+ for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...(d.data()||{})};const st=String(x.status||x.approvalStatus||"").toLowerCase();const src=String(x.sumber||"").toLowerCase();const tipe=String(x.tipeTransaksi||x.tipeOrder||"").toLowerCase();const isMember=src==="member"||tipe.includes("member")||x.jenisTransaksi==="member";const pending=st==="menunggu_approval"||st==="pending"||st==="menunggu approval";if(isMember&&pending)map.set(d.id,x)})}catch(e){console.warn("query penjualan",e)}}
+ rows=[...map.values()];render();msg(`Akun aktif • ${rows.length} order menunggu approval.`,"ok")
+}
+function groupRows(){const groups=new Map();for(const r of rows){const m=memberOf(r);const key=String(r.memberUid||m.uid||m.userId||m.email||m.kode||m.nama||r.id);if(!groups.has(key))groups.set(key,{key,member:m,orders:[]});groups.get(key).orders.push(r)}return [...groups.values()]}
+function render(){
+ const key=$("search").value.trim().toLowerCase();let groups=groupRows();
+ groups=groups.map(g=>({...g,orders:g.orders.filter(r=>{const m=memberOf(r),txt=[m.nama,m.email,m.kode,m.wa,r.nomorNota,r.nota,...itemsOf(r).flatMap(x=>[x.nama,x.kode])].join(" ").toLowerCase();return txt.includes(key)})})).filter(g=>g.orders.length);
+ groups.forEach(g=>g.orders.sort((a,b)=>dateValue(b)-dateValue(a)));
+ const sort=$("sort").value;groups.sort((a,b)=>{if(sort==="member")return String(a.member.nama||a.member.kode||"").localeCompare(String(b.member.nama||b.member.kode||""));if(sort==="qty")return b.orders.reduce((s,r)=>s+itemsOf(r).reduce((a,x)=>a+x.qty,0),0)-a.orders.reduce((s,r)=>s+itemsOf(r).reduce((a,x)=>a+x.qty,0),0);if(sort==="total")return b.orders.reduce((s,r)=>s+orderTotal(r),0)-a.orders.reduce((s,r)=>s+orderTotal(r),0);return Math.max(...b.orders.map(dateValue))-Math.max(...a.orders.map(dateValue))});
+ const all=groups.flatMap(g=>g.orders),qty=all.reduce((s,r)=>s+itemsOf(r).reduce((a,x)=>a+x.qty,0),0),total=all.reduce((s,r)=>s+orderTotal(r),0);
+ $("stats").innerHTML=`<div class="stat"><small>MEMBER</small><b>${groups.length}</b></div><div class="stat"><small>NOTA</small><b>${all.length}</b></div><div class="stat"><small>TOTAL QTY</small><b>${qty.toLocaleString("id-ID")} pcs</b></div><div class="stat"><small>TOTAL ORDER</small><b>${rp(total)}</b></div>`;
+ $("list").innerHTML=groups.length?groups.map(renderGroup).join(""): '<div class="card empty">Tidak ada order member yang menunggu approval.</div>';
+}
+function renderGroup(g){const m=g.member||{};const total=g.orders.reduce((s,r)=>s+orderTotal(r),0),qty=g.orders.reduce((s,r)=>s+itemsOf(r).reduce((a,x)=>a+x.qty,0),0);return `<section class="member"><div class="member-head"><div><div class="member-name">${esc(m.nama||m.namaMember||"Member")}</div><div class="member-meta">${esc(m.email||"-")} • Kode: ${esc(m.kode||"-")}<br>WA: ${esc(m.wa||"-")}</div></div><span class="count">${g.orders.length} NOTA • ${qty} PCS</span></div><div class="member-body">${g.orders.map(renderOrder).join("")}<div class="member-total">Total gabungan member: <strong>${rp(total)}</strong> • ${qty} pcs</div><div class="actions"><button class="waSupplier" onclick="sendSupplierWA(${JSON.stringify(g.key)})">📲 Kirim Order ke WhatsApp</button></div></div></section>`}
+
+function productParts(x){
+ const brand=String(x.brand||x.merek||x.merk||x.namaBrand||x.brands||"").trim();
+ const tipe=String(x.tipe||x.type||x.model||x.namaTipe||x.namaProduk||x.nama||x.kode||"-").trim();
+ const merk=String(x.merk||x.merek||"").trim();
+ return {brand,tipe,merk};
+}
+function aggregateProducts(g){
+ const map=new Map();
+ g.orders.forEach(r=>itemsOf(r).forEach(x=>{
+   const p=productParts(x);
+   const key=[p.brand,p.tipe,p.merk,x.kode||x.kodeProduk||"-"].map(v=>String(v).toLowerCase()).join("|");
+   if(!map.has(key))map.set(key,{brand:p.brand,tipe:p.tipe,merk:p.merk,kode:x.kode||x.kodeProduk||"-",qty:0});
+   map.get(key).qty+=Number(x.qty)||0;
+ }));
+ return [...map.values()];
+}
+function supplierMessage(g){
+ const products=aggregateProducts(g);
+ let t="*ORDER PRODUK MEMBER*\n\n";
+ t+="Mohon diproses sesuai stok yang tersedia.\n\n";
+ t+="*DAFTAR ORDER:*\n";
+ products.forEach((p,i)=>{
+   const parts=[];
+   if(p.brand) parts.push(p.brand);
+   if(p.tipe) parts.push(p.tipe);
+   if(p.merk && p.merk.toLowerCase()!==p.brand.toLowerCase()) parts.push(p.merk);
+   t+=`${i+1}. ${parts.join(" / ")||p.kode} — ${p.qty} pcs\n`;
+ });
+ const qty=products.reduce((s,p)=>s+p.qty,0);
+ t+=`\n*TOTAL: ${qty} pcs*\n\nTerima kasih.`;
+ return t;
+}
+window.sendSupplierWA=function(key){
+ const g=groupRows().find(x=>x.key===key);
+ if(!g)return;
+ const text=supplierMessage(g);
+ // Tanpa nomor pemasok. WhatsApp akan meminta pengguna memilih kontak tujuan.
+ window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
+};
+function renderOrder(r){const m=memberOf(r),type=paymentType(r),its=itemsOf(r),total=orderTotal(r),date=r.tanggal||"-";const dp=Number(r.dp??r.uangMuka??0)||0;const sisa=Math.max(0,total-dp);return `<article class="order"><div class="order-head"><div><div class="nota">${esc(r.nomorNota||r.nota||r.id)}</div><div class="date">${esc(date)} • ${esc(m.nama||"-")}</div></div><span class="pay ${type==='CASH'?'cash':''}">${type}</span></div><div class="items">${its.map(x=>`<div class="item"><div><div class="item-name">${esc(x.nama)}</div><div class="item-meta">Kode: ${esc(x.kode)} • Qty: <b>${x.qty} pcs</b></div></div><div class="item-price">${rp(x.harga*x.qty-Math.min(x.diskon,x.harga*x.qty))}</div></div>`).join("")}</div><div class="summary"><span>DP: <b>${rp(dp)}</b></span><span>Sisa: <b>${rp(sisa)}</b></span><span>Total: <b>${rp(total)}</b></span></div></article>`}
+$("search").addEventListener("input",render);$("sort").addEventListener("change",render);$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};role=String(profile.role||"").toLowerCase();ownerUid=getOwner(profile);$("email").textContent=u.email||"-";await load()}catch(e){console.error(e);msg(e.message||"Gagal memuat akun.","err")}});
+</script>
+</body>
+</html>
