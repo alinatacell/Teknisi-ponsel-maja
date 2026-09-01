@@ -328,7 +328,7 @@ body.dark textarea:focus{
 
 <script type="module">
 import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{
   getFirestore,collection,getDocs,getDoc,doc,query,where,
   addDoc,serverTimestamp
@@ -346,6 +346,7 @@ const cfg={
 const app=getApps().length?getApp():initializeApp(cfg);
 const auth=getAuth(app);
 const db=getFirestore(app);
+setPersistence(auth,browserLocalPersistence).catch(e=>console.warn("Auth persistence:",e));
 const $=id=>document.getElementById(id);
 /* =========================
    DARK MODE
@@ -397,15 +398,60 @@ function bersihkan(){$("tanggal").value=today();$("sumberDana").value="kas";$("j
 window.bersihkan=bersihkan;
 $("sumberDana").addEventListener("change",()=>{if($("sumberDana").value==="pengelola")$("jenis").value="Pengeluaran Pengelola";else if($("jenis").value==="Pengeluaran Pengelola")$("jenis").value="Transportasi"});
 $("jenis").addEventListener("change",()=>{const j=$("jenis").value;if(j==="Pengeluaran Pengelola"||j==="Pengambilan UP Pengelola")$("sumberDana").value="pengelola";else $("sumberDana").value="kas";$("memberPickWrap").style.display=j==="Pengambilan Tabungan Member"?"block":"none";});
-async function ambilProfile(){if(!uid)return;try{const s=await getDoc(doc(db,"users",uid));if(s.exists())profile=s.data()||{}}catch(e){console.warn("Profil:",e.message)}ownerUid=profile.ownerUid||profile.ownerId||uid;namaKonter=String(profile.namaKonter||profile.konterName||profile.namaToko||profile.namaUsaha||profile.toko||profile.konter||"").trim();if(!namaKonter&&ownerUid!==uid){try{const s=await getDoc(doc(db,"users",ownerUid));if(s.exists()){const p=s.data()||{};namaKonter=String(p.namaKonter||p.konterName||p.namaToko||p.namaUsaha||p.toko||p.konter||"").trim()}}catch(e){}}$("konterNameHeader").textContent=namaKonter||"Nama Konter";$("ownerName").textContent=profile.nama||profile.namaPemilik||profile.namaLengkap||auth.currentUser?.displayName||"Akun FIXZY";$("ownerEmail").textContent=auth.currentUser?.email||"Firebase"}
+async function ambilProfile(){
+ if(!uid)throw Error("Sesi akun belum tersedia.");
+ const s=await getDoc(doc(db,"users",uid));
+ if(!s.exists())throw Error("Profil akun tidak ditemukan di Firebase.");
+ profile=s.data()||{};
+ const role=String(profile.role||"").toLowerCase();
+ if(role==="superadmin")throw Error("SUPERADMIN tidak memiliki akses ke data bisnis Owner.");
+ ownerUid=role==="owner"?uid:String(profile.ownerUid||profile.ownerId||"").trim()||uid;
+ namaKonter=String(profile.namaKonter||profile.konterName||profile.namaToko||profile.namaUsaha||profile.toko||profile.konter||"").trim();
+ if(!namaKonter&&ownerUid!==uid){
+  try{const os=await getDoc(doc(db,"users",ownerUid));if(os.exists()){const p=os.data()||{};namaKonter=String(p.namaKonter||p.konterName||p.namaToko||p.namaUsaha||p.toko||p.konter||"").trim()}}catch(e){console.warn("Owner profile:",e.message)}
+ }
+ $("konterNameHeader").textContent=namaKonter||"Nama Konter";
+ $("ownerName").textContent=role==="owner"?(profile.nama||profile.namaPemilik||profile.namaLengkap||auth.currentUser?.displayName||"Owner"): (profile.nama||profile.namaKaryawan||profile.namaLengkap||auth.currentUser?.displayName||"Karyawan");
+ $("ownerEmail").textContent=auth.currentUser?.email||profile.email||"Firebase";
+ window.fixzySession={uid,role,ownerUid,profile};
+}
+async function muatMember(){
+  const sel=$("memberPick");
+  if(!sel||!ownerUid)return;
+  const map=new Map();
+  for(const field of ["ownerUid","ownerId"]){
+    try{
+      const s=await getDocs(query(collection(db,"users"),where(field,"==",ownerUid)));
+      s.docs.forEach(d=>{
+        const x={id:d.id,...d.data()};
+        const role=String(x.role||"").toLowerCase();
+        if((role==="employee"||role==="reseller"||role==="member"||x.isMember===true)&&x.status!=="nonaktif")map.set(d.id,x);
+      });
+    }catch(e){console.warn("member",field,e.message)}
+  }
+  const arr=[...map.values()].sort((a,b)=>String(a.nama||a.namaKaryawan||a.name||a.email||"").localeCompare(String(b.nama||b.namaKaryawan||b.name||b.email||""),"id"));
+  sel.innerHTML='<option value="">-- Pilih Member --</option>'+arr.map(x=>`<option value="${esc(x.id)}">${esc(x.nama||x.namaKaryawan||x.name||x.email||x.id)}</option>`).join("");
+}
+
 async function ambilData(){rows=[];const map=new Map();for(const field of ["ownerUid","ownerId","uid"]){const value=field==="ownerUid"?ownerUid:uid;if(!value)continue;try{const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",value)));s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}))}catch(e){console.warn("pengeluaran",field,e.message)}}rows=[...map.values()].filter(r=>String(r.modul||"").toLowerCase()==="member")}
 function render(){const period=$("filterBulan").value||monthNow();const data=rows.filter(r=>String(r.tanggal||"").startsWith(period)).sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||"")));const total=data.reduce((s,r)=>s+(Number(r.nominal)||0),0);const kas=data.filter(r=>String(r.sumberDana||"kas").toLowerCase()==="kas").reduce((s,r)=>s+(Number(r.nominal)||0),0);const pengelola=data.filter(r=>String(r.sumberDana||"kas").toLowerCase()==="pengelola").reduce((s,r)=>s+(Number(r.nominal)||0),0);$("total").textContent=money(total);$("kas").textContent=money(kas);$("pengelola").textContent=money(pengelola);$("jumlah").textContent=data.length;$("tbody").innerHTML=data.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.tanggal||"-")}</td><td><span class="badge">${esc(r.jenis||"-")}</span></td><td>${esc(r.keterangan||"-")}</td><td class="num amount">${money(r.nominal)}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">Belum ada pengeluaran member pada bulan ini.</td></tr>'}
-async function simpan(){if(!uid){showPopup("Sesi Firebase belum tersedia","Buka halaman ini dari FIXZY yang sudah login.");return}const tanggal=$("tanggal").value||today(),jenis=$("jenis").value,sumberDana=$("sumberDana").value,memberId=$("memberPick")?.value||"",memberNama=$("memberPick")?.selectedOptions?.[0]?.textContent||"",nominal=Number(String($("nominal").value||"").replace(/[^0-9]/g,""))||0,keterangan=$("keterangan").value.trim();if(!nominal||nominal<1){showPopup("Nominal belum diisi","Masukkan nominal pengeluaran terlebih dahulu.");return}if((jenis==="Pengeluaran Pengelola")!==(sumberDana==="pengelola")){showPopup("Sumber dana tidak sesuai","Jenis Pengeluaran Pengelola harus memakai Hasil Pengelola; jenis lainnya memakai Uang Kas.");return}try{$("status").textContent="⏳ Menyimpan pengeluaran member ke Firebase...";await addDoc(collection(db,"pengeluaran"),{uid,ownerUid,email:auth.currentUser?.email||"",namaKonter:namaKonter||"",modul:"member",sumberDana,tanggal,jenis,memberId,memberNama,nominal,keterangan,createdBy:auth.currentUser?.uid||uid,createdAt:serverTimestamp()});bersihkan();await ambilData();render();$("status").innerHTML=`<span class="ok">✓ Pengeluaran Member berhasil disimpan • ${esc(jenis)} • ${money(nominal)}</span>`;showPopup("Berhasil disimpan",`Pengeluaran Member ${jenis} sebesar ${money(nominal)} sudah tersimpan di Firebase.`)}catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal menyimpan: ${esc(e.message||e)}</span>`;showPopup("Gagal menyimpan",e.message||String(e))}}
+async function simpan(){if(!uid){showPopup("Sesi Firebase belum tersedia","Buka halaman ini dari FIXZY yang sudah login.");return}const tanggal=$("tanggal").value||today(),jenis=$("jenis").value,sumberDana=$("sumberDana").value,memberId=$("memberPick")?.value||"",memberNama=$("memberPick")?.selectedOptions?.[0]?.textContent||"",nominal=Number(String($("nominal").value||"").replace(/[^0-9]/g,""))||0,keterangan=$("keterangan").value.trim();if(!nominal||nominal<1){showPopup("Nominal belum diisi","Masukkan nominal pengeluaran terlebih dahulu.");return}if(jenis==="Pengambilan Tabungan Member"&&!memberId){showPopup("Member belum dipilih","Pilih member untuk pengambilan tabungan.");return}if((jenis==="Pengeluaran Pengelola")!==(sumberDana==="pengelola")){showPopup("Sumber dana tidak sesuai","Jenis Pengeluaran Pengelola harus memakai Hasil Pengelola; jenis lainnya memakai Uang Kas.");return}try{$("status").textContent="⏳ Menyimpan pengeluaran member ke Firebase...";await addDoc(collection(db,"pengeluaran"),{uid,ownerUid,email:auth.currentUser?.email||"",namaKonter:namaKonter||"",modul:"member",sumberDana,tanggal,jenis,memberId,memberNama,nominal,keterangan,createdBy:auth.currentUser?.uid||uid,createdAt:serverTimestamp()});bersihkan();await ambilData();render();$("status").innerHTML=`<span class="ok">✓ Pengeluaran Member berhasil disimpan • ${esc(jenis)} • ${money(nominal)}</span>`;showPopup("Berhasil disimpan",`Pengeluaran Member ${jenis} sebesar ${money(nominal)} sudah tersimpan di Firebase.`)}catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal menyimpan: ${esc(e.message||e)}</span>`;showPopup("Gagal menyimpan",e.message||String(e))}}
 window.simpan=simpan;
-async function muatSemua(){$("status").textContent="⏳ Memuat data pengeluaran member...";try{await ambilProfile();await ambilData();render();$("status").innerHTML=`<span class="ok">✓ Firebase aktif • ${rows.length} pengeluaran member • ${esc(namaKonter||"Nama Konter")}</span>`}catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal memuat Firebase: ${esc(e.message||e)}</span>`}}
+async function muatSemua(){$("status").textContent="⏳ Memuat data pengeluaran member...";try{await ambilProfile();await muatMember();await ambilData();render();$("status").innerHTML=`<span class="ok">✓ Firebase aktif • ${rows.length} pengeluaran member • ${esc(namaKonter||"Nama Konter")}</span>`}catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal memuat Firebase: ${esc(e.message||e)}</span>`}}
 window.muatSemua=muatSemua;
 $("tanggal").value=today();$("filterBulan").value=monthNow();
-onAuthStateChanged(auth,async user=>{if(!user){uid="";$("ownerName").textContent="Menunggu sesi FIXZY...";$("ownerEmail").textContent="";$("status").innerHTML='<span class="err">⚠️ Sesi Firebase belum terbaca.</span>';return}uid=user.uid;await muatSemua()});
+async function pulihkanSesi(){
+ try{
+  const raw=localStorage.getItem("fixzy_user_profile")||sessionStorage.getItem("fixzy_user_profile");
+  const p=raw?JSON.parse(raw):{};
+  const id=localStorage.getItem("fixzy_uid")||sessionStorage.getItem("fixzy_uid")||p?.uid||"";
+  if(!id)return;
+  if(auth.currentUser){uid=auth.currentUser.uid;await muatSemua();return;}
+  uid=id;await muatSemua();
+ }catch(e){console.warn("Pulihkan sesi:",e.message)}
+}
+onAuthStateChanged(auth,async user=>{if(user){uid=user.uid;await muatSemua();}else{await pulihkanSesi();}});
+[500,1500,3000,5000].forEach(ms=>setTimeout(()=>{if(auth.currentUser){uid=auth.currentUser.uid;muatSemua()}else{pulihkanSesi()}},ms));
 </script>
 </body>
 </html>

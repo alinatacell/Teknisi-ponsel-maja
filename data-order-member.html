@@ -121,12 +121,13 @@ body.dark .meta b{color:#fff}
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSy_C_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+setPersistence(auth,browserLocalPersistence).catch(e=>console.warn("Auth persistence:",e));
 let uid="",ownerUid="",profile={},rows=[],payOrderId=null;
 
 const $=id=>document.getElementById(id);
@@ -248,7 +249,8 @@ async function load(){
  const map=new Map();
  const qs=[
   query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+  query(collection(db,"order_member"),where("ownerId","==",ownerUid)),
+  query(collection(db,"order_member"),where("uid","==",ownerUid))
  ];
  for(const q of qs){
   const snap=await getDocs(q);
@@ -293,6 +295,10 @@ function renderOrder(r){
  const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
  const tempo=Number(r.tempoHari||0)||0;
  const jatuh=r.jatuhTempo||r.tanggalJatuhTempo||"-";
+ const jenis=String(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||"").toLowerCase();
+ const cash=["cash","tunai","member_cash","member_cash_tunai","cash_tunai","member_tunai"].includes(jenis);
+ const tabungan=Number(r.tabunganPerPcs??r.tabunganMember??0)||0;
+ const up=Number(r.upPengelolaPerPcs??r.upPengelola??0)||0;
 
  return `<div class="order" data-id="${r.id}">
   <div class="order-head">
@@ -307,7 +313,8 @@ function renderOrder(r){
    <div class="meta">
     <b>WA:</b> ${esc(m.wa||"-")}<br>
     <b>Alamat:</b> ${esc(m.alamat||"-")}<br>
-    <b>Tempo:</b> ${tempo} hari • <b>Jatuh tempo:</b> ${esc(jatuh)}
+    <b>Pembayaran:</b> ${cash?"CASH / TUNAI":"TEMPO"}${cash?" — LUNAS / TANPA TAGIHAN":` • ${tempo} hari • Jatuh tempo: ${esc(jatuh)}`}<br>
+    <b>Tabungan Member:</b> ${rp(tabungan)}/pcs • <b>UP Pengelola:</b> ${rp(up)}/pcs
    </div>
 
    ${st==="tagihan" ? (()=>{const di=dueInfo(r);return di.days!==null
@@ -545,8 +552,20 @@ async function initFromSessionFallback(){
    await initAccount(auth.currentUser);
    return;
   }
-  // Jangan menampilkan data hanya dari cache; tunggu Auth yang benar.
-  notice("Menunggu sesi login FIXZY...","");
+  // Pulihkan profil dari Firebase berdasarkan UID sesi FIXZY. Ini hanya
+  // bootstrap identitas; ownerUid tetap diambil dari dokumen users Firebase.
+  const ps=await getDoc(doc(db,"users",sess.uid));
+  if(!ps.exists())throw Error("Profil akun dari sesi FIXZY tidak ditemukan.");
+  profile=ps.data()||{};
+  const roleNow=String(profile.role||sess.role||"").toLowerCase();
+  if(roleNow==="superadmin")throw Error("SUPERADMIN tidak memiliki akses ke data bisnis Owner.");
+  uid=sess.uid;
+  ownerUid=roleNow==="owner"?uid:String(profile.ownerUid||profile.ownerId||"").trim();
+  if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
+  window.fixzySession={uid,role:roleNow,ownerUid,profile};
+  await load();
+  authInitialized=true;
+  notice(`Akun aktif • ${roleNow==="owner"?"Owner":"Karyawan"} • Data Order Member milik Owner ini.`,"ok");
  }catch(e){
   console.error(e);
  }
