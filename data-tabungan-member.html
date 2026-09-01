@@ -40,7 +40,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 <script type="module">
 import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),num=v=>Number(v)||0,esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -53,8 +53,8 @@ function email(a){return String(a.email||"")}
 function wa(a){return String(a.noWA||a.wa||a.noWa||a.noHp||a.noWhatsapp||a.nomorWA||a.phone||"")}
 function kode(a){return String(a.kodeMember||a.kode||"")}
 function tabunganDefault(a){const v=a.tabunganPerPcs??a.tabunganMember??a.tabunganMemberPerPcs;return Number(v??4000)||4000}
-function itemList(r){const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({qty:Math.max(0,num(x.qty??x.jumlah)),tab:Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0,memberId:String(x.memberUid||x.memberId||x.uid||r.memberUid||r.memberId||""),memberEmail:String(x.memberEmail||r.memberEmail||"")}))}
-function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||""),email:String(r.memberEmail||m.email||""),kode:String(m.kode||r.kodeMember||""),nama:String(m.nama||"")}}
+function itemList(r){const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({qty:Math.max(0,num(x.qty??x.jumlah)),tab:Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0,memberId:String(x.memberUid||x.memberId||x.uid||r.memberUid||r.memberId||r.createdByMemberUid||""),memberEmail:String(x.memberEmail||r.memberEmail||r.member?.email||r.pelanggan?.email||"")}))}
+function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||""),email:String(r.memberEmail||m.email||""),kode:String(m.kode||m.kodeMember||r.kodeMember||""),nama:String(m.nama||m.namaMember||r.memberNama||"")}}
 async function loadMembers(){
  const map=new Map();
  const qs=[query(collection(db,"users"),where("ownerUid","==",ownerUid))];
@@ -74,7 +74,7 @@ function aggregate(){
  const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
  members.forEach(m=>{const rec={member:m,qty:0,total:0,withdraw:0,saldo:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);byName.set(norm(nama(m)),rec)});
  function findRec(r){const k=orderMemberKey(r);return byId.get(k.uid)||byEmail.get(norm(k.email))||byCode.get(norm(k.kode))||byName.get(norm(k.nama))||null}
- orders.forEach(r=>{const rec=findRec(r);if(!rec)return;itemList(r).forEach(x=>{rec.qty+=x.qty;rec.total+=x.qty*x.tab})});
+ orders.forEach(r=>{const rec=findRec(r);if(!rec)return;const fallback=Number(r.tabunganPerPcs??r.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;itemList(r).forEach(x=>{const t=x.tab||fallback;rec.qty+=x.qty;rec.total+=x.qty*t})});
  return [...byId.values()];
 }
 function render(){if(!ready)return;const search=norm($("search").value),sf=norm($("statusFilter").value);let data=aggregate().filter(r=>{const a=r.member;const text=[nama(a),email(a),wa(a),kode(a)].map(norm).join(" ");return(!search||text.includes(search))&&(!sf||norm(a.status||"aktif")===(sf))});
