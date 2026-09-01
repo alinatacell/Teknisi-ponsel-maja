@@ -74,7 +74,7 @@ body.dark .meta b{color:#fff}
 </header>
 
 <main>
- <div id="notice" class="notice">Menunggu akun...</div>
+ <div id="notice" class="notice">Menghubungkan akun FIXZY...</div>
 
  <div class="card">
   <div class="title">Data Order Member yang Telah Approval</div>
@@ -575,17 +575,22 @@ onAuthStateChanged(auth,u=>{
  if(u){
   initAccount(u);
  }else if(!authInitialized){
-  // Jangan langsung menghapus sesi. Firebase pada Android kadang
-  // memulihkan persistence setelah halaman selesai dimuat.
   initFromSessionFallback();
  }
 });
 
-// Fallback beberapa tahap agar tidak terjebak permanen di "Menunggu akun".
-[500,1500,3000,5000].forEach(ms=>setTimeout(()=>{
- if(auth.currentUser) initAccount(auth.currentUser);
- else initFromSessionFallback();
-},ms));
+// Bootstrap tambahan untuk Android: tetap memakai Firebase Auth yang sama.
+let bootTries=0;
+const bootTimer=setInterval(()=>{
+ bootTries++;
+ if(auth.currentUser){
+  clearInterval(bootTimer);
+  initAccount(auth.currentUser);
+ }else if(!authInitialized){
+  initFromSessionFallback();
+ }
+ if(bootTries>=20)clearInterval(bootTimer);
+},500);
 
 // Halaman index dapat mengirim sesi ke halaman yang sudah terbuka.
 window.addEventListener("storage",e=>{
