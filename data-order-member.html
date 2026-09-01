@@ -162,18 +162,27 @@ function itemsOf(r){
  }));
 }
 function orderStatus(r){
- // Status pembayaran mengikuti kondisi pembayaran aktual.
- const jenis=String(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||"").toLowerCase();
+ // Status pembayaran mengikuti kondisi pembayaran aktual, bukan hanya field status.
+ const jenis=String(
+  r.jenisHarga||r.tipeOrder||r.tipeTransaksi||r.metodePembayaran||r.metode||r.paymentMethod||""
+ ).toLowerCase().replace(/[\s-]+/g,"_");
  const total=Number(r.totalBayar??r.total??0)||0;
  const dp=Number(r.dp??r.uangMuka??0)||0;
  const paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
- const sf=Number(r.sisaBayar??r.sisa);
+ const rawSisa=r.sisaBayar??r.sisa;
+ const sf=Number(rawSisa);
  const sisa=Number.isFinite(sf)?Math.max(0,sf):Math.max(0,total-paid);
- // CASH/TUNAI selalu lunas.
- if(jenis==="cash" || jenis==="member_cash" || jenis==="member_cash_tunai") return "lunas";
- // Tempo menjadi lunas jika sisa tagihan sudah 0.
+
+ // Semua bentuk CASH/TUNAI dianggap langsung lunas.
+ if(["cash","tunai","member_cash","member_cash_tunai","cash_tunai","member_tunai"].includes(jenis)) return "lunas";
+
+ // Jika seluruh nilai transaksi sudah dibayar, selalu LUNAS.
  if(total>0 && sisa<=0) return "lunas";
- if(String(r.status||"").toLowerCase()==="lunas") return "lunas";
+ if(total>0 && paid>=total) return "lunas";
+
+ // Fallback untuk data lama yang hanya memiliki status.
+ const st=String(r.status||"").toLowerCase().trim();
+ if(["lunas","paid","settled","selesai_lunas"].includes(st)) return "lunas";
  return "tagihan";
 }
 
@@ -467,21 +476,25 @@ let authInitialized=false, loadingAccount=false;
 */
 function readFixzySession(){
  try{
-  const raw=localStorage.getItem("fixzy_user_profile");
-  if(!raw)return null;
-  const p=JSON.parse(raw);
-  const id=localStorage.getItem("fixzy_uid")||p?.uid||"";
+  // FIXZY lama menyimpan identitas di localStorage, sedangkan beberapa
+  // versi login juga memakai sessionStorage. Baca keduanya tanpa menjadikan
+  // cache sebagai sumber otorisasi Firestore.
+  const raw=localStorage.getItem("fixzy_user_profile")||sessionStorage.getItem("fixzy_user_profile");
+  const p=raw?JSON.parse(raw):{};
+  const id=localStorage.getItem("fixzy_uid")||sessionStorage.getItem("fixzy_uid")||p?.uid||"";
   if(!id)return null;
-  return {uid:id,role:String(localStorage.getItem("fixzy_role")||p?.role||"").toLowerCase(),profile:p||{}};
+  const role=String(localStorage.getItem("fixzy_role")||sessionStorage.getItem("fixzy_role")||p?.role||"").toLowerCase();
+  return {uid:id,role,profile:p||{}};
  }catch(e){return null}
 }
 
 function ownerFromSession(sess){
  if(!sess)return "";
  const r=String(sess.role||sess.profile?.role||"").toLowerCase();
+ // SUPERADMIN tidak boleh melihat data bisnis Owner.
+ if(r==="superadmin")return "";
  if(r==="owner")return sess.uid;
- if(r==="superadmin")return sess.profile?.ownerUid||sess.uid;
- return String(sess.profile?.ownerUid||"").trim();
+ return String(sess.profile?.ownerUid||sess.profile?.ownerId||"").trim();
 }
 
 async function initAccount(u){
@@ -495,6 +508,9 @@ async function initAccount(u){
   const s=await getDoc(doc(db,"users",uid));
   if(!s.exists())throw Error("Profil akun tidak ditemukan di Firebase.");
   profile=s.data()||{};
+
+  const roleNow=String(profile.role||"").toLowerCase();
+  if(roleNow==="superadmin")throw Error("SUPERADMIN tidak memiliki akses ke data bisnis Owner.");
 
   // Owner = uid sendiri. Employee/reseller = ownerUid dari profil.
   ownerUid=ownerOf(profile);
