@@ -74,7 +74,7 @@ body.dark .meta b{color:#fff}
 </header>
 
 <main>
- <div id="notice" class="notice">Menghubungkan akun FIXZY...</div>
+ <div id="notice" class="notice">Menunggu akun...</div>
 
  <div class="card">
   <div class="title">Data Order Member yang Telah Approval</div>
@@ -121,13 +121,19 @@ body.dark .meta b{color:#fff}
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const cfg={apiKey:"AIzaSy_C_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const cfg={
+ apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+ authDomain:"fixzy-update.firebaseapp.com",
+ projectId:"fixzy-update",
+ storageBucket:"fixzy-update.firebasestorage.app",
+ messagingSenderId:"995892519622",
+ appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+};
 
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-setPersistence(auth,browserLocalPersistence).catch(e=>console.warn("Auth persistence:",e));
 let uid="",ownerUid="",profile={},rows=[],payOrderId=null;
 
 const $=id=>document.getElementById(id);
@@ -156,27 +162,18 @@ function itemsOf(r){
  }));
 }
 function orderStatus(r){
- // Status pembayaran mengikuti kondisi pembayaran aktual, bukan hanya field status.
- const jenis=String(
-  r.jenisHarga||r.tipeOrder||r.tipeTransaksi||r.metodePembayaran||r.metode||r.paymentMethod||""
- ).toLowerCase().replace(/[\s-]+/g,"_");
+ // Status pembayaran mengikuti kondisi pembayaran aktual.
+ const jenis=String(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||"").toLowerCase();
  const total=Number(r.totalBayar??r.total??0)||0;
  const dp=Number(r.dp??r.uangMuka??0)||0;
  const paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
- const rawSisa=r.sisaBayar??r.sisa;
- const sf=Number(rawSisa);
+ const sf=Number(r.sisaBayar??r.sisa);
  const sisa=Number.isFinite(sf)?Math.max(0,sf):Math.max(0,total-paid);
-
- // Semua bentuk CASH/TUNAI dianggap langsung lunas.
- if(["cash","tunai","member_cash","member_cash_tunai","cash_tunai","member_tunai"].includes(jenis)) return "lunas";
-
- // Jika seluruh nilai transaksi sudah dibayar, selalu LUNAS.
+ // CASH/TUNAI selalu lunas.
+ if(jenis==="cash" || jenis==="member_cash" || jenis==="member_cash_tunai") return "lunas";
+ // Tempo menjadi lunas jika sisa tagihan sudah 0.
  if(total>0 && sisa<=0) return "lunas";
- if(total>0 && paid>=total) return "lunas";
-
- // Fallback untuk data lama yang hanya memiliki status.
- const st=String(r.status||"").toLowerCase().trim();
- if(["lunas","paid","settled","selesai_lunas"].includes(st)) return "lunas";
+ if(String(r.status||"").toLowerCase()==="lunas") return "lunas";
  return "tagihan";
 }
 
@@ -249,8 +246,7 @@ async function load(){
  const map=new Map();
  const qs=[
   query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"order_member"),where("ownerId","==",ownerUid)),
-  query(collection(db,"order_member"),where("uid","==",ownerUid))
+  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
  ];
  for(const q of qs){
   const snap=await getDocs(q);
@@ -295,10 +291,6 @@ function renderOrder(r){
  const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
  const tempo=Number(r.tempoHari||0)||0;
  const jatuh=r.jatuhTempo||r.tanggalJatuhTempo||"-";
- const jenis=String(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||"").toLowerCase();
- const cash=["cash","tunai","member_cash","member_cash_tunai","cash_tunai","member_tunai"].includes(jenis);
- const tabungan=Number(r.tabunganPerPcs??r.tabunganMember??0)||0;
- const up=Number(r.upPengelolaPerPcs??r.upPengelola??0)||0;
 
  return `<div class="order" data-id="${r.id}">
   <div class="order-head">
@@ -313,8 +305,7 @@ function renderOrder(r){
    <div class="meta">
     <b>WA:</b> ${esc(m.wa||"-")}<br>
     <b>Alamat:</b> ${esc(m.alamat||"-")}<br>
-    <b>Pembayaran:</b> ${cash?"CASH / TUNAI":"TEMPO"}${cash?" — LUNAS / TANPA TAGIHAN":` • ${tempo} hari • Jatuh tempo: ${esc(jatuh)}`}<br>
-    <b>Tabungan Member:</b> ${rp(tabungan)}/pcs • <b>UP Pengelola:</b> ${rp(up)}/pcs
+    <b>Tempo:</b> ${tempo} hari • <b>Jatuh tempo:</b> ${esc(jatuh)}
    </div>
 
    ${st==="tagihan" ? (()=>{const di=dueInfo(r);return di.days!==null
@@ -476,25 +467,21 @@ let authInitialized=false, loadingAccount=false;
 */
 function readFixzySession(){
  try{
-  // FIXZY lama menyimpan identitas di localStorage, sedangkan beberapa
-  // versi login juga memakai sessionStorage. Baca keduanya tanpa menjadikan
-  // cache sebagai sumber otorisasi Firestore.
-  const raw=localStorage.getItem("fixzy_user_profile")||sessionStorage.getItem("fixzy_user_profile");
-  const p=raw?JSON.parse(raw):{};
-  const id=localStorage.getItem("fixzy_uid")||sessionStorage.getItem("fixzy_uid")||p?.uid||"";
+  const raw=localStorage.getItem("fixzy_user_profile");
+  if(!raw)return null;
+  const p=JSON.parse(raw);
+  const id=localStorage.getItem("fixzy_uid")||p?.uid||"";
   if(!id)return null;
-  const role=String(localStorage.getItem("fixzy_role")||sessionStorage.getItem("fixzy_role")||p?.role||"").toLowerCase();
-  return {uid:id,role,profile:p||{}};
+  return {uid:id,role:String(localStorage.getItem("fixzy_role")||p?.role||"").toLowerCase(),profile:p||{}};
  }catch(e){return null}
 }
 
 function ownerFromSession(sess){
  if(!sess)return "";
  const r=String(sess.role||sess.profile?.role||"").toLowerCase();
- // SUPERADMIN tidak boleh melihat data bisnis Owner.
- if(r==="superadmin")return "";
  if(r==="owner")return sess.uid;
- return String(sess.profile?.ownerUid||sess.profile?.ownerId||"").trim();
+ if(r==="superadmin")return sess.profile?.ownerUid||sess.uid;
+ return String(sess.profile?.ownerUid||"").trim();
 }
 
 async function initAccount(u){
@@ -508,9 +495,6 @@ async function initAccount(u){
   const s=await getDoc(doc(db,"users",uid));
   if(!s.exists())throw Error("Profil akun tidak ditemukan di Firebase.");
   profile=s.data()||{};
-
-  const roleNow=String(profile.role||"").toLowerCase();
-  if(roleNow==="superadmin")throw Error("SUPERADMIN tidak memiliki akses ke data bisnis Owner.");
 
   // Owner = uid sendiri. Employee/reseller = ownerUid dari profil.
   ownerUid=ownerOf(profile);
@@ -552,20 +536,8 @@ async function initFromSessionFallback(){
    await initAccount(auth.currentUser);
    return;
   }
-  // Pulihkan profil dari Firebase berdasarkan UID sesi FIXZY. Ini hanya
-  // bootstrap identitas; ownerUid tetap diambil dari dokumen users Firebase.
-  const ps=await getDoc(doc(db,"users",sess.uid));
-  if(!ps.exists())throw Error("Profil akun dari sesi FIXZY tidak ditemukan.");
-  profile=ps.data()||{};
-  const roleNow=String(profile.role||sess.role||"").toLowerCase();
-  if(roleNow==="superadmin")throw Error("SUPERADMIN tidak memiliki akses ke data bisnis Owner.");
-  uid=sess.uid;
-  ownerUid=roleNow==="owner"?uid:String(profile.ownerUid||profile.ownerId||"").trim();
-  if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
-  window.fixzySession={uid,role:roleNow,ownerUid,profile};
-  await load();
-  authInitialized=true;
-  notice(`Akun aktif • ${roleNow==="owner"?"Owner":"Karyawan"} • Data Order Member milik Owner ini.`,"ok");
+  // Jangan menampilkan data hanya dari cache; tunggu Auth yang benar.
+  notice("Menunggu sesi login FIXZY...","");
  }catch(e){
   console.error(e);
  }
@@ -575,22 +547,17 @@ onAuthStateChanged(auth,u=>{
  if(u){
   initAccount(u);
  }else if(!authInitialized){
+  // Jangan langsung menghapus sesi. Firebase pada Android kadang
+  // memulihkan persistence setelah halaman selesai dimuat.
   initFromSessionFallback();
  }
 });
 
-// Bootstrap tambahan untuk Android: tetap memakai Firebase Auth yang sama.
-let bootTries=0;
-const bootTimer=setInterval(()=>{
- bootTries++;
- if(auth.currentUser){
-  clearInterval(bootTimer);
-  initAccount(auth.currentUser);
- }else if(!authInitialized){
-  initFromSessionFallback();
- }
- if(bootTries>=20)clearInterval(bootTimer);
-},500);
+// Fallback beberapa tahap agar tidak terjebak permanen di "Menunggu akun".
+[500,1500,3000,5000].forEach(ms=>setTimeout(()=>{
+ if(auth.currentUser) initAccount(auth.currentUser);
+ else initFromSessionFallback();
+},ms));
 
 // Halaman index dapat mengirim sesi ke halaman yang sudah terbuka.
 window.addEventListener("storage",e=>{
