@@ -162,12 +162,7 @@ window.rejectOrder=async id=>{
 function buildMessage(r,items,statusText){
  const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id;
  let text=`Halo Kak ${m.nama||""} 👋\n\n`;
- if(statusText==="approved"){text+=`Pesanan member *${nota}* sudah kami cek.\n\n`;text+=`✅ Produk yang tersedia dan disetujui:\n`;items.forEach(x=>text+=`• ${x.nama} x${x.qty} — ${rp(x.total||x.harga*x.qty)}\n`);text+=`\n💰 Total: ${rp(r.total)}\n💵 DP: ${rp(r.dp)}\n📌 Sisa: ${rp(r.sisa)}\n📅 Jatuh tempo: ${r.jatuhTempo||"-"}\n\nPesanan yang sudah disetujui akan diproses di *Data Order Member* Pesanan yang sudah disetujui akan diproses di *Data Order Member*.
-
-🔗 *CEK DATA ORDER MEMBER:*
-https://alinatacell.github.io/Teknisi-ponsel-maja/rekap-order-member.html
-
-\n\nTerima kasih 🙏\n*${nama}*`;
+ if(statusText==="approved"){text+=`Pesanan member *${nota}* sudah kami cek.\n\n`;text+=`✅ Produk yang tersedia dan disetujui:\n`;items.forEach(x=>text+=`• ${x.nama} x${x.qty} — ${rp(x.total||x.harga*x.qty)}\n`);text+=`\n💰 Total: ${rp(r.total)}\n💵 DP: ${rp(r.dp)}\n📌 Sisa: ${rp(r.sisa)}\n📅 Jatuh tempo: ${r.jatuhTempo||"-"}\n\nPesanan yang sudah disetujui akan diproses di *Data Order Member*.\n\n🔗 *CEK DATA ORDER MEMBER:*\nhttps://alinatacell.github.io/Teknisi-ponsel-maja/rekap-order-member.html\n\nTerima kasih 🙏\n*${nama}*`;
  }else{text+=`Pesanan member *${nota}* sudah kami cek.\n\n❌ Mohon maaf, stok yang dipesan belum tersedia / belum mencukupi.\n\n${r.alasanApproval||""}\n\nSilakan konfirmasi kembali kepada kami untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;}
  return text;
 }
