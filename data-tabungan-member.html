@@ -44,83 +44,130 @@ import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.1
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),num=v=>Number(v)||0,esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-let uid="",ownerUid="",profile={},members=[],orders=[],ready=false;
+const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const setText=(id,v)=>{const e=$(id);if(e)e.textContent=v};
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),num=v=>Number(v)||0;
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let uid="",ownerUid="",profile={},members=[],orders=[],withdrawals=[],ready=false,loading=false;
 function norm(v){return String(v??"").trim().toLowerCase()}
-function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
-function ownerOf(d){const r=norm(d.role);if(r==="owner"||r==="superadmin"||r==="admin")return String(d.ownerUid||d.ownerId||uid).trim()||uid;return String(d.ownerUid||d.ownerId||uid).trim()||uid}
-function nama(a){return String(a.nama||a.namaKaryawan||a.name||a.displayName||a.email||"-")}
-function email(a){return String(a.email||"")}
-function wa(a){return String(a.noWA||a.wa||a.noWa||a.noHp||a.noWhatsapp||a.nomorWA||a.phone||"")}
-function kode(a){return String(a.kodeMember||a.kode||"")}
-function tabunganDefault(a){const v=a.tabunganPerPcs??a.tabunganMember??a.tabunganMemberPerPcs;return Number(v??4000)||4000}
-function orderDate(r){const v=r.createdAt||r.approvedAt||r.updatedAt;if(v?.toDate)return v.toDate();if(v instanceof Date)return v;const raw=r.tanggal||r.date||r.created_at||'';const d=new Date(raw);return isNaN(d)?new Date():d;}
+function notice(t,c=""){setText("notice",t);const e=$("notice");if(e)e.className="notice "+c}
+function ownerOf(d){const r=norm(d.role||d.profileRole);if(r==="owner"||r==="admin")return String(d.ownerUid||d.ownerId||uid).trim()||uid;if(r==="superadmin"||r==="super_admin")return "";return String(d.ownerUid||d.ownerId||"").trim()}
+function nama(a){return String(a?.nama||a?.namaMember||a?.namaKaryawan||a?.name||a?.displayName||a?.email||"-")}
+function email(a){return String(a?.email||"")}
+function wa(a){return String(a?.noWA||a?.wa||a?.noWa||a?.noHp||a?.noWhatsapp||a?.nomorWA||a?.phone||"")}
+function kode(a){return String(a?.kodeMember||a?.kode||"")}
+function tabunganDefault(a){const v=a?.tabunganPerPcs??a?.tabunganMember??a?.tabunganMemberPerPcs;return Number(v??4000)||4000}
+function toDate(v){if(v?.toDate)return v.toDate();if(v instanceof Date)return v;const d=new Date(v);return isNaN(d)?null:d}
+function orderDate(r){return toDate(r.createdAt)||toDate(r.approvedAt)||toDate(r.updatedAt)||toDate(r.tanggal)||toDate(r.date)||new Date()}
 function monthKey(r){const d=orderDate(r);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
-function itemList(r){const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];return a.map(x=>({qty:Math.max(0,num(x.qty??x.jumlah??x.quantity)),tab:Number(x.tabunganPerPcs??x.tabunganMember??r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??0)||0,up:Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0}));}
-function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||''),email:String(r.memberEmail||m.email||''),kode:String(m.kode||m.kodeMember||r.kodeMember||''),nama:String(m.nama||m.namaMember||r.memberNama||'')}}
+function itemList(r){
+ const a=Array.isArray(r.approvedItems)?r.approvedItems:(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
+ return a.map(x=>({qty:Math.max(0,num(x.approvedQty??x.qty??x.jumlah??x.quantity)),tab:Number(x.tabunganPerPcs??x.tabunganMember??r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??0)||0,up:Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0}));
+}
+function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||""),email:String(r.memberEmail||m.email||""),kode:String(m.kode||m.kodeMember||r.kodeMember||""),nama:String(m.nama||m.namaMember||r.memberNama||"")}}
+async function safeQuery(q){try{return await getDocs(q)}catch(e){console.warn("FIXZY query dilewati:",e?.message||e);return null}}
 async function loadMembers(){
  const map=new Map();
- // Users adalah sumber identitas member bila aturan Firestore mengizinkan query owner.
- // Jika query users ditolak, jangan hentikan halaman: identitas akan dibangun dari order_member.
- try{
-   const qs=[query(collection(db,'users'),where('ownerUid','==',ownerUid)),query(collection(db,'users'),where('ownerId','==',ownerUid))];
-   for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...(d.data()||{})};const r=norm(x.role);if(['employee','karyawan','reseller','member'].includes(r)&&!map.has(d.id))map.set(d.id,x)})}catch(e){console.warn('users query dilewati:',e)}}
- }catch(e){console.warn('users load:',e)}
+ for(const field of ["ownerUid","ownerId"]){
+   const s=await safeQuery(query(collection(db,"users"),where(field,"==",ownerUid)));
+   if(!s)continue;
+   s.forEach(d=>{const x={id:d.id,...(d.data()||{})};const r=norm(x.role||x.profileRole);if(["employee","karyawan","reseller","member"].includes(r)&&!map.has(d.id))map.set(d.id,x)});
+ }
  members=[...map.values()];
 }
-async function loadOrders(){const map=new Map();const qs=[query(collection(db,'order_member'),where('ownerUid','==',ownerUid)),query(collection(db,'order_member'),where('ownerId','==',ownerUid))];for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...(d.data()||{})})})}catch(e){console.warn('order_member',e)}}orders=[...map.values()].filter(r=>{const ap=norm(r.approvalStatus||'');const st=norm(r.status||'');return ap==='approved'||['order_member','approved','tagihan','lunas'].includes(st);});}
+async function loadOrders(){
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId"]){
+   const s=await safeQuery(query(collection(db,"order_member"),where(field,"==",ownerUid)));
+   if(!s)continue;
+   s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...(d.data()||{})})});
+ }
+ orders=[...map.values()].filter(r=>{const ap=norm(r.approvalStatus||"");const st=norm(r.status||"");return ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st)});
+}
+async function loadWithdrawals(){
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId","uid"]){
+   const value=field==="uid"?uid:ownerUid;if(!value)continue;
+   const s=await safeQuery(query(collection(db,"pengeluaran"),where(field,"==",value)));
+   if(!s)continue;
+   s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
+ }
+ withdrawals=[...map.values()].filter(r=>norm(r.modul)==="member"&&norm(r.jenis)==="pengambilan tabungan member");
+}
+function fallbackMembersFromOrders(){
+ const map=new Map();
+ orders.forEach(r=>{
+   const m=r.member||r.pelanggan||{};
+   const id=String(r.memberUid||r.memberId||m.uid||m.userId||"").trim();
+   const em=String(r.memberEmail||m.email||"").trim();
+   const kd=String(m.kodeMember||m.kode||r.kodeMember||"").trim();
+   const nm=String(m.nama||m.namaMember||r.memberNama||"").trim();
+   const key=(id||em||kd||nm).toLowerCase();if(!key)return;
+   if(!map.has(key))map.set(key,{id:id||key,...m,email:em||m.email||"",kodeMember:kd,nama:nm||"-",role:"member",status:m.status||"aktif"});
+ });
+ return [...map.values()];
+}
+function findRec(by,r){const k=orderMemberKey(r);return by.id.get(k.uid)||by.email.get(norm(k.email))||by.code.get(norm(k.kode))||by.name.get(norm(k.nama))||null}
+function withdrawalFor(by,r){
+ const ids=[String(r.memberId||r.memberUid||r.uid||"").trim(),norm(r.memberEmail||""),norm(r.memberNama||"")].filter(Boolean);
+ let total=0;
+ withdrawals.forEach(w=>{const idsW=[String(w.memberId||w.memberUid||"").trim(),norm(w.memberEmail||""),norm(w.memberNama||"")].filter(Boolean);if(ids.some(x=>idsW.includes(x)))total+=num(w.nominal)});
+ return total;
+}
 function aggregate(){
  const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
- members.forEach(m=>{const rec={member:m,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);byName.set(norm(nama(m)),rec)});
- function findRec(r){const k=orderMemberKey(r);return byId.get(k.uid)||byEmail.get(norm(k.email))||byCode.get(norm(k.kode))||byName.get(norm(k.nama))||null}
+ members.forEach(m=>{const rec={member:m,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);if(nama(m))byName.set(norm(nama(m)),rec)});
  orders.forEach(r=>{
-   const rec=findRec(r);if(!rec)return;
-   const fallbackTab=Number(r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??0)||0;
-   const fallbackUp=Number(r.upPengelolaPerPcs??r.upPengelola??0)||0;
+   let rec=findRec({id:byId,email:byEmail,code:byCode,name:byName},r);
+   if(!rec){const m=r.member||{};const temp={id:String(r.memberUid||r.memberId||m.uid||m.userId||""),...m,email:r.memberEmail||m.email||"",kodeMember:m.kodeMember||m.kode||r.kodeMember||"",nama:m.nama||m.namaMember||r.memberNama||"-",role:"member",status:m.status||"aktif"};if(temp.id){rec={member:temp,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(temp.id,rec);if(email(temp))byEmail.set(norm(email(temp)),rec);if(kode(temp))byCode.set(norm(kode(temp)),rec);byName.set(norm(nama(temp)),rec);}}
+   if(!rec)return;
+   const fallbackTab=num(r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;
+   const fallbackUp=num(r.upPengelolaPerPcs??r.upPengelola??rec.member.upPengelolaPerPcs??0);
    const items=itemList(r);
-   if(items.length){items.forEach(x=>{const q=x.qty,tab=x.tab||fallbackTab,up=x.up||fallbackUp;rec.qty+=q;rec.total+=q*tab;rec.up+=q*up;if(q>0&&up>0)rec.upPcs=up});}
-   else{const q=Math.max(0,num(r.totalQty??r.qty??r.jumlah));rec.qty+=q;rec.total+=Number(r.totalTabunganOrder??0)||q*fallbackTab;rec.up+=Number(r.totalUpPengelolaOrder??0)||q*fallbackUp;if(q>0&&fallbackUp>0)rec.upPcs=fallbackUp;}
-   const kas=Number(r.kasBulanan??r.uangKasBulanan??rec.member.kasBulanan??rec.member.uangKasBulanan??0)||0;
+   if(items.length){items.forEach(x=>{const q=x.qty,tab=x.tab||fallbackTab,up=x.up||fallbackUp;rec.qty+=q;rec.total+=q*tab;rec.up+=q*up;if(q>0)rec.upPcs=tab?tab:rec.upPcs});}
+   else{
+     let q=num(r.totalQty??r.approvedQty??r.qty??r.jumlah);
+     const totalTab=num(r.totalTabunganOrder??r.totalTabungan??0);
+     if(!q&&totalTab&&fallbackTab)q=Math.round(totalTab/fallbackTab);
+     rec.qty+=q;rec.total+=totalTab||q*fallbackTab;rec.up+=num(r.totalUpPengelolaOrder??r.totalUp??0)||q*fallbackUp;if(q>0)rec.upPcs=fallbackUp;
+   }
+   const kas=num(r.kasBulanan??r.uangKasBulanan??rec.member.kasBulanan??rec.member.uangKasBulanan??0);
    if(kas>0){const mk=monthKey(r);if(!rec.kasMonths.has(mk)){rec.kasMonths.add(mk);rec.kas+=kas}}
  });
- return[...byId.values()];
+ for(const rec of byId.values())rec.withdraw=withdrawalFor(byId,rec.member);
+ return [...byId.values()];
 }
-function render(){if(!ready)return;const search=norm($('search').value),sf=norm($('statusFilter').value);const data=aggregate().filter(r=>{const a=r.member;const text=[nama(a),email(a),wa(a),kode(a)].map(norm).join(' ');return(!search||text.includes(search))&&(!sf||norm(a.status||'aktif')===sf)});let total=0,up=0,kas=0,withdraw=0;data.forEach(r=>{total+=r.total;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});$('totalMember').textContent=data.length.toLocaleString('id-ID');$('totalTabungan').textContent=rp(total);$('totalQty').textContent=data.reduce((a,r)=>a+r.qty,0).toLocaleString('id-ID')+' pcs';$('totalUp').textContent=rp(up);$('totalKas').textContent=rp(kas);$('saldoTabungan').textContent=rp(total-withdraw);$('tbody').innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const upPcs=r.upPcs||Number(a.upPengelolaPerPcs??a.upPengelola??0)||0;const months=[...r.kasMonths].sort().join(', ')||'-';return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||'-')}</div></td><td>${esc(email(a)||'-')}</td><td>${esc(wa(a)||'-')}</td><td>${esc(kode(a)||'-')}</td><td class="num">${rp(tabunganDefault(a))}</td><td class="num">${r.qty.toLocaleString('id-ID')}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==='nonaktif'?'off':'active'}">${esc(a.status||'aktif')}</span></td></tr>`}).join(''):'<tr><td colspan="15" class="empty">Belum ada data member/order yang sesuai.</td></tr>';}
+function render(){
+ if(!ready)return;
+ const search=norm($("search")?.value),sf=norm($("statusFilter")?.value);
+ const data=aggregate().filter(r=>{const a=r.member,text=[nama(a),email(a),wa(a),kode(a)].map(norm).join(" ");return(!search||text.includes(search))&&(!sf||norm(a.status||"aktif")===sf)});
+ let total=0,qty=0,up=0,kas=0,withdraw=0;
+ data.forEach(r=>{total+=r.total;qty+=r.qty;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});
+ setText("totalMember",data.length.toLocaleString("id-ID"));setText("totalTabungan",rp(total));setText("totalQty",qty.toLocaleString("id-ID")+" pcs");setText("totalUp",rp(up));setText("totalKas",rp(kas));setText("saldoTabungan",rp(total-withdraw));
+ const body=$("tbody");if(!body)return;
+ body.innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const tabPcs=r.qty&&r.total?r.total/r.qty:tabunganDefault(a);const upPcs=r.upPcs||num(a.upPengelolaPerPcs??a.upPengelola??0);const months=[...r.kasMonths].sort().join(", ")||"-";return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||"-")}</div></td><td>${esc(email(a)||"-")}</td><td>${esc(wa(a)||"-")}</td><td>${esc(kode(a)||"-")}</td><td class="num">${rp(tabPcs)}</td><td class="num">${r.qty.toLocaleString("id-ID")}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==="nonaktif"?"off":"active"}">${esc(a.status||"aktif")}</span></td></tr>`}).join(""):"<tr><td colspan=\"15\" class=\"empty\">Belum ada data member/order yang sesuai.</td></tr>";
+}
 async function load(){
- if(!ownerUid)return;
- notice('Menghubungkan Firebase FIXZY...','ok');
- await Promise.all([loadMembers(),loadOrders()]);
- // Bila collection users tidak bisa di-query, bentuk daftar member dari order approved.
- if(!members.length){
-   const map=new Map();
-   orders.forEach(r=>{
-     const m=r.member||r.pelanggan||{};
-     const k=String(r.memberUid||r.memberId||m.uid||m.userId||r.memberEmail||m.email||m.kode||m.kodeMember||m.nama||'').trim().toLowerCase();
-     if(!k)return;
-     if(!map.has(k))map.set(k,{id:String(r.memberUid||r.memberId||m.uid||m.userId||k),...m,email:r.memberEmail||m.email||'',kodeMember:m.kodeMember||m.kode||r.kodeMember||'',nama:m.nama||m.namaMember||r.memberNama||'-',role:'member',status:m.status||'aktif'});
-   });
-   members=[...map.values()];
- }
- ready=true;render();notice(`Firebase FIXZY terhubung • ${members.length} member • ${orders.length} order approved.`,'ok')
-}
-window.muatUlang=async()=>{if(!ready)return;await load()};window.resetFilter=()=>{$('search').value='';$('statusFilter').value='';render()};$('search').oninput=render;$('statusFilter').onchange=render;$('dark').onclick=()=>{document.body.classList.toggle('dark');$('dark').textContent=document.body.classList.contains('dark')?'☀️':'🌙'};
-onAuthStateChanged(auth,async u=>{
- if(!u){notice('Menunggu sesi login FIXZY...');return}
+ if(!ownerUid||loading)return;loading=true;ready=false;notice("Menghubungkan Firebase FIXZY...","ok");
  try{
-   uid=u.uid;
-   const s=await getDoc(doc(db,'users',uid));
-   if(!s.exists())throw Error('Profil akun tidak ditemukan di users/'+uid);
-   profile=s.data()||{};
-   const role=norm(profile.role||profile.profileRole);
-   if(role==='superadmin'||role==='super_admin'||norm(u.email)==='servicehpmaja@gmail.com')throw Error('SUPERADMIN tidak memiliki akses data bisnis Owner.');
-   ownerUid=(role==='owner'||profile.isOwner===true)?uid:String(profile.ownerUid||profile.ownerId||'').trim();
-   if(!ownerUid)throw Error('ownerUid/ownerId pemilik akun tidak ditemukan.');
-   $('email').textContent=u.email||profile.email||'-';
-   await load();
- }catch(e){console.error(e);notice('Gagal memuat Data Tabungan Member: '+(e?.message||e),'err')}
+   await Promise.all([loadMembers(),loadOrders(),loadWithdrawals()]);
+   if(!members.length)members=fallbackMembersFromOrders();
+   ready=true;render();notice(`Firebase FIXZY terhubung • ${members.length} member • ${orders.length} order approved.`,'ok');
+ }catch(e){console.error(e);notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err")}finally{loading=false}
+}
+window.muatUlang=async()=>{if(auth.currentUser){try{const s=await getDoc(doc(db,"users",auth.currentUser.uid));if(s.exists()){profile=s.data()||{};const role=norm(profile.role||profile.profileRole);ownerUid=(role==="owner"||profile.isOwner===true)?auth.currentUser.uid:String(profile.ownerUid||profile.ownerId||"").trim()}}catch(e){} }if(ownerUid)await load()};
+window.resetFilter=()=>{if($("search"))$("search").value="";if($("statusFilter"))$("statusFilter").value="";render()};
+$("search")?.addEventListener("input",render);$("statusFilter")?.addEventListener("change",render);$("dark")?.addEventListener("click",()=>{document.body.classList.toggle("dark");setText("dark",document.body.classList.contains("dark")?"☀️":"🌙")});
+onAuthStateChanged(auth,async u=>{
+ if(!u){notice("Menunggu sesi login FIXZY...");return}
+ try{
+   uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan di users/"+uid);
+   profile=s.data()||{};const role=norm(profile.role||profile.profileRole);
+   if(role==="superadmin"||role==="super_admin"||norm(u.email)==="servicehpmaja@gmail.com")throw Error("SUPERADMIN tidak memiliki akses data bisnis Owner.");
+   ownerUid=(role==="owner"||profile.isOwner===true)?uid:ownerOf(profile);if(!ownerUid)throw Error("ownerUid/ownerId pemilik akun tidak ditemukan.");
+   setText("email",u.email||profile.email||"-");await load();
+ }catch(e){console.error(e);notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err")}
 });
-// Android/iframe: beri waktu Firebase Auth memulihkan sesi yang sudah tersimpan.
-[500,1500,3000,5000].forEach(ms=>setTimeout(()=>{if(auth.currentUser&&!ready)onAuthStateChanged(auth,()=>{})},ms));
 </script>
 </body></html>
