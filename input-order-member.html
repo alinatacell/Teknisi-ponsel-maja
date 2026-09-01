@@ -90,10 +90,10 @@ function activeBasePrice(p){
 }
 function getTabunganMember(){
   const v=selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??selectedMember?.tabunganMemberPerPcs;
-  return Number(v??4000)||4000;
+  return Number(v??0)||0;
 }
 function getUpPengelola(){
-  return Number(ownerSettings.up??1000)||1000;
+  return Number(ownerSettings.up??0)||0;
 }
 function composedPrice(p){return activeBasePrice(p)+getTabunganMember()+getUpPengelola()}
 function syncCartWithStock(){
@@ -279,7 +279,7 @@ function build(){
   if(x.qty<1)throw Error(`Qty ${x.nama} minimal 1.`);
   if(Number(x.stok)<=0)throw Error(`Produk ${x.nama} sudah tidak memiliki stok.`);
   if(x.qty>x.stok)throw Error(`Pesanan ${x.nama} melebihi stok terbaru ${x.stok} pcs.`);
-}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:jenisHarga==="cash"?c.total:c.dp,uangMuka:jenisHarga==="cash"?c.total:c.dp,sisa:jenisHarga==="cash"?0:c.sisa,sisaBayar:jenisHarga==="cash"?0:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:jenisHarga==="cash"?0:c.sisa,pendapatan:jenisHarga==="cash"?c.total:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
+}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,memberUid:uid,memberEmail:auth.currentUser?.email||"",nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{uid,memberUid:uid,email:auth.currentUser?.email||"",kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:jenisHarga==="cash"?c.total:c.dp,uangMuka:jenisHarga==="cash"?c.total:c.dp,sisa:jenisHarga==="cash"?0:c.sisa,sisaBayar:jenisHarga==="cash"?0:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:jenisHarga==="cash"?0:c.sisa,pendapatan:jenisHarga==="cash"?c.total:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
 window.simpan=async()=>{
   if(!ready)return msg("Halaman belum siap.","err");
   try{
@@ -300,8 +300,8 @@ window.simpan=async()=>{
 window.resetForm=()=>{
   ["catatan","alamat"].forEach(x=>$(x).value="");
   if(selectedMember){
-    $("nama").value=selectedMember.nama||selectedMember.namaKaryawan||selectedMember.name||window._loginDisplayName||"";
-    $("wa").value=selectedMember.noWA||selectedMember.wa||selectedMember.noWa||selectedMember.noHp||"";
+    $("nama").value=selectedMember.nama||selectedMember.namaKaryawan||selectedMember.name||window._loginDisplayName||selectedMember.displayName||selectedMember.email||"";
+    $("wa").value=selectedMember.noWA||selectedMember.wa||selectedMember.noWa||selectedMember.noHp||selectedMember.noHP||selectedMember.nomorWA||selectedMember.nomorWhatsapp||selectedMember.phone||selectedMember.phoneNumber||"";
     $("kode").value=selectedMember.kodeMember||selectedMember.kode||kodeMember();
   }else{
     $("nama").value=""; $("wa").value=""; $("kode").value=kodeMember();
@@ -323,7 +323,7 @@ $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textCont
 function isiMemberDariAkun(d){
   selectedMember={id:uid,...d};
   const namaAkun=d.nama||d.namaKaryawan||d.name||window._loginDisplayName||d.displayName||d.email||"";
-  const wa=d.noWA||d.wa||d.noWa||d.noHp||"";
+  const wa=d.noWA||d.wa||d.noWa||d.noHp||d.noHP||d.nomorWA||d.nomorWhatsapp||d.phone||d.phoneNumber||"";
   $("nama").value=namaAkun;
   $("wa").value=wa;
   $("kode").value=d.kodeMember||d.kode||kodeMember();
@@ -354,8 +354,8 @@ onAuthStateChanged(auth,async u=>{
       if(os.exists())ownerDoc=os.data()||{};
     }
     ownerSettings={
-      up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??1000)||1000,
-      kas:Number(ownerDoc.kasBulananDefault??0)||0
+      up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??0)||0,
+      kas:Number(ownerDoc.kasBulananDefault??ownerDoc.kasBulanan??ownerDoc.uangKasBulanan??0)||0
     };
     window._loginDisplayName=u.displayName||"";
     $("email").textContent=u.email||"-";

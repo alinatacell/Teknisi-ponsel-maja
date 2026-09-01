@@ -332,8 +332,18 @@ function ownerOf(d){
  return String(d.ownerUid||d.ownerId||"").trim()||uid;
 }
 
+function isCashOrder(r){
+ const vals=[r.jenisHarga,r.tipeOrder,r.tipeTransaksi,r.metodePembayaran,r.paymentMethod].map(v=>String(v??"").trim().toLowerCase());
+ return vals.some(v=>["cash","tunai","member_cash","cash_tunai","member_tunai"].includes(v));
+}
 function orderStatus(r){
- return String(r.status||"tagihan").toLowerCase()==="lunas"?"lunas":"tagihan";
+ if(isCashOrder(r))return "lunas";
+ const total=Math.max(0,Number(r.totalBayar??r.total??0)||0);
+ const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
+ const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
+ const st=String(r.statusPembayaran||r.paymentStatus||r.status||"").toLowerCase();
+ if(["lunas","paid","dibayar","terbayar","selesai"].includes(st))return "lunas";
+ return total>0&&(sisa<=0||paid>=total)?"lunas":"tagihan";
 }
 
 function itemList(r){
@@ -345,6 +355,8 @@ function itemList(r){
   qty:Math.max(0,Number(x.qty||x.jumlah||0)||0),
   harga:Math.max(0,Number(x.harga||x.hargaJual||0)||0),
   modal:Math.max(0,Number(x.modalSatuan??x.modal??0)||0),
+  tabunganPerPcs:Math.max(0,Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),
+  upPengelolaPerPcs:Math.max(0,Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),
   total:Math.max(0,Number(x.total??((Number(x.harga||x.hargaJual||0)*Number(x.qty||x.jumlah||0))-Number(x.diskon||0)))||0)
  }));
 }
@@ -489,8 +501,8 @@ function renderExpenses(){
   }
 
   const qty=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty,0),0);
-  const kasMasuk=qty*4000;
-  const upMasuk=qty*1000;
+  const kasMasuk=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0);
+  const upMasuk=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0);
 
   $("expenseKas").textContent=rp(kas);
   $("expensePengelola").textContent=rp(pengelola);
@@ -578,8 +590,8 @@ function renderStock(){
  // Panel lama = NILAI SETELAH ditambah UP Pengelola + Uang Kas.
  // Dasar fee: qty order member x Rp5.000.
  const feeQtyForStock = orderQty;
- const upForStock = feeQtyForStock * 1000;
- const kasForStock = feeQtyForStock * 4000;
+ const upForStock = currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0);
+ const kasForStock = currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0);
  const totalFeeForStock = upForStock + kasForStock;
 
  $("stockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
@@ -670,7 +682,7 @@ function renderOrders(){
   const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
   const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
   const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
-  qty+=q;up+=q*1000;kas+=q*4000;
+  qty+=q;up+=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0);kas+=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0);
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
   return `<tr>
@@ -680,8 +692,8 @@ function renderOrders(){
    <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
    <td class="num">${q.toLocaleString("id-ID")}</td>
    <td class="num">${rp(value)}</td>
-   <td class="num">${rp(q*1000)}</td>
-   <td class="num">${rp(q*4000)}</td>
+   <td class="num">${rp(items.reduce((a,x)=>a+x.qty*x.upPengelolaPerPcs,0))}</td>
+   <td class="num">${rp(items.reduce((a,x)=>a+x.qty*x.tabunganPerPcs,0))}</td>
    <td class="num">${rp(sisa)}</td>
   </tr>`;
  });
@@ -689,7 +701,7 @@ function renderOrders(){
  $("upPengelola").textContent=rp(up);
  $("uangKas").textContent=rp(kas);
  $("totalFee").textContent=rp(up+kas);
- $("feeFormula").textContent=`${qty.toLocaleString("id-ID")} pcs × Rp 5.000 = ${rp(up+kas)}`;
+ $("feeFormula").textContent=`${qty.toLocaleString("id-ID")} pcs • UP + Tabungan = ${rp(up+kas)}`;
  $("orderTable").innerHTML=rows.join("")||`<tr><td colspan="9" class="empty">Belum ada order member pada periode ini.</td></tr>`;
 }
 

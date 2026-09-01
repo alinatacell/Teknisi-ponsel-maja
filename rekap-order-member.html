@@ -219,8 +219,8 @@ function renderRekap(){
   const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
   const st=orderStatus(r);
   const jenis=cash?"CASH":"TEMPO";
-  const upRow=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??1000)||0),0);
-  const tabRow=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??4000)||0),0);
+  const upRow=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0);
+  const tabRow=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0);
   const kasRow=Number(r.kasBulanan??r.uangKasBulanan??0)||0;
   qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
   const m=r.member||r.pelanggan||{};

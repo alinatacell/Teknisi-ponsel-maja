@@ -141,6 +141,11 @@ body{overflow:hidden}
       <span class="ico">✅</span>Persetujuan Orderan
     </button>
 
+    <button class="menu-link" data-page="data-tabungan-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">🏦</span>Data Tabungan Member
+    </button>
+
     <div class="menu-section">KEUANGAN MEMBER</div>
 
     <button class="menu-link" data-page="data-keuangan.html"
@@ -209,6 +214,7 @@ const FIXZY_PERMISSION_BY_PAGE={
   "data-karyawan.html":"ownerOnly",
   "upah-kerja.html":"ownerOnly",
   "pengaturan.html":"ownerOnly",
+  "data-tabungan-member.html":"orderMember",
   "izin-akses.html":"ownerOnly",
   "saldo-token.html":"saldoToken",
   "cek-paket.html":"cekPaket",

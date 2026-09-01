@@ -163,6 +163,28 @@ window.pilihAksesKaryawan=()=>{
 };
 function renderIzin(a){const izin=gabungIzin(a);if(!izin.length)return '<span style="color:#94a3b8">Tidak ada akses</span>';return izin.map(v=>`<span class="badge">${esc(izinLabel(v))}</span>`).join("")}
 
+async function muatPengaturanPengelola(){
+  if(!ready)return;
+  try{
+    const snap=await getDoc(doc(db,"users",ownerUid));
+    if(snap.exists()){
+      const d=snap.data()||{};
+      $("fUpPengelolaGlobal").value=Number(d.upPengelolaPerPcs??d.upPengelola??1000)||0;
+      $("fKasBulananGlobal").value=Number(d.kasBulananDefault??d.kasBulanan??d.uangKasBulanan??0)||0;
+    }
+  }catch(e){console.warn("Gagal memuat pengaturan pengelola",e)}
+}
+window.simpanPengaturanPengelola=async()=>{
+  if(!ready)return;
+  try{
+    const up=Number($("fUpPengelolaGlobal").value)||0;
+    const kas=Number($("fKasBulananGlobal").value)||0;
+    await setDoc(doc(db,"users",ownerUid),{upPengelolaPerPcs:up,upPengelola:up,kasBulananDefault:kas,updatedAt:serverTimestamp()},{merge:true});
+    await muatPengaturanPengelola();
+    tampilNotice("✅ Pengaturan tersimpan",`UP Pengelola <b>${rupiah(up)}</b>/pcs dan Uang Kas <b>${rupiah(kas)}</b>/bulan/member.`);
+  }catch(e){tampilNotice("❌ Gagal menyimpan",esc(e.message||e))}
+}
+
 async function load(){if(!ready)return;
   // FIX ISOLASI - hanya akun dengan ownerUid == ownerUid ini
   const s=await getDocs(query(collection(db,"users"),where("ownerUid","==",ownerUid)));
@@ -237,7 +259,7 @@ Terima kasih 🙏
    }
    if(pass.length<6)return tampilNotice("⚠️ Password","Password minimal 6 karakter.");
    const newUid=await buatAuthBaru(email,pass,n);
-   const accountData={uid:newUid,ownerUid,role:r,status,nama:n,namaKaryawan:n,email,noWA:wa,wa,noWa:wa,jabatan:j,upahHarian:upah,izin,permissions:izin,tanggalDaftar:new Date().toISOString(),createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+   const accountData={uid:newUid,ownerUid,role:r,status,nama:n,namaKaryawan:n,email,noWA:wa,wa,noWa:wa,jabatan:j,upahHarian:upah,tabunganPerPcs:Number($("fTabunganMember").value)||0,tabunganMember:Number($("fTabunganMember").value)||0,kasBulanan:Number($("fKasBulanan").value)||0,uangKasBulanan:Number($("fKasBulanan").value)||0,izin,permissions:izin,tanggalDaftar:new Date().toISOString(),createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
    await setDoc(doc(db,"users",newUid),accountData);
    $("popup").classList.remove("show");
    const namaKonter = profile.namaKonter || profile.namaToko || "FIXZY";
@@ -345,7 +367,7 @@ window.kirimResetPassword=async email=>{
  catch(e){tampilNotice("❌ Reset Password",esc(e.message||e))}
 };
 
-async function init(){onAuthStateChanged(auth,async u=>{if(!u){location.replace("login.html");return}uid=u.uid;try{const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw new Error("Profil Owner tidak ditemukan.");profile=s.data()||{};if(!["owner","superadmin","admin"].includes(norm(profile.role)))throw new Error("Halaman Izin Akses hanya untuk Owner / Superadmin.");ownerUid=norm(profile.role)==="owner"?uid:(profile.ownerUid||profile.ownerId||uid);ready=true;await load()}catch(e){ready=false;$("status").innerHTML=`<span class="err">🔒 ${esc(e.message||e)}</span>`;$("tbody").innerHTML='<tr><td colspan="8" class="empty">Akses tidak tersedia.</td></tr>'}})}
+async function init(){onAuthStateChanged(auth,async u=>{if(!u){location.replace("login.html");return}uid=u.uid;try{const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw new Error("Profil Owner tidak ditemukan.");profile=s.data()||{};if(!["owner","superadmin","admin"].includes(norm(profile.role)))throw new Error("Halaman Izin Akses hanya untuk Owner / Superadmin.");ownerUid=norm(profile.role)==="owner"?uid:(profile.ownerUid||profile.ownerId||uid);ready=true;await muatPengaturanPengelola();await load()}catch(e){ready=false;$("status").innerHTML=`<span class="err">🔒 ${esc(e.message||e)}</span>`;$("tbody").innerHTML='<tr><td colspan="8" class="empty">Akses tidak tersedia.</td></tr>'}})}
 window.muatSemua=async()=>{if(ready){$("status").textContent="Memuat ulang...";await load()}};
 init();
 </script>

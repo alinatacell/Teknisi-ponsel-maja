@@ -124,14 +124,7 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-ap
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const cfg={
- apiKey:"AIzaSyCwMbJsuORhIq4QCmp4c1r6OsjAUlfxU5Y",
- authDomain:"fixzy-f056f.firebaseapp.com",
- projectId:"fixzy-f056f",
- storageBucket:"fixzy-f056f.firebasestorage.app",
- messagingSenderId:"838081521031",
- appId:"1:838081521031:web:50fdee909b56460b055f22"
-};
+const cfg={apiKey:"AIzaSy_C_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 let uid="",ownerUid="",profile={},rows=[],payOrderId=null;
