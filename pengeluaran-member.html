@@ -335,7 +335,7 @@ import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.1
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{
   getFirestore,collection,getDocs,getDoc,doc,query,where,
-  addDoc,serverTimestamp
+  addDoc,setDoc,increment,serverTimestamp
 }from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -502,7 +502,18 @@ async function simpan(){
  if(isTabungan&&!memberId){showPopup("Member belum dipilih","Pilih member untuk pengambilan tabungan.");return}
  try{
   $("status").textContent="⏳ Menyimpan pengeluaran member ke Firebase...";
-  await addDoc(collection(db,"pengeluaran"),{uid,ownerUid,ownerId:ownerUid,email:auth.currentUser?.email||"",namaKonter:namaKonter||"",modul:"member",sumberDana,tanggal,jenis,memberId,memberNama,nominal,keterangan,createdBy:auth.currentUser?.uid||uid,createdAt:serverTimestamp()});
+  const modul=sumberDana==="tabungan"?"member":sumberDana;
+  await addDoc(collection(db,"pengeluaran"),{uid,ownerUid,ownerId:ownerUid,email:auth.currentUser?.email||"",namaKonter:namaKonter||"",modul,sumberDana,tanggal,jenis,memberId,memberNama,nominal,keterangan,createdBy:auth.currentUser?.uid||uid,createdAt:serverTimestamp()});
+
+  // Tabungan Member tetap diproses sebagai tabungan. Kas dan UP mengurangi
+  // saldo Owner yang sama dengan yang dibentuk oleh Input Order Member.
+  if(sumberDana==="kas"||sumberDana==="pengelola"){
+    const saldoRef=doc(db,"saldo_owner",ownerUid);
+    const perubahan={updatedAt:serverTimestamp()};
+    if(sumberDana==="kas")perubahan.saldoKas=increment(-nominal);
+    if(sumberDana==="pengelola")perubahan.saldoPengelola=increment(-nominal);
+    await setDoc(saldoRef,perubahan,{merge:true});
+  }
   bersihkan();await ambilData();render();
   $("status").innerHTML=`<span class="ok">✓ ${esc(jenis)} berhasil disimpan • ${money(nominal)}</span>`;
   showPopup("Berhasil disimpan",`${jenis} sebesar ${money(nominal)} sudah tersimpan di Firebase.`)
