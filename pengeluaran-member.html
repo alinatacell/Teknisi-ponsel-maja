@@ -278,7 +278,7 @@ body.dark textarea:focus{
   <section class="card" style="margin-top:12px">
     <h2 class="title">💸 Tambah Pengeluaran Member</h2>
     <div class="status" style="margin-bottom:12px">
-      Pengeluaran dibagi menjadi 3 sumber dana: <b>Tabungan Member</b>, <b>Uang Kas</b>, dan <b>Pengelola</b>.
+      Sumber dana: <b>Tabungan Member</b>, <b>Uang Kas</b>, dan <b>Pengelola</b>.
     </div>
     <div class="formgrid">
       <div class="field"><label>TANGGAL</label><input id="tanggal" type="date"></div>
@@ -434,53 +434,49 @@ async function muatMember(){
  const sel=$("memberPick");
  if(!sel||!ownerUid)return;
 
- const map=new Map();
+ try{
+   // Sama seperti Input Order Member:
+   // member diambil dari koleksi users berdasarkan ownerUid,
+   // lalu hanya role reseller/member/employee yang aktif.
+   const s=await getDocs(
+     query(collection(db,"users"),where("ownerUid","==",ownerUid))
+   );
 
- // Ambil member dari koleksi users.
- for(const field of ["ownerUid","ownerId"]){
-  try{
-   const s=await getDocs(query(collection(db,"users"),where(field,"==",ownerUid)));
-   s.forEach(d=>{
-    const x={id:d.id,...d.data()};
-    const role=String(x.role||x.profileRole||"").toLowerCase();
-    const aktif=String(x.status||"").toLowerCase()!=="nonaktif";
-    if(aktif&&(role==="member"||role==="reseller"||x.isMember===true)){
-      map.set(d.id,x);
-    }
-   });
-  }catch(e){console.warn("users member",field,e.message)}
- }
+   const members=s.docs
+     .map(d=>({id:d.id,...(d.data()||{})}))
+     .filter(x=>
+       ["reseller","member","employee"].includes(
+         String(x.role||"").toLowerCase()
+       ) &&
+       String(x.status||"aktif").toLowerCase()!=="nonaktif"
+     );
 
- // Fallback/pendukung: ambil dari koleksi members jika data member
- // memang disimpan terpisah dari users.
- for(const field of ["ownerUid","ownerId"]){
-  try{
-   const s=await getDocs(query(collection(db,"members"),where(field,"==",ownerUid)));
-   s.forEach(d=>{
-    const x={id:d.id,...d.data()};
-    if(String(x.status||"").toLowerCase()!=="nonaktif"){
-      map.set(d.id,x);
-    }
-   });
-  }catch(e){console.warn("members",field,e.message)}
- }
+   members.sort((a,b)=>
+     String(a.nama||a.namaKaryawan||a.name||a.email||"")
+       .localeCompare(
+         String(b.nama||b.namaKaryawan||b.name||b.email||""),
+         "id"
+       )
+   );
 
- const arr=[...map.values()].sort((a,b)=>{
-   const na=String(a.nama||a.namaMember||a.name||a.namaLengkap||a.email||"");
-   const nb=String(b.nama||b.namaMember||b.name||b.namaLengkap||b.email||"");
-   return na.localeCompare(nb,"id");
- });
+   sel.innerHTML=
+     '<option value="">-- Pilih Member --</option>'+
+     members.map(m=>{
+       const nama=m.nama||m.namaKaryawan||m.name||m.email||m.id;
+       return `<option value="${esc(m.id)}">${esc(nama)}</option>`;
+     }).join("");
 
- sel.innerHTML='<option value="">-- Pilih Member --</option>'+
-   arr.map(x=>{
-     const nama=x.nama||x.namaMember||x.name||x.namaLengkap||x.email||x.id;
-     return `<option value="${esc(x.id)}">${esc(nama)}</option>`;
-   }).join("");
-
- if(!arr.length){
-   sel.innerHTML='<option value="">-- Tidak ada member --</option>';
+   if(!members.length){
+     sel.innerHTML='<option value="">-- Tidak ada member --</option>';
+   }
+ }catch(e){
+   console.error("Member load:",e);
+   sel.innerHTML='<option value="">-- Gagal memuat member --</option>';
+   $("status").innerHTML=
+     `<span class="err">❌ Gagal memuat member: ${esc(e.message||e)}</span>`;
  }
 }
+
 async function ambilData(){rows=[];const map=new Map();for(const field of ["ownerUid","ownerId","uid"]){const value=field==="uid"?uid:ownerUid;if(!value)continue;try{const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",value)));s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}))}catch(e){console.warn("pengeluaran",field,e.message)}}rows=[...map.values()].filter(r=>String(r.modul||"").toLowerCase()==="member")}
 function render(){
  const period=$("filterBulan").value||monthNow();
@@ -515,7 +511,7 @@ async function simpan(){
 window.simpan=simpan;
 async function muatSemua(){$("status").textContent="⏳ Memuat data pengeluaran member...";try{await ambilProfile();await muatMember();await ambilData();render();$("status").innerHTML=`<span class="ok">✓ Firebase aktif • ${rows.length} pengeluaran member • ${esc(namaKonter||"Nama Konter")}</span>`}catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal memuat Firebase: ${esc(e.message||e)}</span>`}}
 window.muatSemua=muatSemua;
-$("tanggal").value=today();$("filterBulan").value=monthNow();updateJenis();
+$("tanggal").value=today();$("filterBulan").value=monthNow();updateJenis();updateJenis();
 onAuthStateChanged(auth,async user=>{if(!user){uid="";$("ownerName").textContent="Menunggu sesi FIXZY...";$("ownerEmail").textContent="";$("status").innerHTML='<span class="err">⚠️ Sesi Firebase belum terbaca.</span>';return}uid=user.uid;await muatSemua()});
 </script>
 </body>
