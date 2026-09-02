@@ -59,7 +59,11 @@ function orderDate(r){return toDate(r.createdAt)||toDate(r.approvedAt)||toDate(r
 function monthKey(r){const d=orderDate(r);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
 function itemList(r){
  const a=Array.isArray(r.approvedItems)?r.approvedItems:(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
- return a.map(x=>({qty:Math.max(0,num(x.approvedQty??x.qty??x.jumlah??x.quantity)),tab:Number(x.tabunganPerPcs??x.tabunganMember??r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??0)||0,up:Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0}));
+ return a.map(x=>({
+   qty:Math.max(0,num(x.approvedQty??x.qty??x.jumlah??x.quantity)),
+   tabStored:x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs??x.menabungMember,
+   upStored:x.upPengelolaPerPcs??x.upPengelola??x.upPerPcs
+ }));
 }
 function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||""),email:String(r.memberEmail||m.email||""),kode:String(m.kode||m.kodeMember||r.kodeMember||""),nama:String(m.nama||m.namaMember||r.memberNama||"")}}
 async function safeQuery(q){try{return await getDocs(q)}catch(e){console.warn("FIXZY query dilewati:",e?.message||e);return null}}
@@ -123,12 +127,20 @@ function withdrawalFor(r){
 }
 function aggregate(){
  const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
- members.forEach(m=>{const rec={member:m,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);if(nama(m))byName.set(norm(nama(m)),rec)});
+ members.forEach(m=>{
+   const rec={member:m,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};
+   byId.set(m.id,rec);
+   if(email(m))byEmail.set(norm(email(m)),rec);
+   if(kode(m))byCode.set(norm(kode(m)),rec);
+   if(nama(m))byName.set(norm(nama(m)),rec);
+ });
  orders.forEach(r=>{
    let rec=findRec({id:byId,email:byEmail,code:byCode,name:byName},r);
    if(!rec){
-     const m=r.member||{};
-     const temp={id:String(r.memberUid||r.memberId||m.uid||m.userId||""),...m,email:r.memberEmail||m.email||"",kodeMember:m.kodeMember||m.kode||r.kodeMember||"",nama:m.nama||m.namaMember||r.memberNama||"-",role:"member",status:m.status||"aktif"};
+     const m=r.member||r.pelanggan||{};
+     const temp={id:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||"").trim(),
+       ...m,email:r.memberEmail||m.email||"",kodeMember:m.kodeMember||m.kode||r.kodeMember||"",
+       nama:m.nama||m.namaMember||r.memberNama||"-",role:"member",status:m.status||"aktif"};
      if(temp.id){
        rec={member:temp,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};
        byId.set(temp.id,rec);
@@ -138,28 +150,74 @@ function aggregate(){
      }
    }
    if(!rec)return;
-   const orderTotal=num(r.approvedTotal??r.totalBayar??r.total??0);
-   const paidRecorded=num(r.totalDibayar??r.pembayaran??r.approvedDp??r.dp??r.uangMuka??0);
-   const paymentType=norm(r.tipeOrder||r.jenisTransaksi||r.metodePembayaran||r.paymentMethod||r.pembayaranJenis||'');
-   const cashOrder=/cash|tunai/.test(paymentType)||paymentType==='member_cash';
+
+   const orderTotal=Math.max(0,num(r.approvedTotal??r.totalBayar??r.total??0));
+   const paidRecorded=Math.max(0,num(r.totalDibayar??r.pembayaran??r.approvedDp??r.dp??r.uangMuka??0));
+   const paymentType=norm(r.tipeOrder||r.tipeTransaksi||r.jenisTransaksi||r.metodePembayaran||r.paymentMethod||r.pembayaranJenis||"");
+   const cashOrder=/cash|tunai/.test(paymentType)||paymentType==="member_cash";
    rec.paid+=Math.min(orderTotal,Math.max(0,cashOrder?orderTotal:paidRecorded));
-   const fallbackTab=num(r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;
-   const fallbackUp=num(r.upPengelolaPerPcs??r.upPengelola??rec.member.upPengelolaPerPcs??0);
+
+   const memberObj=r.member||r.pelanggan||{};
+   const fallbackTab=num(r.tabunganPerPcs??r.tabunganMember??r.menabungMemberPerPcs??
+     memberObj.tabunganPerPcs??memberObj.tabunganMember??
+     rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;
+   const fallbackUp=num(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??
+     rec.member.upPengelolaPerPcs??rec.member.upPengelola??0);
+
    const items=itemList(r);
-   if(items.length){
-     items.forEach(x=>{const q=x.qty,tab=x.tab||fallbackTab,up=x.up||fallbackUp;rec.qty+=q;rec.total+=q*tab;rec.up+=q*up;if(q>0)rec.upPcs=up});
-   }else{
-     let q=num(r.totalQty??r.approvedQty??r.qty??r.jumlah);
-     const totalTab=num(r.totalTabunganOrder??r.totalTabungan??0);
-     if(!q&&totalTab&&fallbackTab)q=Math.round(totalTab/fallbackTab);
-     rec.qty+=q;rec.total+=totalTab||q*fallbackTab;rec.up+=num(r.totalUpPengelolaOrder??r.totalUp??0)||q*fallbackUp;if(q>0)rec.upPcs=fallbackUp;
+   const qtyFromItems=items.reduce((a,x)=>a+x.qty,0);
+   const qtyStored=Math.max(0,num(r.totalQty??r.approvedQty??r.qty??r.jumlah??0));
+   const q=qtyFromItems>0?qtyFromItems:qtyStored;
+
+   // AKURAT: bila order menyimpan total tabungan, gunakan total tersebut.
+   // Jangan menjumlahkan ulang qty x default 4000 jika nilai order sudah tersimpan.
+   const explicitTab=r.totalTabunganOrder??r.totalTabunganMember??r.totalTabungan??
+     r.tabunganTotal??r.totalMenabungMember;
+   const hasExplicitTab=explicitTab!==undefined&&explicitTab!==null&&explicitTab!=="";
+   let orderTab=hasExplicitTab?Math.max(0,num(explicitTab)):0;
+   if(!hasExplicitTab){
+     if(items.length){
+       orderTab=items.reduce((sum,x)=>{
+         const tab=x.tabStored!==undefined&&x.tabStored!==null&&x.tabStored!==""?num(x.tabStored):fallbackTab;
+         return sum+x.qty*tab;
+       },0);
+     }else orderTab=q*fallbackTab;
    }
-   const kas=num(r.kasBulanan??r.uangKasBulanan??rec.member.kasBulanan??rec.member.uangKasBulanan??0);
-   if(kas>0){const mk=monthKey(r);if(!rec.kasMonths.has(mk)){rec.kasMonths.add(mk);rec.kas+=kas}}
+
+   // AKURAT UP: prioritaskan total UP yang tersimpan pada order.
+   const explicitUp=r.totalUpPengelolaOrder??r.totalUPPengelola??r.totalUpPengelola??
+     r.upPengelolaTotal??r.totalUp;
+   const hasExplicitUp=explicitUp!==undefined&&explicitUp!==null&&explicitUp!=="";
+   let orderUp=hasExplicitUp?Math.max(0,num(explicitUp)):0;
+   if(!hasExplicitUp){
+     if(items.length){
+       orderUp=items.reduce((sum,x)=>{
+         const up=x.upStored!==undefined&&x.upStored!==null&&x.upStored!==""?num(x.upStored):fallbackUp;
+         return sum+x.qty*up;
+       },0);
+     }else orderUp=q*fallbackUp;
+   }
+
+   rec.qty+=q;
+   rec.total+=orderTab;
+   rec.up+=orderUp;
+   if(q>0){
+     const firstItem=items.find(x=>x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="");
+     rec.upPcs=firstItem?num(firstItem.upStored):fallbackUp;
+   }
+
+   // Kas: hanya sekali per member per bulan kalender.
+   const kas=num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??
+     rec.member.kasBulanan??rec.member.uangKasBulanan??0);
+   if(kas>0){
+     const mk=monthKey(r);
+     if(!rec.kasMonths.has(mk)){rec.kasMonths.add(mk);rec.kas+=kas;}
+   }
  });
  for(const rec of byId.values())rec.withdraw=withdrawalFor(rec);
  return [...byId.values()];
 }
+
 function render(){
  if(!ready)return;
  const search=String($("search")?.value||"").trim();
