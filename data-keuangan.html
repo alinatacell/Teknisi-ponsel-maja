@@ -29,7 +29,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric,bod
 <div class="metric orange"><div class="label">Total Qty</div><div class="value" id="totalQty">0 pcs</div><div class="sub">Qty order yang masuk tabungan</div></div>
 <div class="metric green"><div class="label">Total UP Pengelola</div><div class="value" id="totalUp">Rp 0</div><div class="sub">UP/Pcs × qty approved</div></div>
 <div class="metric orange"><div class="label">Total Kas Bulanan</div><div class="value" id="totalKas">Rp 0</div><div class="sub">1× per member per bulan kalender</div></div>
-<div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Setelah pengambilan tabungan</div></div><div class="metric green"><div class="label">Saldo UP Pengelola</div><div class="value" id="saldoUpPengelola">Rp 0</div><div class="sub">UP masuk − pengeluaran UP</div></div><div class="metric orange"><div class="label">Saldo Uang Kas</div><div class="value" id="saldoUangKas">Rp 0</div><div class="sub">Kas masuk − pengeluaran Kas</div></div>
+<div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Saat ini belum ada transaksi pengambilan</div></div>
 </div>
 <div class="card"><div class="title">SALDO TABUNGAN PER MEMBER</div>
 <div id="memberPanels" class="member-panels"><div class="empty">Memuat Firebase...</div></div>
@@ -45,7 +45,7 @@ const $=id=>document.getElementById(id);
 const setText=(id,v)=>{const e=$(id);if(e)e.textContent=v};
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),num=v=>Number(v)||0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-let uid="",ownerUid="",profile={},members=[],orders=[],withdrawals=[],expenses=[],ready=false,loading=false;
+let uid="",ownerUid="",profile={},members=[],orders=[],withdrawals=[],ready=false,loading=false;
 function norm(v){return String(v??"").trim().toLowerCase()}
 function notice(t,c=""){setText("notice",t);const e=$("notice");if(e)e.className="notice "+c}
 function ownerOf(d){const r=norm(d.role||d.profileRole);if(r==="owner"||r==="admin")return String(d.ownerUid||d.ownerId||uid).trim()||uid;if(r==="superadmin"||r==="super_admin")return "";return String(d.ownerUid||d.ownerId||"").trim()}
@@ -102,20 +102,6 @@ async function loadWithdrawals(){
  }
  withdrawals=[...map.values()].filter(r=>norm(r.modul)==="member"&&norm(r.jenis)==="pengambilan tabungan member");
 }
-async function loadAllExpenses(){
- const map=new Map();
- for(const collectionName of ["pengeluaran","pengeluaranMember"]){
-  for(const field of ["ownerUid","ownerId","uid"]){
-   const value=field==="uid"?uid:ownerUid;if(!value)continue;
-   const s=await safeQuery(query(collection(db,collectionName),where(field,"==",value)));
-   if(!s)continue; s.forEach(d=>map.set(collectionName+":"+d.id,{id:d.id,...(d.data()||{})}));
-  }
- } expenses=[...map.values()];
-}
-function expenseTotals(){
- let kas=0,up=0; expenses.forEach(e=>{const n=Math.max(0,num(e.nominal));const source=norm(e.sumberDana||e.sumber||"");const jenis=norm(e.jenisLabel||e.jenis||""); if(source.includes("pengelola")||jenis.includes("pengelola"))up+=n; else if(source.includes("kas")||source===""||jenis.includes("transport")||jenis.includes("acara")||jenis.includes("lain"))kas+=n;}); return {kas,up};
-}
-
 function fallbackMembersFromOrders(){
  const map=new Map();
  orders.forEach(r=>{
@@ -251,8 +237,7 @@ function render(){
  setText("totalQty",qty.toLocaleString("id-ID")+" pcs");
  setText("totalUp",rp(up));
  setText("totalKas",rp(kas));
- setText("saldoTabungan",rp(Math.max(0,total-withdraw)));
-  const global=aggregate(); let upGlobal=0,kasGlobal=0; global.forEach(r=>{upGlobal+=r.up;kasGlobal+=r.kas}); const ex=expenseTotals(); setText("saldoUpPengelola",rp(Math.max(0,upGlobal-ex.up))); setText("saldoUangKas",rp(Math.max(0,kasGlobal-ex.kas)));
+ setText("saldoTabungan",rp(total-withdraw));
  const body=$("memberPanels");if(!body)return;
  body.innerHTML=data.length?data.map((r,i)=>{
    const a=r.member,saldo=Math.max(0,r.total-r.withdraw);
@@ -285,7 +270,7 @@ async function load(){
  if(!ownerUid||loading)return;
  loading=true;ready=false;notice("Menghubungkan Firebase FIXZY...","ok");
  try{
-   await Promise.all([loadMembers(),loadOrders(),loadWithdrawals(),loadAllExpenses()]);
+   await Promise.all([loadMembers(),loadOrders(),loadWithdrawals()]);
    if(!members.length)members=fallbackMembersFromOrders();
    isiDropdownMember();
    ready=true;render();
