@@ -161,8 +161,13 @@ function aggregate(){
    const fallbackTab=num(r.tabunganPerPcs??r.tabunganMember??r.menabungMemberPerPcs??
      memberObj.tabunganPerPcs??memberObj.tabunganMember??
      rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;
-   const fallbackUp=num(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??
-     rec.member.upPengelolaPerPcs??rec.member.upPengelola??0);
+   const fallbackUp=num(
+     r.upPengelolaPerPcs??
+     r.upPerPcs??
+     rec.member.upPengelolaPerPcs??
+     rec.member.upPengelola??
+     1000
+   );
 
    const items=itemList(r);
    const qtyFromItems=items.reduce((a,x)=>a+x.qty,0);
@@ -184,18 +189,19 @@ function aggregate(){
      }else orderTab=q*fallbackTab;
    }
 
-   // AKURAT UP: prioritaskan total UP yang tersimpan pada order.
-   const explicitUp=r.totalUpPengelolaOrder??r.totalUPPengelola??r.totalUpPengelola??
-     r.upPengelolaTotal??r.totalUp;
-   const hasExplicitUp=explicitUp!==undefined&&explicitUp!==null&&explicitUp!=="";
-   let orderUp=hasExplicitUp?Math.max(0,num(explicitUp)):0;
-   if(!hasExplicitUp){
-     if(items.length){
-       orderUp=items.reduce((sum,x)=>{
-         const up=x.upStored!==undefined&&x.upStored!==null&&x.upStored!==""?num(x.upStored):fallbackUp;
-         return sum+x.qty*up;
-       },0);
-     }else orderUp=q*fallbackUp;
+   // UP PENGELOLA AKURAT:
+   // selalu dihitung dari QTY approved x tarif UP per pcs.
+   // Field total UP order tidak dipakai sebagai tarif per pcs.
+   let orderUp=0;
+   if(items.length){
+     orderUp=items.reduce((sum,x)=>{
+       const upPcs=(x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="")
+         ?num(x.upStored)
+         :fallbackUp;
+       return sum+(x.qty*upPcs);
+     },0);
+   }else{
+     orderUp=q*fallbackUp;
    }
 
    rec.qty+=q;
