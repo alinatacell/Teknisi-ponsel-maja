@@ -452,18 +452,17 @@ function orderMonthKey(r){
  if(!d||isNaN(d.getTime()))return String(r.tanggal||"").slice(0,7);
  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
 }
-function tabunganMasuk(){return currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0)}
-function pengelolaMasuk(){return currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0)}
-function kasBulananMasuk(){
+function tabunganMasuk(source=orders){return source.reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0)}
+function pengelolaMasuk(source=orders){return source.reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0)}
+function kasBulananMasuk(source=orders){
  const seen=new Set();let total=0;
- for(const r of currentOrders()){
-  const member=orderMemberKey(r); const month=orderMonthKey(r);
-  const key=(member||String(r.memberEmail||r.memberNama||r.id))+"|"+month;
-  if(seen.has(key))continue; seen.add(key);
-  const v=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.member?.kasBulanan??r.member?.uangKasBulanan??0)||0;
-  total+=Math.max(0,v);
- }
+ for(const r of source){const member=orderMemberKey(r),month=orderMonthKey(r);const key=(member||String(r.memberEmail||r.memberNama||r.id))+'|'+month;if(seen.has(key))continue;seen.add(key);const v=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.member?.kasBulanan??r.member?.uangKasBulanan??0)||0;total+=Math.max(0,v)}
  return total;
+}
+function expenseTotals(source=expenses){
+ let tabungan=0,kas=0,pengelola=0;
+ for(const e of source){const n=Math.max(0,num(e.nominal));const sourceName=String(e.sumberDana||e.sumber||'').trim().toLowerCase();const jenis=String(e.jenisLabel||e.jenis||'').trim().toLowerCase();if(sourceName==='tabungan'||jenis.includes('pengambilan tabungan'))tabungan+=n;else if(sourceName.includes('pengelola')||jenis.includes('pengelola'))pengelola+=n;else if(sourceName.includes('kas')||sourceName===''||jenis.includes('transport')||jenis.includes('acara')||jenis.includes('lain'))kas+=n}
+ return {tabungan,kas,pengelola};
 }
 
 async function loadExpenses(){
@@ -511,29 +510,11 @@ function currentExpenses(){
 }
 
 function renderExpenses(){
- let tabungan=0,kas=0,pengelola=0;
- for(const e of currentExpenses()){
-  const n=Math.max(0,num(e.nominal));
-  const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
-  const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
-  if(source==="tabungan" || jenis.includes("pengambilan tabungan")) tabungan+=n;
-  else if(source.includes("pengelola") || jenis.includes("pengelola")) pengelola+=n;
-  else if(source.includes("kas") || source==="" || jenis.includes("transport") || jenis.includes("acara") || jenis.includes("lain")) kas+=n;
- }
- const tabMasuk=tabunganMasuk(),kasMasuk=kasBulananMasuk(),upMasuk=pengelolaMasuk();
- $("expenseTabungan").textContent=rp(tabungan);
- $("expenseKas").textContent=rp(kas);
- $("expensePengelola").textContent=rp(pengelola);
- $("expenseTotal").textContent=rp(tabungan+kas+pengelola);
- $("saldoTabunganAkhir").textContent=rp(tabMasuk-tabungan);
- $("saldoKasAkhir").textContent=rp(kasMasuk-kas);
- $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
- const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
-  const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
-  const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
-  const label=source==="tabungan"||jenis.includes("pengambilan tabungan")?"TABUNGAN MEMBER":source.includes("pengelola")||jenis.includes("pengelola")?"UP PENGELOLA":"UANG KAS";
-  return `<tr><td>${esc(e.tanggal||"-")}</td><td>${esc(e.jenisLabel||e.jenis||"-")}</td><td>${label}</td><td>${esc(e.keterangan||e.memberNama||"-")}</td><td class="num">${rp(num(e.nominal))}</td></tr>`;
- }).join("");
+ const shown=expenseTotals(currentExpenses()),all=expenseTotals(expenses);
+ const tabMasuk=tabunganMasuk(orders),kasMasuk=kasBulananMasuk(orders),upMasuk=pengelolaMasuk(orders);
+ $("expenseTabungan").textContent=rp(shown.tabungan);$("expenseKas").textContent=rp(shown.kas);$("expensePengelola").textContent=rp(shown.pengelola);$("expenseTotal").textContent=rp(shown.tabungan+shown.kas+shown.pengelola);
+ $("saldoTabunganAkhir").textContent=rp(Math.max(0,tabMasuk-all.tabungan));$("saldoKasAkhir").textContent=rp(Math.max(0,kasMasuk-all.kas));$("saldoPengelolaAkhir").textContent=rp(Math.max(0,upMasuk-all.pengelola));
+ const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||'').localeCompare(String(a.tanggal||''))).map(e=>{const source=String(e.sumberDana||e.sumber||'').trim().toLowerCase(),jenis=String(e.jenisLabel||e.jenis||'').trim().toLowerCase(),label=source==='tabungan'||jenis.includes('pengambilan tabungan')?'TABUNGAN MEMBER':source.includes('pengelola')||jenis.includes('pengelola')?'UP PENGELOLA':'UANG KAS';return `<tr><td>${esc(e.tanggal||'-')}</td><td>${esc(e.jenisLabel||e.jenis||'-')}</td><td>${label}</td><td>${esc(e.keterangan||e.memberNama||'-')}</td><td class="num">${rp(num(e.nominal))}</td></tr>`}).join('');
  $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
 }
 
@@ -602,7 +583,7 @@ function renderStock(){
  // Dasar fee: qty order member x Rp5.000.
  const feeQtyForStock = orderQty;
  const upForStock = currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0);
- const kasForStock = currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0);
+ const kasForStock = kasBulananMasuk(currentOrders());
  const totalFeeForStock = upForStock + kasForStock;
 
  $("stockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
@@ -684,8 +665,12 @@ function renderBills(){
 
 function renderOrders(){
  const data=currentOrders();
- let qty=0,up=0,kas=0;
+ let qty=0,up=0,kas=kasBulananMasuk(data);
+ const seenKas=new Set();
  const rows=data.map(r=>{
+  const member=orderMemberKey(r),month=orderMonthKey(r);
+  const kasKey=(member||String(r.memberEmail||r.memberNama||r.id))+"|"+month;
+  const kasRow=!seenKas.has(kasKey)?(seenKas.add(kasKey),Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.member?.kasBulanan??r.member?.uangKasBulanan??0))):0;
   const items=itemList(r);
   const q=items.reduce((a,x)=>a+x.qty,0);
   const value=items.reduce((a,x)=>a+x.total,0);
@@ -693,7 +678,7 @@ function renderOrders(){
   const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
   const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
   const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
-  qty+=q;up+=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0);kas+=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0);
+  qty+=q;up+=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0);
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
   return `<tr>
@@ -704,7 +689,7 @@ function renderOrders(){
    <td class="num">${q.toLocaleString("id-ID")}</td>
    <td class="num">${rp(value)}</td>
    <td class="num">${rp(items.reduce((a,x)=>a+x.qty*x.upPengelolaPerPcs,0))}</td>
-   <td class="num">${rp(items.reduce((a,x)=>a+x.qty*x.tabunganPerPcs,0))}</td>
+   <td class="num">${rp(kasRow)}</td>
    <td class="num">${rp(sisa)}</td>
   </tr>`;
  });
