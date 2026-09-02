@@ -269,22 +269,25 @@ body.dark textarea:focus{
   <div id="status" style="display:none">Memeriksa sesi Firebase...</div>
 
   <section class="kpis">
-    <div class="kpi k1"><small>PENGELUARAN MEMBER</small><b id="total">Rp 0</b></div>
-    <div class="kpi k2"><small>UANG KAS</small><b id="kas">Rp 0</b></div>
-    <div class="kpi k3"><small>HASIL PENGELOLA</small><b id="pengelola">Rp 0</b></div>
+    <div class="kpi k1"><small>PENGAMBILAN TABUNGAN</small><b id="total">Rp 0</b></div>
+    <div class="kpi k2"><small>PENGELUARAN KAS</small><b id="kas">Rp 0</b></div>
+    <div class="kpi k3"><small>PENGAMBILAN UP PENGELOLA</small><b id="pengelola">Rp 0</b></div>
     <div class="kpi k4"><small>TRANSAKSI</small><b id="jumlah">0</b></div>
   </section>
 
   <section class="card" style="margin-top:12px">
     <h2 class="title">💸 Tambah Pengeluaran Member</h2>
     <div class="status" style="margin-bottom:12px">
-      Transportasi, Acara Komunitas, dan Lain-lain diambil dari <b>Uang Kas</b>.
-      Pengeluaran Pengelola diambil dari <b>Hasil Pengelola</b>.
+      Pengeluaran dibagi menjadi 3 sumber dana: <b>Tabungan Member</b>, <b>Uang Kas</b>, dan <b>Pengelola</b>.
     </div>
     <div class="formgrid">
       <div class="field"><label>TANGGAL</label><input id="tanggal" type="date"></div>
-      <div class="field"><label>SUMBER DANA</label><select id="sumberDana"><option value="kas">Uang Kas</option><option value="pengelola">Hasil Pengelola</option></select></div>
-      <div class="field"><label>JENIS PENGELUARAN</label><select id="jenis"><option>Transportasi</option><option>Acara Komunitas</option><option>Lain-lain</option><option>Pengeluaran Pengelola</option><option>Pengambilan Tabungan Member</option><option>Pengambilan UP Pengelola</option></select></div>
+      <div class="field"><label>SUMBER DANA</label><select id="sumberDana">
+        <option value="tabungan">Tabungan Member</option>
+        <option value="kas">Uang Kas</option>
+        <option value="pengelola">Pengelola</option>
+      </select></div>
+      <div class="field"><label>JENIS PENGELUARAN</label><select id="jenis"></select></div>
       <div class="field" id="memberPickWrap" style="display:none"><label>NAMA MEMBER</label><select id="memberPick"><option value="">-- Pilih Member --</option></select></div>
       <div class="field"><label>NOMINAL</label><input id="nominal" type="tel" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal"></div>
       <div class="field full"><label>KETERANGAN</label><textarea id="keterangan" placeholder="Keterangan pengeluaran"></textarea></div>
@@ -394,23 +397,26 @@ function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 function monthNow(){return today().slice(0,7)}
 function showPopup(title,text){$("popupTitle").textContent=title;$("popupText").textContent=text;$("popup").classList.add("show")}
 window.tutupPopup=()=>$('popup').classList.remove('show');
-function bersihkan(){$("tanggal").value=today();$("sumberDana").value="kas";$("jenis").value="Transportasi";$("memberPick").value="";$("memberPickWrap").style.display="none";$("nominal").value="";$("keterangan").value=""}
+function bersihkan(){
+  $("tanggal").value=today();
+  $("sumberDana").value="tabungan";
+  updateJenis();
+  $("memberPick").value="";
+  $("nominal").value="";
+  $("keterangan").value="";
+}
 window.bersihkan=bersihkan;
-$("sumberDana").addEventListener("change",()=>{
+function updateJenis(){
   const s=$("sumberDana").value;
-  if(s==="pengelola"){
-    if(!["Pengeluaran Pengelola","Pengambilan UP Pengelola"].includes($("jenis").value))$("jenis").value="Pengeluaran Pengelola";
-  }else if($("jenis").value==="Pengeluaran Pengelola"||$("jenis").value==="Pengambilan UP Pengelola"){
-    $("jenis").value="Transportasi";
-  }
-  $("memberPickWrap").style.display=$("jenis").value==="Pengambilan Tabungan Member"?"block":"none";
-});
-$("jenis").addEventListener("change",()=>{
-  const j=$("jenis").value;
-  if(j==="Pengeluaran Pengelola"||j==="Pengambilan UP Pengelola")$("sumberDana").value="pengelola";
-  else $("sumberDana").value="kas";
-  $("memberPickWrap").style.display=j==="Pengambilan Tabungan Member"?"block":"none";
-});
+  const daftar={
+    tabungan:["Pengambilan Tabungan Member"],
+    kas:["Transportasi","Acara Komunitas","Lain-lain"],
+    pengelola:["Pengambilan UP Pengelola"]
+  };
+  $("jenis").innerHTML=(daftar[s]||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+  $("memberPickWrap").style.display=s==="tabungan"?"block":"none";
+}
+$("sumberDana").addEventListener("change",updateJenis);
 async function ambilProfile(){
  if(!uid)return;
  try{const s=await getDoc(doc(db,"users",uid));if(s.exists())profile=s.data()||{}}catch(e){console.warn("Profil:",e.message)}
@@ -446,8 +452,8 @@ function render(){
  const period=$("filterBulan").value||monthNow();
  const data=rows.filter(r=>String(r.tanggal||"").startsWith(period)).sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||"")));
  const total=data.reduce((s,r)=>s+(Number(r.nominal)||0),0);
- const kas=data.filter(r=>{const j=String(r.jenis||"").toLowerCase();return String(r.sumberDana||"").toLowerCase()==="kas"&&j!=="pengambilan tabungan member"}).reduce((s,r)=>s+(Number(r.nominal)||0),0);
- const pengelola=data.filter(r=>{const j=String(r.jenis||"").toLowerCase();const s=String(r.sumberDana||"").toLowerCase();return s==="pengelola"||j.includes("pengelola")}).reduce((s,r)=>s+(Number(r.nominal)||0),0);
+ const kas=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="kas").reduce((s,r)=>s+(Number(r.nominal)||0),0);
+ const pengelola=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="pengelola").reduce((s,r)=>s+(Number(r.nominal)||0),0);
  $("total").textContent=money(total);$("kas").textContent=money(kas);$("pengelola").textContent=money(pengelola);$("jumlah").textContent=data.length;
  $("tbody").innerHTML=data.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.tanggal||"-")}</td><td><span class="badge">${esc(r.jenis||"-")}</span></td><td>${esc(r.keterangan||r.memberNama||"-")}</td><td class="num amount">${money(r.nominal)}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">Belum ada pengeluaran member pada bulan ini.</td></tr>'
 }
@@ -459,10 +465,10 @@ async function simpan(){
  const nominal=Number(String($("nominal").value||"").replace(/[^0-9]/g,""))||0;
  const keterangan=$("keterangan").value.trim();
  if(!nominal||nominal<1){showPopup("Nominal belum diisi","Masukkan nominal pengeluaran terlebih dahulu.");return}
- const isPengelola=jenis==="Pengeluaran Pengelola"||jenis==="Pengambilan UP Pengelola";
- const isTabungan=jenis==="Pengambilan Tabungan Member";
- if(isPengelola&&sumberDana!=="pengelola"){showPopup("Sumber dana tidak sesuai","Pengeluaran/Pengambilan UP Pengelola harus memakai Hasil Pengelola.");return}
- if(!isPengelola&&sumberDana!=="kas"){showPopup("Sumber dana tidak sesuai","Pengeluaran biasa dan pengambilan tabungan member memakai sumber Kas.");return}
+ const isTabungan=sumberDana==="tabungan";
+ if(isTabungan&&jenis!=="Pengambilan Tabungan Member"){showPopup("Sumber dana tidak sesuai","Tabungan Member hanya untuk Pengambilan Tabungan Member.");return}
+ if(sumberDana==="kas"&&!["Transportasi","Acara Komunitas","Lain-lain"].includes(jenis)){showPopup("Sumber dana tidak sesuai","Uang Kas hanya untuk Transportasi, Acara Komunitas, atau Lain-lain.");return}
+ if(sumberDana==="pengelola"&&jenis!=="Pengambilan UP Pengelola"){showPopup("Sumber dana tidak sesuai","Pengelola hanya untuk Pengambilan UP Pengelola.");return}
  if(isTabungan&&!memberId){showPopup("Member belum dipilih","Pilih member untuk pengambilan tabungan.");return}
  try{
   $("status").textContent="⏳ Menyimpan pengeluaran member ke Firebase...";
@@ -475,7 +481,7 @@ async function simpan(){
 window.simpan=simpan;
 async function muatSemua(){$("status").textContent="⏳ Memuat data pengeluaran member...";try{await ambilProfile();await muatMember();await ambilData();render();$("status").innerHTML=`<span class="ok">✓ Firebase aktif • ${rows.length} pengeluaran member • ${esc(namaKonter||"Nama Konter")}</span>`}catch(e){console.error(e);$("status").innerHTML=`<span class="err">❌ Gagal memuat Firebase: ${esc(e.message||e)}</span>`}}
 window.muatSemua=muatSemua;
-$("tanggal").value=today();$("filterBulan").value=monthNow();
+$("tanggal").value=today();$("filterBulan").value=monthNow();updateJenis();
 onAuthStateChanged(auth,async user=>{if(!user){uid="";$("ownerName").textContent="Menunggu sesi FIXZY...";$("ownerEmail").textContent="";$("status").innerHTML='<span class="err">⚠️ Sesi Firebase belum terbaca.</span>';return}uid=user.uid;await muatSemua()});
 </script>
 </body>
