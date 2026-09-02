@@ -3,306 +3,86 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FIXZY | Data Keuangan Member</title>
+<title>FIXZY | Dashboard Member</title>
 <style>
-*{box-sizing:border-box}
-:root{--b:#0b0f14;--b2:#111827;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626;--blue:#2563eb;--orange:#f59e0b}
-html,body{margin:0;padding:0;overflow-x:hidden}
-body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
-header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}
+*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626;--blue:#2563eb;--orange:#f59e0b}
+html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9;height:70px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}
 .head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
-.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
-.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
-.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
-.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
-main{max-width:1100px;margin:auto;padding:88px 12px 30px}
-.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.logo{width:50px;height:50px;object-fit:contain;background:#000;border-radius:12px;padding:4px}.hi{flex:1;min-width:0}
+.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.btn{border:2px solid #334155;border-radius:9px;padding:9px 12px;font-weight:900;cursor:pointer;background:#1f2937;color:#fff}
+main{max-width:1100px;margin:auto;padding:84px 12px 30px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
 .card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
 .title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
-.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
-label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
-input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.top-stock-summary{margin-bottom:12px}.top-stock-summary .metric{min-height:92px}
-.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:3px 3px 0 #111827}
-.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}
-.metric .value{font-size:20px;font-weight:900;margin-top:5px}
-.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}
-.metric.blue{background:#eff6ff}.metric.orange{background:#fffbeb}.metric.green{background:#f0fdf4}.metric.red{background:#fef2f2}
-
-.money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
-.table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
-table{width:100%;border-collapse:collapse;min-width:0}
-@media(max-width:650px){
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:680px}
-  .expense-table table{min-width:620px}
-  th,td{padding:8px 7px;font-size:10px}
-  th{font-size:9px}
-}
-th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
-th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
-td.num{text-align:right;font-weight:800}
-tr:last-child td{border-bottom:0}
-.total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}
-.section-note{font-size:11px;color:#64748b;line-height:1.6;margin-bottom:10px}
-.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
-.badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
-.badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
-.empty{text-align:center;padding:25px;color:#64748b;font-size:12px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.primary{background:#111827;color:#fff}
-.secondary{background:#e5e7eb;color:#111827}
-body.dark{background:#0b1220;color:#e5e7eb}
-body.dark .card,body.dark .metric{background:#111827;color:#e5e7eb;border-color:#475569}
-body.dark .title{border-color:#475569}
-body.dark label{color:#9ca3af}
-body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
-body.dark .metric.blue,body.dark .metric.orange,body.dark .metric.green,body.dark .metric.red{background:#1e293b}
-body.dark .money-total,body.dark .total-row td{background:#1c1917}
-body.dark th{background:#020617}
-body.dark td{border-color:#334155}
-.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.expense-table{margin-top:12px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
-@media(max-width:650px){
-      header{height:68px}
-      .hi h1{font-size:16px}
-      main{padding:80px 8px 24px}
-      .summary-grid{grid-template-columns:1fr}
-      .filters{grid-template-columns:1fr}
-      .acts .btn{padding:8px}
-      .metric .value{font-size:18px}
-      .card{padding:12px}
-    }
+.filters{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;font:inherit;box-shadow:2px 2px 0 #111827}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:2px solid #111827;border-radius:10px;padding:13px;box-shadow:3px 3px 0 #111827;background:#f8fafc}
+.metric.blue{background:#eff6ff}.metric.green{background:#f0fdf4}.metric.orange{background:#fffbeb}.metric.red{background:#fef2f2}
+.label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}.value{font-size:21px;font-weight:900;margin-top:6px}.sub{font-size:10px;color:#64748b;margin-top:4px;line-height:1.4}
+.balance{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.balance .metric{min-height:100px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #e5e7eb;font-size:11px;text-align:left}th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}td.num{text-align:right;font-weight:800}
+.total td{font-weight:900;background:#fffbeb;border-top:2px solid #111827}
+.note{font-size:11px;color:#64748b;line-height:1.6}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark td{border-color:#334155}body.dark .total td{background:#1c1917}
+@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.balance{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){main{padding:78px 8px 24px}.grid,.balance{grid-template-columns:1fr}.hi h1{font-size:16px}.card{padding:12px}.value{font-size:19px}.table-wrap{overflow:auto}table{min-width:620px}}
 </style>
 </head>
 <body>
-<header>
- <div class="head">
-  <img class="logo" src="logo.png" alt="FIXZY">
-  <div class="hi"><h1>Data Keuangan Member</h1><span id="email" class="email">-</span></div>
-  <div class="acts">
-   <button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button>
-   <button id="dark" class="btn dark" type="button">🌙</button>
-  </div>
- </div>
-</header>
+<header><div class="head">
+<img class="logo" src="logo.png" alt="FIXZY">
+<div class="hi"><h1>Dashboard Member</h1><span id="email" class="email">-</span></div>
+<button class="btn" onclick="location.reload()">↻ Refresh</button>
+<button class="btn" id="dark">🌙</button>
+</div></header>
 
 <main>
- <div id="notice" class="notice">Menunggu akun...</div>
+<div id="notice" class="notice">Menunggu akun...</div>
 
- <div class="card">
-  <div class="title">Ringkasan Keuangan Member</div>
-  <div class="filters">
-   <div>
-    <label>PERIODE</label>
-    <select id="periode">
-     <option value="all">Semua Data</option>
-     <option value="month">Bulan Ini</option>
-     <option value="year">Tahun Ini</option>
-    </select>
-   </div>
-   <div>
-    <label>PENCARIAN PRODUK</label>
-    <input id="search" placeholder="Nama / kode produk...">
-   </div>
-   <div class="actions">
-    <button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button>
-   </div>
-  </div>
- </div>
 <div class="card">
-  <div class="title">RINCIAN STOCK PER PRODUK</div>
-  <div class="table-wrap">
-   <table>
-    <thead><tr>
-     <th>Produk</th><th>Kode</th><th class="num">Stock Total</th><th class="num">Di Order</th><th class="num">Sisa Stock</th>
-     <th class="num">Modal/PCS</th><th class="num">Nominal Total</th><th class="num">Nominal Order</th><th class="num">Nominal Sisa</th>
-    </tr></thead>
-    <tbody id="stockTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
- <div class="card">
-  <div class="title">STOCK MEMBER</div>
-  <div class="section-note">
-   <b>Stock total</b> dihitung sebagai stock yang masih tersedia + stock yang sudah masuk order member.
-   Nilai nominal stock menggunakan <b>modal/pcs</b> dari data stock/order.
-  </div>
-  <!-- PANEL ATAS: NILAI STOCK SEBELUM UP PENGELOLA + UANG KAS -->
-  <div class="summary-grid top-stock-summary">
-   <div class="metric blue">
-    <div class="label">Total Stock Sebelum UP + Kas</div>
-    <div class="value" id="preFeeStockTotalQty">0 pcs</div>
-    <div class="sub" id="preFeeStockTotalNominal">Rp 0</div>
-   </div>
-   <div class="metric orange">
-    <div class="label">Stock Di Order Sebelum UP + Kas</div>
-    <div class="value" id="preFeeOrderStockQty">0 pcs</div>
-    <div class="sub" id="preFeeOrderStockNominal">Rp 0</div>
-   </div>
-   <div class="metric green">
-    <div class="label">Sisa Stock Sebelum UP + Kas</div>
-    <div class="value" id="preFeeRemainingStockQty">0 pcs</div>
-    <div class="sub" id="preFeeRemainingStockNominal">Rp 0</div>
-   </div>
-   <div class="metric">
-    <div class="label">Nilai Modal Sebelum UP + Kas</div>
-    <div class="value" id="preFeeModalTotal">Rp 0</div>
-    <div class="sub">Nilai stock tanpa UP Pengelola + Uang Kas</div>
-   </div>
-  </div>
+<div class="title">DASHBOARD KEUANGAN MEMBER</div>
+<div class="filters">
+<div><b style="font-size:11px">PERIODE</b>
+<select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div>
+<div><button class="btn" onclick="muat()">Muat Data</button></div>
+</div>
+</div>
 
-  <div class="summary-grid">
-   <div class="metric blue">
-    <div class="label">Jumlah Stock Total + UP + Kas</div>
-    <div class="value" id="stockTotalQty">0 pcs</div>
-    <div class="sub" id="stockTotalNominal">Rp 0</div>
-   </div>
-   <div class="metric orange">
-    <div class="label">Stock Di Order + UP + Kas</div>
-    <div class="value" id="orderStockQty">0 pcs</div>
-    <div class="sub" id="orderStockNominal">Rp 0</div>
-   </div>
-   <div class="metric green">
-    <div class="label">Sisa Stock + UP + Kas</div>
-    <div class="value" id="remainingStockQty">0 pcs</div>
-    <div class="sub" id="remainingStockNominal">Rp 0</div>
-   </div>
-   <div class="metric">
-    <div class="label">Nilai Total + UP + Kas</div>
-    <div class="value" id="modalTotal">Rp 0</div>
-    <div class="sub">Nilai stock + UP Pengelola + Uang Kas</div>
-   </div>
-  </div>
- </div>
+<div class="grid">
+<div class="metric blue"><div class="label">Order Approved</div><div class="value" id="orders">0</div><div class="sub">Order member yang masuk perhitungan</div></div>
+<div class="metric orange"><div class="label">Total Qty</div><div class="value" id="qty">0 pcs</div><div class="sub">Jumlah pcs approved</div></div>
+<div class="metric green"><div class="label">UP Pengelola Masuk</div><div class="value" id="up">Rp 0</div><div class="sub">UP per pcs × qty</div></div>
+<div class="metric orange"><div class="label">Uang Kas Masuk</div><div class="value" id="kas">Rp 0</div><div class="sub">1× per member per bulan</div></div>
+</div>
+
 <div class="card">
-  <div class="title">UANG PENGELOLA & UANG KAS</div>
-  <div class="section-note">
-   Perhitungan otomatis berdasarkan <b>jumlah pcs yang sudah masuk ke Data Order Member</b>:
-   <br>• <b>UP Pengelola</b> mengikuti pengaturan Pengelola / pcs
-   <br>• <b>Tabungan Member</b> mengikuti pengaturan masing-masing Member / pcs
-   <br>• <b>Uang Kas</b> adalah iuran bulanan per Member
-  </div>
-  <div class="summary-grid">
-   <div class="metric blue">
-    <div class="label">Stock Di Order</div>
-    <div class="value" id="feeQty">0 pcs</div>
-    <div class="sub">Dasar perhitungan UP + Kas</div>
-   </div>
-   <div class="metric">
-    <div class="label">UP Pengelola</div>
-    <div class="value" id="upPengelola">Rp 0</div>
-    <div class="sub">Rp 1.000 × pcs order</div>
-   </div>
-   <div class="metric green">
-    <div class="label">Tabungan Member</div>
-    <div class="value" id="uangKas">Rp 0</div>
-    <div class="sub">Tabungan sesuai tarif Member</div>
-   </div>
-   <div class="metric orange">
-    <div class="label">Total UP + Tabungan</div>
-    <div class="value" id="totalFee">Rp 0</div>
-    <div class="sub">UP + Tabungan sesuai order</div>
-   </div>
-  </div>
-  <div class="money-total" id="feeFormula">0 pcs × Rp 5.000 = Rp 0</div>
- </div>
+<div class="title">SALDO SAAT INI</div>
+<div class="balance">
+<div class="metric blue"><div class="label">Saldo Tabungan Member</div><div class="value" id="saldoTab">Rp 0</div><div class="sub">Tabungan masuk − pengambilan</div></div>
+<div class="metric green"><div class="label">Saldo Uang Kas</div><div class="value" id="saldoKas">Rp 0</div><div class="sub">Kas masuk − pengeluaran kas</div></div>
+<div class="metric orange"><div class="label">Saldo UP Pengelola</div><div class="value" id="saldoUp">Rp 0</div><div class="sub">UP masuk − pengeluaran pengelola</div></div>
+</div>
+</div>
 
- <div class="card">
-  <div class="title">PENGELUARAN</div>
-  <div class="section-note">
-   <b>Transportasi, Acara Komunitas, dan Lain-lain</b> diambil dari <b>Uang Kas</b>.
-   <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
-  </div>
-  <div class="expense-grid">
-   <div class="metric">
-    <div class="label">Pengambilan Tabungan Member</div>
-    <div class="value" id="expenseTabungan">Rp 0</div>
-    <div class="sub">Mengurangi saldo tabungan member</div>
-   </div>
-   <div class="metric green">
-    <div class="label">Pengeluaran Uang Kas</div>
-    <div class="value" id="expenseKas">Rp 0</div>
-    <div class="sub">Transportasi + acara + lain-lain</div>
-   </div>
-   <div class="metric orange">
-    <div class="label">Pengeluaran Pengelola</div>
-    <div class="value" id="expensePengelola">Rp 0</div>
-    <div class="sub">Dari hasil pengelola</div>
-   </div>
-   <div class="metric red">
-    <div class="label">Total Pengeluaran</div>
-    <div class="value" id="expenseTotal">Rp 0</div>
-    <div class="sub">Kas + pengelola</div>
-   </div>
-  </div>
-  <div class="money-total">
-   Saldo Tabungan: <b id="saldoTabunganAkhir">Rp 0</b><br>Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
-   &nbsp; | &nbsp;
-   Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
-  </div>
-   <div class="table-wrap expense-table">
-   <table>
-    <thead><tr>
-     <th>Tanggal</th><th>Jenis</th><th>Sumber Dana</th><th>Keterangan</th><th class="num">Nominal</th>
-    </tr></thead>
-    <tbody id="expenseTable"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
- 
+<div class="card">
+<div class="title">RINGKASAN PENGELUARAN</div>
+<div class="grid">
+<div class="metric"><div class="label">Pengambilan Tabungan</div><div class="value" id="outTab">Rp 0</div></div>
+<div class="metric"><div class="label">Pengeluaran Kas</div><div class="value" id="outKas">Rp 0</div></div>
+<div class="metric"><div class="label">Pengeluaran Pengelola</div><div class="value" id="outUp">Rp 0</div></div>
+<div class="metric red"><div class="label">Total Pengeluaran</div><div class="value" id="outTotal">Rp 0</div></div>
+</div>
+</div>
 
- <div class="card">
-  <div class="title">NOMINAL TAGIHAN & PEMBAYARAN</div>
-  <div class="summary-grid">
-   <div class="metric red">
-    <div class="label">Jumlah Tagihan</div>
-    <div class="value" id="billCount">0</div>
-    <div class="sub">Order member belum lunas</div>
-   </div>
-
-   <div class="metric orange">
-    <div class="label">Nominal Tagihan</div>
-    <div class="value" id="billTotal">Rp 0</div>
-    <div class="sub">Total sisa tagihan member</div>
-   </div>
-
-   <div class="metric green">
-    <div class="label">Sudah Lunas</div>
-    <div class="value" id="paidTotal">Rp 0</div>
-    <div class="sub">Total nominal yang sudah dibayar</div>
-   </div>
-
-   <div class="metric blue">
-    <div class="label">Total Pembayaran</div>
-    <div class="value" id="paymentTotal">Rp 0</div>
-    <div class="sub">Nominal tagihan + sudah lunas</div>
-   </div>
-  </div>
-  <div class="table-wrap" style="margin-top:12px">
-   <table>
-    <thead><tr>
-     <th>Nota</th><th>Member</th><th>Jatuh Tempo</th><th>Status</th>
-     <th class="num">Total Order</th><th class="num">DP</th><th class="num">Dibayar</th><th class="num">Sisa Tagihan</th>
-    </tr></thead>
-    <tbody id="billTable"><tr><td colspan="8" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
-
- 
-  
-
- <div class="card">
-  <div class="title">REKAP PER ORDER MEMBER</div>
-  <div class="table-wrap">
-   <table>
-    <thead><tr>
-     <th>Nota</th><th>Member</th><th>Status</th><th>Jatuh Tempo</th>
-     <th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Uang Kas</th><th class="num">Sisa Tagihan</th>
-    </tr></thead>
-    <tbody id="orderTable"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
-   </table>
-  </div>
- </div>
+<div class="card">
+<div class="title">RINCIAN PER BULAN</div>
+<div class="note">Kas dihitung satu kali untuk setiap member pada setiap bulan kalender. UP dihitung dari tarif UP yang tersimpan pada item order.</div>
+<div class="table-wrap" style="overflow:auto;margin-top:10px">
+<table><thead><tr><th>Bulan</th><th class="num">Qty</th><th class="num">Tabungan</th><th class="num">UP Pengelola</th><th class="num">Kas</th></tr></thead>
+<tbody id="monthTable"><tr><td colspan="5">Memuat...</td></tr></tbody></table>
+</div>
+</div>
 </main>
 
 <script type="module">
@@ -310,449 +90,95 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-ap
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const cfg={
- apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
- authDomain:"fixzy-update.firebaseapp.com",
- projectId:"fixzy-update",
- storageBucket:"fixzy-update.firebasestorage.app",
- messagingSenderId:"995892519622",
- appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
-};
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e35b5d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-let uid="",ownerUid="",profile={},stocks=[],orders=[],expenses=[],ready=false;
+const $=id=>document.getElementById(id),num=v=>Number(v)||0,rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+let uid="",ownerUid="",orders=[],expenses=[];
 
-const $=id=>document.getElementById(id);
-const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const num=v=>Number(v)||0;
-
-function notice(t,c=""){
- $("notice").textContent=t;
- $("notice").className="notice "+c;
-}
-
-function ownerOf(d){
- const role=String(d.role||"").toLowerCase();
- if(role==="owner"||role==="superadmin")return uid;
- return String(d.ownerUid||d.ownerId||"").trim()||uid;
-}
-
-function isCashOrder(r){
- const vals=[r.jenisHarga,r.tipeOrder,r.tipeTransaksi,r.metodePembayaran,r.paymentMethod].map(v=>String(v??"").trim().toLowerCase());
- return vals.some(v=>["cash","tunai","member_cash","cash_tunai","member_tunai"].includes(v));
-}
-function orderStatus(r){
- if(isCashOrder(r))return "lunas";
- const total=Math.max(0,Number(r.totalBayar??r.total??0)||0);
- const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
- const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
- const st=String(r.statusPembayaran||r.paymentStatus||r.status||"").toLowerCase();
- if(["lunas","paid","dibayar","terbayar","selesai"].includes(st))return "lunas";
- return total>0&&(sisa<=0||paid>=total)?"lunas":"tagihan";
-}
-
-function itemList(r){
- const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
- return a.map(x=>({
-  produkId:String(x.produkId||x.id||""),
-  nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
-  kode:String(x.kode||x.kodeProduk||""),
-  qty:Math.max(0,Number(x.qty||x.jumlah||0)||0),
-  harga:Math.max(0,Number(x.harga||x.hargaJual||0)||0),
-  modal:Math.max(0,Number(x.modalSatuan??x.modal??0)||0),
-  tabunganPerPcs:Math.max(0,Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),
-  upPengelolaPerPcs:Math.max(0,Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),
-  total:Math.max(0,Number(x.total??((Number(x.harga||x.hargaJual||0)*Number(x.qty||x.jumlah||0))-Number(x.diskon||0)))||0)
- }));
-}
-
-function dueDate(r){
- const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
- if(!raw)return null;
- if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
- const s=String(raw);
- if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-  const [y,m,d]=s.split("-").map(Number);
-  return new Date(y,m-1,d);
- }
- if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
-  const [d,m,y]=s.split("/").map(Number);
-  return new Date(y,m-1,d);
- }
- const d=new Date(s);
- return isNaN(d.getTime())?null:d;
-}
-
+function norm(v){return String(v??"").trim().toLowerCase()}
+function notice(t,c=""){ $("notice").textContent=t;$("notice").className="notice "+c}
+function ownerOf(d){const r=norm(d.role||d.profileRole);if(r==="owner"||r==="admin")return uid;return String(d.ownerUid||d.ownerId||"").trim()}
+function dt(v){if(v?.toDate)return v.toDate();if(v?.seconds)return new Date(v.seconds*1000);const d=new Date(v);return isNaN(d)?null:d}
+function month(r){const d=dt(r.approvedAt||r.createdAt||r.tanggal||r.date)||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
+function memberKey(r){const m=r.member||r.pelanggan||{};return String(r.memberUid||r.memberId||m.uid||m.userId||r.memberEmail||m.email||r.memberNama||m.nama||"")}
 function inPeriod(r){
- const p=$("periode").value;
- if(p==="all")return true;
- const raw=r.approvedAt||r.createdAt||r.tanggal||"";
- let d=null;
- if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
- else if(String(raw).match(/^\d{4}-\d{2}-\d{2}$/))d=new Date(String(raw)+"T00:00:00");
- else if(raw)d=new Date(raw);
- if(!d||isNaN(d.getTime()))return true;
- const now=new Date();
- if(p==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
- if(p==="year")return d.getFullYear()===now.getFullYear();
- return true;
+ const p=$("periode").value;if(p==="all")return true;
+ const d=dt(r.approvedAt||r.createdAt||r.tanggal||r.date);if(!d)return true;const n=new Date();
+ return p==="month"?d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth():d.getFullYear()===n.getFullYear();
 }
-
-async function loadStocks(){
+function items(r){const a=Array.isArray(r.approvedItems)?r.approvedItems:(Array.isArray(r.items)?r.items:[]);return a.map(x=>({qty:Math.max(0,num(x.approvedQty??x.qty??x.jumlah)),tab:num(x.tabunganPerPcs??r.tabunganPerPcs),up:num(x.upPengelolaPerPcs??r.upPengelolaPerPcs)}))}
+function approved(r){const a=norm(r.approvalStatus),s=norm(r.status);return a==="approved"||["approved","order_member","tagihan","lunas"].includes(s)}
+function totals(list){
+ let qty=0,tab=0,up=0,kas=0,seen=new Set();
+ for(const r of list){
+  if(!approved(r))continue;
+  const xs=items(r);qty+=xs.reduce((a,x)=>a+x.qty,0);
+  tab+=xs.reduce((a,x)=>a+x.qty*x.tab,0);
+  up+=xs.reduce((a,x)=>a+x.qty*x.up,0);
+  const k=memberKey(r)+"|"+month(r);
+  if(!seen.has(k)){seen.add(k);kas+=Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.member?.kasBulanan))}
+ }
+ return{qty,tab,up,kas}
+}
+function expenseTotals(list){
+ let tab=0,kas=0,up=0;
+ for(const e of list.filter(inPeriod)){
+  const n=Math.max(0,num(e.nominal)),s=norm(e.sumberDana||e.sumber),j=norm(e.jenisLabel||e.jenis);
+  if(s==="tabungan"||j.includes("pengambilan tabungan"))tab+=n;
+  else if(s.includes("pengelola")||j.includes("pengelola"))up+=n;
+  else if(s.includes("kas")||!s||j.includes("transport")||j.includes("acara")||j.includes("lain"))kas+=n;
+ }
+ return{tab,kas,up}
+}
+async function readCol(name){
  const map=new Map();
- const qs=[
-  query(collection(db,"stok"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"stok"),where("ownerId","==",ownerUid))
- ];
- for(const q of qs){
-  const s=await getDocs(q);
-  s.forEach(d=>{
-   const x=d.data()||{};
-   const key=d.id;
-   if(!map.has(key)){
-    map.set(key,{id:d.id,...x,
-     qtySisa:Math.max(0,Number(x.sisa??x.stok??0)||0),
-     modal:Math.max(0,Number(x.hargaModal??x.modal??0)||0),
-     nama:String(x.nama||x.namaProduk||"-"),
-     kode:String(x.kode||x.kodeProduk||"")
-    });
-   }
-  });
+ for(const f of ["ownerUid","ownerId","uid"]){
+  const v=f==="uid"?uid:ownerUid;if(!v)continue;
+  try{const s=await getDocs(query(collection(db,name),where(f,"==",v)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}))}catch(e){}
  }
- stocks=[...map.values()];
+ return [...map.values()];
 }
-
-async function loadOrders(){
- const map=new Map();
- const qs=[
-  query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
- ];
- for(const q of qs){
-  const s=await getDocs(q);
-  s.forEach(d=>{
-   const x={id:d.id,...d.data()};
-   if(!map.has(d.id))map.set(d.id,x);
-  });
- }
- orders=[...map.values()];
-}
-
-function currentOrders(){
- return orders.filter(inPeriod);
-}
-
-function orderMemberKey(r){const m=r.member||r.pelanggan||{};return String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||m.email||m.kode||"")}
-function orderMonthKey(r){
- const raw=r.createdAt||r.approvedAt||r.updatedAt||r.tanggal||r.date||"";
- let d=null;
- if(raw?.toDate)d=raw.toDate();
- else if(raw?.seconds)d=new Date(raw.seconds*1000);
- else if(raw)d=new Date(raw);
- if(!d||isNaN(d.getTime()))return String(r.tanggal||"").slice(0,7);
- return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-}
-function tabunganMasuk(){return currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0)}
-function pengelolaMasuk(){return currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0)}
-function kasBulananMasuk(){
- const seen=new Set();let total=0;
- for(const r of currentOrders()){
-  const member=orderMemberKey(r); const month=orderMonthKey(r);
-  const key=(member||String(r.memberEmail||r.memberNama||r.id))+"|"+month;
-  if(seen.has(key))continue; seen.add(key);
-  const v=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.member?.kasBulanan??r.member?.uangKasBulanan??0)||0;
-  total+=Math.max(0,v);
- }
- return total;
-}
-
-async function loadExpenses(){
-  // SINKRON TOTAL:
-  // 1) koleksi lama/utama FIXZY: pengeluaran (modul="member")
-  // 2) koleksi member lama: pengeluaranMember
-  // Keduanya dibaca dan digabung berdasarkan ID dokumen.
-  // Tidak ada data lama yang dihapus/dipindahkan.
-  const map=new Map();
-
-  async function readOwnerCollection(collectionName){
-    const qs=[
-      query(collection(db,collectionName),where("ownerUid","==",ownerUid)),
-      query(collection(db,collectionName),where("ownerId","==",ownerUid)),
-      query(collection(db,collectionName),where("uid","==",uid))
-    ];
-
-    for(const q of qs){
-      try{
-        const s=await getDocs(q);
-        s.forEach(d=>{
-          const x={id:d.id,...d.data()};
-          const modul=String(x.modul||"").toLowerCase();
-
-          const source=String(x.sumberDana||x.sumber||"").toLowerCase();
-          const jenis=String(x.jenisLabel||x.jenis||"").toLowerCase();
-          const supported=["member","kas","pengelola"].includes(modul)||["tabungan","kas","pengelola"].includes(source);
-          const legacyMember=collectionName==="pengeluaranMember";
-          if(supported||legacyMember){map.set(`${collectionName}:${d.id}`,x);}
-        });
-      }catch(e){
-        console.warn(`Gagal membaca ${collectionName}:`,e.message);
-      }
-    }
-  }
-
-  await readOwnerCollection("pengeluaran");
-  await readOwnerCollection("pengeluaranMember");
-
-  expenses=[...map.values()];
-}
-
-function currentExpenses(){
-  return expenses.filter(inPeriod);
-}
-
-function renderExpenses(){
- let tabungan=0,kas=0,pengelola=0;
- for(const e of currentExpenses()){
-  const n=Math.max(0,num(e.nominal));
-  const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
-  const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
-  if(source==="tabungan" || jenis.includes("pengambilan tabungan")) tabungan+=n;
-  else if(source.includes("pengelola") || jenis.includes("pengelola")) pengelola+=n;
-  else if(source.includes("kas") || source==="" || jenis.includes("transport") || jenis.includes("acara") || jenis.includes("lain")) kas+=n;
- }
- const tabMasuk=tabunganMasuk(),kasMasuk=kasBulananMasuk(),upMasuk=pengelolaMasuk();
- $("expenseTabungan").textContent=rp(tabungan);
- $("expenseKas").textContent=rp(kas);
- $("expensePengelola").textContent=rp(pengelola);
- $("expenseTotal").textContent=rp(tabungan+kas+pengelola);
- $("saldoTabunganAkhir").textContent=rp(tabMasuk-tabungan);
- $("saldoKasAkhir").textContent=rp(kasMasuk-kas);
- $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
- const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
-  const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
-  const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
-  const label=source==="tabungan"||jenis.includes("pengambilan tabungan")?"TABUNGAN MEMBER":source.includes("pengelola")||jenis.includes("pengelola")?"UP PENGELOLA":"UANG KAS";
-  return `<tr><td>${esc(e.tanggal||"-")}</td><td>${esc(e.jenisLabel||e.jenis||"-")}</td><td>${label}</td><td>${esc(e.keterangan||e.memberNama||"-")}</td><td class="num">${rp(num(e.nominal))}</td></tr>`;
- }).join("");
- $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
-}
-
-function buildStockData(){
- const map=new Map();
-
- // Stock yang masih ada di gudang/konter.
- for(const s of stocks){
-  const key=s.id;
-  map.set(key,{
-   produkId:key,nama:s.nama,kode:s.kode,modal:s.modal,
-   sisa: s.qtySisa,diOrder:0
-  });
- }
-
- // Stock yang sudah disetujui dan masuk order member.
- // Qty ini dijumlahkan untuk mengetahui stock total = sisa + di order.
- for(const o of currentOrders()){
-  for(const x of itemList(o)){
-   const key=x.produkId||("nama:"+x.nama);
-   if(!map.has(key)){
-    map.set(key,{produkId:key,nama:x.nama,kode:x.kode,modal:x.modal,sisa:0,diOrder:0});
-   }
-   const row=map.get(key);
-   row.diOrder+=x.qty;
-   if(!row.modal&&x.modal)row.modal=x.modal;
-   if(!row.nama||row.nama==="-")row.nama=x.nama;
-   if(!row.kode)row.kode=x.kode;
-  }
- }
- return [...map.values()].map(x=>{
-  const totalQty=x.sisa+x.diOrder;
-  return {
-   ...x,
-   totalQty,
-   nominalTotal:totalQty*x.modal,
-   nominalOrder:x.diOrder*x.modal,
-   nominalSisa:x.sisa*x.modal
-  };
- });
-}
-
-function renderStock(){
- const data=buildStockData();
- const search=$("search").value.trim().toLowerCase();
- const filtered=data.filter(x=>(x.nama+" "+x.kode).toLowerCase().includes(search));
-
- const totalQty=data.reduce((a,x)=>a+x.totalQty,0);
- const orderQty=data.reduce((a,x)=>a+x.diOrder,0);
- const sisaQty=data.reduce((a,x)=>a+x.sisa,0);
- const totalNom=data.reduce((a,x)=>a+x.nominalTotal,0);
- const orderNom=data.reduce((a,x)=>a+x.nominalOrder,0);
- const sisaNom=data.reduce((a,x)=>a+x.nominalSisa,0);
-
- // Panel atas = nilai dasar sebelum UP Pengelola + Uang Kas.
- // Menggunakan perhitungan stock yang sama persis dengan panel lama.
- $("preFeeStockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
- $("preFeeStockTotalNominal").textContent=rp(totalNom);
- $("preFeeOrderStockQty").textContent=orderQty.toLocaleString("id-ID")+" pcs";
- $("preFeeOrderStockNominal").textContent=rp(orderNom);
- $("preFeeRemainingStockQty").textContent=sisaQty.toLocaleString("id-ID")+" pcs";
- $("preFeeRemainingStockNominal").textContent=rp(sisaNom);
- $("preFeeModalTotal").textContent=rp(totalNom);
-
- // Panel lama = NILAI SETELAH ditambah UP Pengelola + Uang Kas.
- // Dasar fee: qty order member x Rp5.000.
- const feeQtyForStock = orderQty;
- const upForStock = currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0);
- const kasForStock = currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0);
- const totalFeeForStock = upForStock + kasForStock;
-
- $("stockTotalQty").textContent=totalQty.toLocaleString("id-ID")+" pcs";
- $("stockTotalNominal").textContent=rp(totalNom + totalFeeForStock);
- $("orderStockQty").textContent=orderQty.toLocaleString("id-ID")+" pcs";
- $("orderStockNominal").textContent=rp(orderNom + totalFeeForStock);
- $("remainingStockQty").textContent=sisaQty.toLocaleString("id-ID")+" pcs";
- $("remainingStockNominal").textContent=rp(sisaNom);
- $("modalTotal").textContent=rp(totalNom + totalFeeForStock);
-
- $("stockTable").innerHTML=filtered.length?filtered.map(x=>`
-  <tr>
-   <td><b>${esc(x.nama)}</b></td>
-   <td>${esc(x.kode||"-")}</td>
-   <td class="num">${x.totalQty.toLocaleString("id-ID")}</td>
-   <td class="num">${x.diOrder.toLocaleString("id-ID")}</td>
-   <td class="num">${x.sisa.toLocaleString("id-ID")}</td>
-   <td class="num">${rp(x.modal)}</td>
-   <td class="num">${rp(x.nominalTotal)}</td>
-   <td class="num">${rp(x.nominalOrder)}</td>
-   <td class="num">${rp(x.nominalSisa)}</td>
-  </tr>`).join(""):`<tr><td colspan="9" class="empty">Tidak ada produk sesuai pencarian.</td></tr>`;
-}
-
-function renderBills(){
- const all=currentOrders();
-
- // Tagihan = order yang masih memiliki sisa pembayaran.
- const data=all.filter(x=>orderStatus(x)==="tagihan");
-
- let totalTagihan=0;
- let totalLunas=0;
-
- // Hitung nominal yang sudah lunas dari order berstatus LUNAS.
- for(const r of all){
-  const totalOrder=Math.max(0,Number(r.totalBayar??r.total??0)||0);
-  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
-
-  if(orderStatus(r)==="lunas"){
-   totalLunas += paid > 0 ? paid : totalOrder;
-  }
- }
-
- const rows=data.map(r=>{
-  const totalOrder=Math.max(0,Number(r.totalBayar??r.total??0)||0);
-  const dp=Math.max(0,Number(r.dp??r.uangMuka??0)||0);
-  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??dp)||0);
-  const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(totalOrder-paid))||0);
-
-  totalTagihan += sisa;
-
-  const m=r.member||r.pelanggan||{};
-  const due=dueDate(r);
-  const dueText=due?due.toLocaleDateString("id-ID"):"-";
-
-  return `<tr>
-   <td><b>${esc(r.nomorNota||r.id)}</b></td>
-   <td>${esc(m.nama||"-")}<br><small>${esc(m.kode||r.kodeMember||"")}</small></td>
-   <td>${dueText}</td>
-   <td><span class="badge tagihan">TAGIHAN</span></td>
-   <td class="num">${rp(totalOrder)}</td>
-   <td class="num">${rp(dp)}</td>
-   <td class="num">${rp(paid)}</td>
-   <td class="num">${rp(sisa)}</td>
-  </tr>`;
- });
-
- const totalPembayaran=totalTagihan+totalLunas;
-
- $("billCount").textContent=data.length.toLocaleString("id-ID");
- $("billTotal").textContent=rp(totalTagihan);
- $("paidTotal").textContent=rp(totalLunas);
- $("paymentTotal").textContent=rp(totalPembayaran);
-
- $("billTable").innerHTML=
-  rows.join("")||
-  `<tr><td colspan="8" class="empty">Tidak ada tagihan pada periode ini.</td></tr>`;
-}
-
-function renderOrders(){
- const data=currentOrders();
- let qty=0,up=0,kas=0;
- const rows=data.map(r=>{
-  const items=itemList(r);
-  const q=items.reduce((a,x)=>a+x.qty,0);
-  const value=items.reduce((a,x)=>a+x.total,0);
-  const st=orderStatus(r);
-  const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
-  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
-  const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
-  qty+=q;up+=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0);kas+=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0);
-  const m=r.member||r.pelanggan||{};
-  const due=dueDate(r);
-  return `<tr>
-   <td><b>${esc(r.nomorNota||r.id)}</b></td>
-   <td>${esc(m.nama||"-")}</td>
-   <td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td>
-   <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
-   <td class="num">${q.toLocaleString("id-ID")}</td>
-   <td class="num">${rp(value)}</td>
-   <td class="num">${rp(items.reduce((a,x)=>a+x.qty*x.upPengelolaPerPcs,0))}</td>
-   <td class="num">${rp(items.reduce((a,x)=>a+x.qty*x.tabunganPerPcs,0))}</td>
-   <td class="num">${rp(sisa)}</td>
-  </tr>`;
- });
- $("feeQty").textContent=qty.toLocaleString("id-ID")+" pcs";
- $("upPengelola").textContent=rp(up);
- $("uangKas").textContent=rp(kas);
- $("totalFee").textContent=rp(up+kas);
- $("feeFormula").textContent=`${qty.toLocaleString("id-ID")} pcs • UP + Tabungan = ${rp(up+kas)}`;
- $("orderTable").innerHTML=rows.join("")||`<tr><td colspan="9" class="empty">Belum ada order member pada periode ini.</td></tr>`;
-}
-
-function renderAll(){
- if(!ready)return;
- renderStock();
- renderBills();
- renderOrders();
- renderExpenses();
-}
-
-$("periode").onchange=renderAll;
-$("search").oninput=renderAll;
-$("dark").onclick=()=>{
- document.body.classList.toggle("dark");
- $("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
-};
-
-onAuthStateChanged(auth,async u=>{
- if(!u){
-  notice("Belum login. Silakan login melalui FIXZY.","err");
-  return;
- }
+async function muat(){
+ if(!ownerUid)return;
  try{
-  uid=u.uid;
-  const s=await getDoc(doc(db,"users",uid));
-  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-  profile=s.data()||{};
-  ownerUid=ownerOf(profile);
-  $("email").textContent=u.email||"-";
-  await loadStocks();
-  await loadOrders();
-  await loadExpenses();
-  ready=true;
-  renderAll();
-  notice(`Akun aktif • Data Keuangan Member milik Owner ini • ${orders.length} order member.`,"ok");
- }catch(e){
-  console.error(e);
-  notice("Gagal memuat Data Keuangan Member: "+e.message,"err");
+  notice("Memuat data Firebase...","ok");
+  orders=await readCol("order_member");
+  expenses=await readCol("pengeluaran");
+  try{expenses=expenses.concat(await readCol("pengeluaranMember"))}catch(e){}
+  render();notice("Dashboard tersinkron dengan Firebase.","ok");
+ }catch(e){console.error(e);notice("Gagal memuat: "+(e.message||e),"err")}
+}
+function render(){
+ const os=orders.filter(inPeriod),t=totals(os),ex=expenseTotals(expenses);
+ $("orders").textContent=os.filter(approved).length.toLocaleString("id-ID");
+ $("qty").textContent=t.qty.toLocaleString("id-ID")+" pcs";
+ $("up").textContent=rp(t.up);$("kas").textContent=rp(t.kas);
+ $("outTab").textContent=rp(ex.tab);$("outKas").textContent=rp(ex.kas);$("outUp").textContent=rp(ex.up);$("outTotal").textContent=rp(ex.tab+ex.kas+ex.up);
+ $("saldoTab").textContent=rp(Math.max(0,t.tab-ex.tab));
+ $("saldoKas").textContent=rp(Math.max(0,t.kas-ex.kas));
+ $("saldoUp").textContent=rp(Math.max(0,t.up-ex.up));
+ const m=new Map();
+ for(const r of os.filter(approved)){
+  const k=month(r),xs=items(r),q=xs.reduce((a,x)=>a+x.qty,0),tab=xs.reduce((a,x)=>a+x.qty*x.tab,0),up=xs.reduce((a,x)=>a+x.qty*x.up,0);
+  let z=m.get(k);if(!z)z={qty:0,tab:0,up:0,kas:0};z.qty+=q;z.tab+=tab;z.up+=up;m.set(k,z);
  }
+ const seen=new Set();
+ for(const r of os.filter(approved)){const k=memberKey(r)+"|"+month(r);if(seen.has(k))continue;seen.add(k);const z=m.get(month(r));z.kas+=Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.member?.kasBulanan))}
+ $("monthTable").innerHTML=[...m.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([k,z])=>`<tr><td>${k}</td><td class="num">${z.qty.toLocaleString("id-ID")}</td><td class="num">${rp(z.tab)}</td><td class="num">${rp(z.up)}</td><td class="num">${rp(z.kas)}</td></tr>`).join("")||'<tr><td colspan="5">Belum ada data.</td></tr>';
+}
+$("periode").addEventListener("change",render);$("dark").addEventListener("click",()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"});
+window.muat=muat;
+onAuthStateChanged(auth,async u=>{
+ if(!u){notice("Menunggu sesi login FIXZY...");return}
+ uid=u.uid;$("email").textContent=u.email||"-";
+ try{
+  const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan");
+  const p=s.data()||{},role=norm(p.role||p.profileRole);
+  if(role==="superadmin"||role==="super_admin"||norm(u.email)==="servicehpmaja@gmail.com")throw Error("SUPERADMIN tidak memiliki akses data Owner");
+  ownerUid=role==="owner"||p.isOwner===true?uid:ownerOf(p);
+  if(!ownerUid)throw Error("ownerUid/ownerId tidak ditemukan");
+  await muat();
+ }catch(e){console.error(e);notice("Gagal: "+(e.message||e),"err")}
 });
 </script>
 </body>
