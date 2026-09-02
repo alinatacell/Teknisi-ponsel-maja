@@ -13,6 +13,7 @@ main{max-width:1100px;margin:auto;padding:88px 12px 30px}.notice{font-size:11px;
 .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:3px 3px 0 #111827}.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}.metric .value{font-size:20px;font-weight:900;margin-top:5px}.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}.metric.blue{background:#eff6ff}.metric.green{background:#f0fdf4}.metric.orange{background:#fffbeb}.metric.red{background:#fef2f2}
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}table{width:100%;border-collapse:collapse;min-width:920px}th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px;vertical-align:middle}th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}td.num{text-align:right;font-weight:800}.total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}.member-name{font-weight:900}.subtext{font-size:10px;color:#64748b;margin-top:3px}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;border:1px solid #f59e0b;background:#fef3c7;color:#92400e}.badge.active{border-color:#22c55e;background:#dcfce7;color:#166534}.badge.off{border-color:#94a3b8;background:#f1f5f9;color:#475569}.empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
 .note{font-size:11px;color:#64748b;line-height:1.6;padding:10px;border:2px solid #dbeafe;border-radius:9px;background:#eff6ff;margin-top:10px}.danger-note{border-color:#fed7aa;background:#fff7ed}
+.member-panels{display:grid;grid-template-columns:1fr;gap:14px}.member-panel{border:2px solid #111827;border-radius:14px;background:#fff;box-shadow:4px 4px 0 #111827;overflow:hidden}.member-panel-head{padding:14px;background:#111827;color:#fff;border-bottom:3px solid var(--y)}.member-owner{font-size:18px;font-weight:900;line-height:1.25}.member-owner-label{font-size:10px;font-weight:900;color:#ffc107;letter-spacing:.7px;margin-bottom:4px}.member-id{font-size:10px;color:#cbd5e1;margin-top:5px}.member-status{float:right;margin-left:8px}.member-main{padding:14px}.saving-box{border:2px solid #111827;border-radius:11px;background:#f0fdf4;padding:14px;margin-bottom:12px;box-shadow:2px 2px 0 #111827}.saving-label{font-size:11px;font-weight:900;color:#166534;text-transform:uppercase}.saving-total{font-size:27px;font-weight:900;margin-top:4px}.saving-sub{font-size:10px;color:#64748b;margin-top:4px}.saving-balance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}.saving-balance-box{border:2px solid #111827;border-radius:11px;padding:13px;box-shadow:2px 2px 0 #111827;background:#f8fafc}.saving-balance-box .k{font-size:10px;font-weight:900;text-transform:uppercase;color:#64748b}.saving-balance-box .v{font-size:20px;font-weight:900;margin-top:5px}.saving-balance-box.awal{background:#eff6ff}.saving-balance-box.ambil{background:#fff7ed}.saving-balance-box.sisa{background:#f0fdf4}.saving-formula{font-size:10px;font-weight:800;color:#475569;margin:-4px 0 12px;padding:8px 10px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc}.member-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.member-stat{border:1.5px solid #cbd5e1;border-radius:9px;padding:10px;background:#f8fafc}.member-stat .k{font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase}.member-stat .v{font-size:14px;font-weight:900;margin-top:4px}.member-contact{font-size:11px;color:#475569;line-height:1.6;margin-bottom:10px}.member-contact b{color:#111827}.member-panel .badge{float:none}.member-panel-foot{font-size:10px;color:#64748b;border-top:1px solid #e5e7eb;padding:9px 14px;background:#f8fafc}.empty-panel{padding:28px;text-align:center;color:#64748b;font-size:12px;border:2px dashed #cbd5e1;border-radius:10px}@media(max-width:650px){.member-grid{grid-template-columns:1fr 1fr}.saving-balance-grid{grid-template-columns:1fr}.member-owner{font-size:17px}.saving-total{font-size:25px}}
 body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark label{color:#9ca3af}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .total-row td{background:#1c1917}body.dark .note{background:#172554;border-color:#1e40af}body.dark .danger-note{background:#1c1917;border-color:#92400e}
 @media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
 @media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding:80px 8px 24px}.summary-grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.acts .btn{padding:8px}.metric .value{font-size:18px}.card{padding:12px}table{min-width:920px}}
@@ -34,8 +35,8 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 <div class="metric orange"><div class="label">Total Kas Bulanan</div><div class="value" id="totalKas">Rp 0</div><div class="sub">1× per member per bulan kalender</div></div>
 <div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Saat ini belum ada transaksi pengambilan</div></div>
 </div>
-<div class="card"><div class="title">SALDO PER MEMBER</div>
-<div class="table-wrap"><table><thead><tr><th>No</th><th>Nama Member</th><th>Email</th><th>No. WA</th><th>Kode Member</th><th class="num">Tabungan/Pcs</th><th class="num">Qty</th><th class="num">Total Tabungan</th><th class="num">UP/Pcs</th><th class="num">Total UP</th><th class="num">Pendapatan</th><th class="num">Kas Bulanan</th><th class="num">Bulan Kas</th><th class="num">Pengambilan</th><th class="num">Saldo</th><th>Status</th></tr></thead><tbody id="tbody"><tr><td colspan="16" class="empty">Memuat Firebase...</td></tr></tbody></table></div>
+<div class="card"><div class="title">SALDO TABUNGAN PER MEMBER</div>
+<div id="memberPanels" class="member-panels"><div class="empty">Memuat Firebase...</div></div>
 <div class="note"><b>Aturan:</b> Pendapatan dihitung dari pembayaran member yang tercatat pada order approved (CASH/TUNAI = nilai order penuh; TEMPO/TAGIHAN = DP/pembayaran yang sudah masuk). CASH, TEMPO, dan TABUNGAN tetap dihitung dari order yang sudah approved. <b>Tabungan/Pcs</b> dan <b>UP Pengelola/Pcs</b> memakai nilai yang tersimpan pada order saat dibuat/approval.</div>
 <div class="note danger-note"><b>UANG KAS:</b> dihitung berdasarkan <b>bulan kalender</b>. Satu member hanya mendapat 1 tagihan kas dalam 1 bulan, walaupun order berkali-kali pada bulan yang sama. Bulan berikutnya baru dihitung lagi.</div>
 </div>
@@ -153,8 +154,43 @@ function render(){
  let total=0,qty=0,up=0,kas=0,withdraw=0,paid=0;
  data.forEach(r=>{total+=r.total;qty+=r.qty;up+=r.up;kas+=r.kas;withdraw+=r.withdraw;paid+=r.paid});
  setText("totalMember",data.length.toLocaleString("id-ID"));setText("totalPendapatan",rp(paid));setText("totalTabungan",rp(total));setText("totalQty",qty.toLocaleString("id-ID")+" pcs");setText("totalUp",rp(up));setText("totalKas",rp(kas));setText("saldoTabungan",rp(total-withdraw));
- const body=$("tbody");if(!body)return;
- body.innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const tabPcs=r.qty&&r.total?r.total/r.qty:tabunganDefault(a);const upPcs=r.upPcs||num(a.upPengelolaPerPcs??a.upPengelola??0);const months=[...r.kasMonths].sort().join(", ")||"-";return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||"-")}</div></td><td>${esc(email(a)||"-")}</td><td>${esc(wa(a)||"-")}</td><td>${esc(kode(a)||"-")}</td><td class="num">${rp(tabPcs)}</td><td class="num">${r.qty.toLocaleString("id-ID")}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.paid)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==="nonaktif"?"off":"active"}">${esc(a.status||"aktif")}</span></td></tr>`}).join(""):"<tr><td colspan=\"15\" class=\"empty\">Belum ada data member/order yang sesuai.</td></tr>";
+ const body=$("memberPanels");if(!body)return;
+ body.innerHTML=data.length?data.map((r,i)=>{
+   const a=r.member;
+   const saldo=Math.max(0,r.total-r.withdraw);
+   const tabPcs=r.qty&&r.total?r.total/r.qty:tabunganDefault(a);
+   const upPcs=r.upPcs||num(a.upPengelolaPerPcs??a.upPengelola??0);
+   const months=[...r.kasMonths].sort().join(", ")||"Belum ada";
+   const status=norm(a.status)==="nonaktif"?"off":"active";
+   return `<div class="member-panel">
+     <div class="member-panel-head">
+       <span class="member-status"><span class="badge ${status}">${esc(a.status||"aktif")}</span></span>
+       <div class="member-owner-label">PEMILIK TABUNGAN</div>
+       <div class="member-owner">${esc(nama(a))}</div>
+       <div class="member-id">Kode Member: <b>${esc(kode(a)||"-")}</b> &nbsp;•&nbsp; No. ${i+1}</div>
+     </div>
+     <div class="member-main">
+       <div class="member-contact"><b>Email:</b> ${esc(email(a)||"-")} &nbsp; • &nbsp; <b>WA:</b> ${esc(wa(a)||"-")}</div>
+       <div class="saving-box"><div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div><div class="saving-total">${rp(r.total)}</div><div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved, sebelum pengambilan.</div></div>
+       <div class="saving-balance-grid">
+         <div class="saving-balance-box awal"><div class="k">Tabungan Awal</div><div class="v">${rp(r.total)}</div></div>
+         <div class="saving-balance-box ambil"><div class="k">Pengambilan Tabungan</div><div class="v">− ${rp(r.withdraw)}</div></div>
+         <div class="saving-balance-box sisa"><div class="k">Sisa Tabungan</div><div class="v">${rp(saldo)}</div></div>
+       </div>
+       <div class="saving-formula">Sisa Tabungan ${esc(nama(a))} = Tabungan Awal ${rp(r.total)} − Pengambilan ${rp(r.withdraw)} = <b>${rp(saldo)}</b></div>
+       <div class="member-grid">
+         <div class="member-stat"><div class="k">Tabungan / Pcs</div><div class="v">${rp(tabPcs)}</div></div>
+         <div class="member-stat"><div class="k">Jumlah Qty</div><div class="v">${r.qty.toLocaleString("id-ID")} pcs</div></div>
+         <div class="member-stat"><div class="k">UP Pengelola / Pcs</div><div class="v">${rp(upPcs)}</div></div>
+         <div class="member-stat"><div class="k">Total UP Pengelola</div><div class="v">${rp(r.up)}</div></div>
+         <div class="member-stat"><div class="k">Pendapatan Member</div><div class="v">${rp(r.paid)}</div></div>
+         <div class="member-stat"><div class="k">Kas Bulanan</div><div class="v">${rp(r.kas)}</div></div>
+         <div class="member-stat"><div class="k">Bulan Kas</div><div class="v">${esc(months)}</div></div>
+       </div>
+     </div>
+     <div class="member-panel-foot">Tabungan ini khusus milik <b>${esc(nama(a))}</b>. Uang kas dihitung maksimal 1× untuk member yang sama pada bulan kalender yang sama.</div>
+   </div>`;
+ }).join(""):`<div class="empty-panel">Belum ada data member/order yang sesuai.</div>`;
 }
 async function load(){
  if(!ownerUid||loading)return;loading=true;ready=false;notice("Menghubungkan Firebase FIXZY...","ok");
