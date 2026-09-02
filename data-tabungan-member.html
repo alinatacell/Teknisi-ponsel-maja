@@ -27,9 +27,6 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 <div class="filters"><div><label>CARI MEMBER / EMAIL / KODE</label><input id="search" placeholder="Ketik pencarian..."></div><div><label>STATUS AKUN</label><select id="statusFilter"><option value="">Semua Status</option><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div><div class="actions"><button class="btn secondary" type="button" onclick="resetFilter()">Reset</button></div></div>
 </div>
 <div class="summary-grid">
-<div class="metric blue"><div class="label">Total Member</div><div class="value" id="totalMember">0</div><div class="sub">Akun member pada owner ini</div></div>
- <div class="metric green"><div class="label">Total Pendapatan</div><div class="value" id="totalPendapatan">Rp 0</div><div class="sub">Pembayaran member dari order approved</div></div>
-<div class="metric green"><div class="label">Total Tabungan</div><div class="value" id="totalTabungan">Rp 0</div><div class="sub">Dihitung dari order yang sudah approved</div></div>
 <div class="metric orange"><div class="label">Total Qty</div><div class="value" id="totalQty">0 pcs</div><div class="sub">Qty order yang masuk tabungan</div></div>
 <div class="metric green"><div class="label">Total UP Pengelola</div><div class="value" id="totalUp">Rp 0</div><div class="sub">UP/Pcs × qty approved</div></div>
 <div class="metric orange"><div class="label">Total Kas Bulanan</div><div class="value" id="totalKas">Rp 0</div><div class="sub">1× per member per bulan kalender</div></div>
@@ -165,13 +162,19 @@ function render(){
    return `<div class="member-panel">
      <div class="member-panel-head">
        <span class="member-status"><span class="badge ${status}">${esc(a.status||"aktif")}</span></span>
-       <div class="member-owner-label">PEMILIK TABUNGAN</div>
+       <div class="member-owner-label">PEMILIK TABUNGAN MEMBER</div>
        <div class="member-owner">${esc(nama(a))}</div>
        <div class="member-id">Kode Member: <b>${esc(kode(a)||"-")}</b> &nbsp;•&nbsp; No. ${i+1}</div>
      </div>
      <div class="member-main">
        <div class="member-contact"><b>Email:</b> ${esc(email(a)||"-")} &nbsp; • &nbsp; <b>WA:</b> ${esc(wa(a)||"-")}</div>
-       <div class="saving-box"><div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div><div class="saving-total">${rp(r.total)}</div><div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved, sebelum pengambilan.</div></div>
+       <div class="saving-box"><div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div><div class="saving-total">${rp(r.total)}</div><div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved.</div></div>
+       <div class="saving-balance-grid">
+         <div class="saving-balance-box awal"><div class="k">TABUNGAN AWAL</div><div class="v">${rp(r.total)}</div></div>
+         <div class="saving-balance-box ambil"><div class="k">PENGAMBILAN</div><div class="v">${rp(r.withdraw)}</div></div>
+         <div class="saving-balance-box sisa"><div class="k">SISA TABUNGAN</div><div class="v">${rp(saldo)}</div></div>
+       </div>
+       <div class="saving-formula">Sisa Tabungan <b>${esc(nama(a))}</b> = Tabungan Awal ${rp(r.total)} − Pengambilan ${rp(r.withdraw)} = <b>${rp(saldo)}</b></div>
        <div class="member-extra-panels">
          <div class="extra-panel pengelola">
            <div class="ep-label">PANEL PENGELOLA</div>
@@ -181,7 +184,7 @@ function render(){
          </div>
          <div class="extra-panel kas">
            <div class="ep-label">PANEL UANG KAS</div>
-           <div class="ep-title">Uang Kas — ${esc(nama(a))}</div>
+           <div class="ep-title">Uang Kas — Milik ${esc(nama(a))}</div>
            <div class="ep-value">${rp(r.kas)}</div>
            <div class="ep-sub">Maksimal 1× per bulan untuk member yang sama • Bulan: ${esc(months)}</div>
          </div>
