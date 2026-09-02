@@ -89,9 +89,9 @@ body{overflow:hidden}
   </button>
   <div class="header-running">
     <div class="running-track">
-      <span>🌟 Selamat Datang di FIXZY</span>
-      <span>🔒 pebukuan cerdas bikin usaha makin berkelas </span>
-      <span>🤲 Semoga usaha semakin lancar</span>
+      <span>🌟 Selamat Datang di FIXZY - FIXED ISOLASI</span>
+      <span>🔒 Data sudah isolasi per konter</span>
+      <span>🤲 Karyawan dengan ownerUid sama bisa lihat bareng</span>
       <span>💰 Semoga rezeki bertambah dan berkah</span>
     </div>
   </div>
@@ -138,7 +138,7 @@ body{overflow:hidden}
 
 <button class="menu-link" data-page="gabungan-order.html"
             data-roles="owner" onclick="bukaHalaman(this)">
-      <span class="ico">🚛</span> Orderan ke distrubutor
+      <span class="ico">✅</span> Orderan ke distrubutor
     </button>
 
     <button class="menu-link" data-page="approval-order-member.html"
@@ -146,15 +146,13 @@ body{overflow:hidden}
       <span class="ico">✅</span>Persetujuan Orderan
     </button>
 
-   
-
-    <div class="menu-section">TABUNGAN MEMBER</div>
-
-     <button class="menu-link" data-page="data-tabungan-member.html"
-           data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+    <button class="menu-link" data-page="data-tabungan-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
       <span class="ico">🏦</span>Data Tabungan Member
     </button>
+
     <div class="menu-section">KEUANGAN MEMBER</div>
+
     <button class="menu-link" data-page="data-keuangan.html"
             data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
       <span class="ico">💰</span>Data Keuangan Member
@@ -221,7 +219,7 @@ const FIXZY_PERMISSION_BY_PAGE={
   "data-karyawan.html":"ownerOnly",
   "upah-kerja.html":"ownerOnly",
   "pengaturan.html":"ownerOnly",
-  "data-tabungan-member.html":"orderMember",
+  "data-tabungan-member.html":"dataTabunganMember",
   "izin-akses.html":"ownerOnly",
   "saldo-token.html":"saldoToken",
   "cek-paket.html":"cekPaket",
@@ -256,7 +254,7 @@ function permissionTersedia(permissions, key){
   if(key==="superAdminOnly") return false;
   const session=window.fixzySession||{};
   const role=String(session.role||"").toLowerCase();
-  const basicAllow=["servis","penjualan","pengeluaran","dataServis","dataPenjualan","stock","laporanKeuangan","absensi","saldoToken","cekPaket","laporanPendapatan","dashboardPendapatan"];
+  const basicAllow=["servis","penjualan","pengeluaran","dataServis","dataPenjualan","stock","laporanKeuangan","absensi","saldoToken","cekPaket","laporanPendapatan","dashboardPendapatan","dataTabunganMember"];
   // SUPERADMIN adalah pengelola aplikasi, bukan Owner bisnis.
   if(role==="superadmin" || role==="admin") return key==="superAdminOnly";
   if(["karyawan","employee","kasir","kurir","reseller"].includes(role) && basicAllow.includes(key)) return true;
