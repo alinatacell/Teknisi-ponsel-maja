@@ -42,7 +42,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc,setDoc,increment,writeBatch,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let uid="",businessUid="",products=[],selected=null,cart=[],ready=false,members=[],selectedMember=null,ownerSettings={up:1000,kas:0};
 const $=x=>document.getElementById(x),
@@ -285,7 +285,38 @@ window.simpan=async()=>{
   try{
     let d=build();
     $("save").textContent="Menyimpan...";
-    await addDoc(collection(db,"penjualan"),d);
+    // Simpan order seperti biasa, sekaligus catat Kas & UP ke saldo Owner.
+    // Tabungan Member TIDAK disentuh di sini.
+    const batch=writeBatch(db);
+    const orderRef=doc(collection(db,"penjualan"));
+    batch.set(orderRef,d);
+
+    const kasNominal=Number(d.kasBulanan)||0;
+    const upNominal=Number(d.totalUpPengelolaOrder)||0;
+    const saldoRef=doc(db,"saldo_owner",businessUid);
+    const perubahan={updatedAt:serverTimestamp()};
+    if(upNominal)perubahan.saldoPengelola=increment(upNominal);
+
+    // Kas adalah iuran bulanan: satu member hanya menambah Kas satu kali
+    // untuk satu bulan, walaupun membuat beberapa order.
+    const bulan=String(d.tanggal||today()).slice(0,7);
+    const kasRef=doc(db,"saldo_owner_kas_bulanan",businessUid+"_"+uid+"_"+bulan);
+    if(kasNominal){
+      const kasSnap=await getDoc(kasRef);
+      if(!kasSnap.exists()){
+        perubahan.saldoKas=increment(kasNominal);
+        batch.set(kasRef,{
+          ownerUid:businessUid,
+          memberUid:uid,
+          bulan,
+          nominal:kasNominal,
+          sumber:"input-order-member",
+          createdAt:serverTimestamp()
+        });
+      }
+    }
+    if(Object.keys(perubahan).length>1)batch.set(saldoRef,perubahan,{merge:true});
+    await batch.commit();
     localStorage.removeItem(cartKey());
     cart=[];
     $("save").textContent="Pesanan menunggu approval.";
