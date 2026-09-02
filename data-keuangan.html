@@ -214,6 +214,11 @@ body.dark td{border-color:#334155}
    <b>Pengeluaran Pengelola</b> diambil dari <b>Hasil Pengelola</b>.
   </div>
   <div class="expense-grid">
+   <div class="metric">
+    <div class="label">Pengambilan Tabungan Member</div>
+    <div class="value" id="expenseTabungan">Rp 0</div>
+    <div class="sub">Mengurangi saldo tabungan member</div>
+   </div>
    <div class="metric green">
     <div class="label">Pengeluaran Uang Kas</div>
     <div class="value" id="expenseKas">Rp 0</div>
@@ -231,7 +236,7 @@ body.dark td{border-color:#334155}
    </div>
   </div>
   <div class="money-total">
-   Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
+   Saldo Tabungan: <b id="saldoTabunganAkhir">Rp 0</b><br>Saldo Kas: <b id="saldoKasAkhir">Rp 0</b>
    &nbsp; | &nbsp;
    Saldo Pengelola: <b id="saldoPengelolaAkhir">Rp 0</b>
   </div>
@@ -437,6 +442,30 @@ function currentOrders(){
  return orders.filter(inPeriod);
 }
 
+function orderMemberKey(r){const m=r.member||r.pelanggan||{};return String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||m.email||m.kode||"")}
+function orderMonthKey(r){
+ const raw=r.createdAt||r.approvedAt||r.updatedAt||r.tanggal||r.date||"";
+ let d=null;
+ if(raw?.toDate)d=raw.toDate();
+ else if(raw?.seconds)d=new Date(raw.seconds*1000);
+ else if(raw)d=new Date(raw);
+ if(!d||isNaN(d.getTime()))return String(r.tanggal||"").slice(0,7);
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+}
+function tabunganMasuk(){return currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0)}
+function pengelolaMasuk(){return currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0)}
+function kasBulananMasuk(){
+ const seen=new Set();let total=0;
+ for(const r of currentOrders()){
+  const member=orderMemberKey(r); const month=orderMonthKey(r);
+  const key=(member||String(r.memberEmail||r.memberNama||r.id))+"|"+month;
+  if(seen.has(key))continue; seen.add(key);
+  const v=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.member?.kasBulanan??r.member?.uangKasBulanan??0)||0;
+  total+=Math.max(0,v);
+ }
+ return total;
+}
+
 async function loadExpenses(){
   // SINKRON TOTAL:
   // 1) koleksi lama/utama FIXZY: pengeluaran (modul="member")
@@ -459,11 +488,11 @@ async function loadExpenses(){
           const x={id:d.id,...d.data()};
           const modul=String(x.modul||"").toLowerCase();
 
-          // Untuk koleksi pengeluaran, hanya transaksi Member.
-          // Untuk pengeluaranMember, semua dokumen memang milik modul Member.
-          if(collectionName==="pengeluaranMember" || modul==="member"){
-            map.set(`${collectionName}:${d.id}`,x);
-          }
+          const source=String(x.sumberDana||x.sumber||"").toLowerCase();
+          const jenis=String(x.jenisLabel||x.jenis||"").toLowerCase();
+          const supported=["member","kas","pengelola"].includes(modul)||["tabungan","kas","pengelola"].includes(source);
+          const legacyMember=collectionName==="pengeluaranMember";
+          if(supported||legacyMember){map.set(`${collectionName}:${d.id}`,x);}
         });
       }catch(e){
         console.warn(`Gagal membaca ${collectionName}:`,e.message);
@@ -482,48 +511,30 @@ function currentExpenses(){
 }
 
 function renderExpenses(){
-  let kas=0,pengelola=0;
-  for(const e of currentExpenses()){
-    const n=Math.max(0,num(e.nominal));
-    const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
-    const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
-
-    // Kompatibel dengan data lama:
-    // "Uang Kas", "Kas", "Hasil Pengelola", "Pengelola",
-    // serta data yang hanya membedakan lewat jenis.
-    const isPengelola =
-      source.includes("pengelola") ||
-      jenis.includes("pengelola");
-
-    if(isPengelola) pengelola+=n;
-    else if(source.includes("kas") || source==="" || jenis.includes("transport") ||
-            jenis.includes("acara") || jenis.includes("lain")) kas+=n;
-  }
-
-  const qty=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty,0),0);
-  const kasMasuk=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0),0);
-  const upMasuk=currentOrders().reduce((a,r)=>a+itemList(r).reduce((b,x)=>b+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0),0);
-
-  $("expenseKas").textContent=rp(kas);
-  $("expensePengelola").textContent=rp(pengelola);
-  $("expenseTotal").textContent=rp(kas+pengelola);
-  $("saldoKasAkhir").textContent=rp(kasMasuk-kas);
-  $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
-
-  const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
-    const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
-    const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
-    const isPengelola=source.includes("pengelola") || jenis.includes("pengelola");
-    return `<tr>
-      <td>${esc(e.tanggal||"-")}</td>
-      <td>${esc(e.jenisLabel||e.jenis||"-")}</td>
-      <td>${isPengelola?"HASIL PENGELOLA":"UANG KAS"}</td>
-      <td>${esc(e.keterangan||"-")}</td>
-      <td class="num">${rp(num(e.nominal))}</td>
-    </tr>`;
-  }).join("");
-
-  $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
+ let tabungan=0,kas=0,pengelola=0;
+ for(const e of currentExpenses()){
+  const n=Math.max(0,num(e.nominal));
+  const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
+  const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
+  if(source==="tabungan" || jenis.includes("pengambilan tabungan")) tabungan+=n;
+  else if(source.includes("pengelola") || jenis.includes("pengelola")) pengelola+=n;
+  else if(source.includes("kas") || source==="" || jenis.includes("transport") || jenis.includes("acara") || jenis.includes("lain")) kas+=n;
+ }
+ const tabMasuk=tabunganMasuk(),kasMasuk=kasBulananMasuk(),upMasuk=pengelolaMasuk();
+ $("expenseTabungan").textContent=rp(tabungan);
+ $("expenseKas").textContent=rp(kas);
+ $("expensePengelola").textContent=rp(pengelola);
+ $("expenseTotal").textContent=rp(tabungan+kas+pengelola);
+ $("saldoTabunganAkhir").textContent=rp(tabMasuk-tabungan);
+ $("saldoKasAkhir").textContent=rp(kasMasuk-kas);
+ $("saldoPengelolaAkhir").textContent=rp(upMasuk-pengelola);
+ const rows=currentExpenses().slice().sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||""))).map(e=>{
+  const source=String(e.sumberDana||e.sumber||"").trim().toLowerCase();
+  const jenis=String(e.jenisLabel||e.jenis||"").trim().toLowerCase();
+  const label=source==="tabungan"||jenis.includes("pengambilan tabungan")?"TABUNGAN MEMBER":source.includes("pengelola")||jenis.includes("pengelola")?"UP PENGELOLA":"UANG KAS";
+  return `<tr><td>${esc(e.tanggal||"-")}</td><td>${esc(e.jenisLabel||e.jenis||"-")}</td><td>${label}</td><td>${esc(e.keterangan||e.memberNama||"-")}</td><td class="num">${rp(num(e.nominal))}</td></tr>`;
+ }).join("");
+ $("expenseTable").innerHTML=rows||'<tr><td colspan="5" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
 }
 
 function buildStockData(){

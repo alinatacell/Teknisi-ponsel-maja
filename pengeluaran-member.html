@@ -433,58 +433,39 @@ async function ambilProfile(){
 async function muatMember(){
  const sel=$("memberPick");
  if(!sel||!ownerUid)return;
-
- try{
-   // Sama seperti Input Order Member:
-   // member diambil dari koleksi users berdasarkan ownerUid,
-   // lalu hanya role reseller/member/employee yang aktif.
-   const s=await getDocs(
-     query(collection(db,"users"),where("ownerUid","==",ownerUid))
-   );
-
-   const members=s.docs
-     .map(d=>({id:d.id,...(d.data()||{})}))
-     .filter(x=>
-       ["reseller","member","employee"].includes(
-         String(x.role||"").toLowerCase()
-       ) &&
-       String(x.status||"aktif").toLowerCase()!=="nonaktif"
-     );
-
-   members.sort((a,b)=>
-     String(a.nama||a.namaKaryawan||a.name||a.email||"")
-       .localeCompare(
-         String(b.nama||b.namaKaryawan||b.name||b.email||""),
-         "id"
-       )
-   );
-
-   sel.innerHTML=
-     '<option value="">-- Pilih Member --</option>'+
-     members.map(m=>{
-       const nama=m.nama||m.namaKaryawan||m.name||m.email||m.id;
-       return `<option value="${esc(m.id)}">${esc(nama)}</option>`;
-     }).join("");
-
-   if(!members.length){
-     sel.innerHTML='<option value="">-- Tidak ada member --</option>';
-   }
- }catch(e){
-   console.error("Member load:",e);
-   sel.innerHTML='<option value="">-- Gagal memuat member --</option>';
-   $("status").innerHTML=
-     `<span class="err">❌ Gagal memuat member: ${esc(e.message||e)}</span>`;
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId"]){
+  try{
+   const snap=await getDocs(query(collection(db,"users"),where(field,"==",ownerUid)));
+   snap.forEach(d=>{
+    const x={id:d.id,...(d.data()||{})};
+    const role=String(x.role||x.profileRole||"").trim().toLowerCase();
+    const active=String(x.status||"aktif").trim().toLowerCase()!=="nonaktif";
+    if(active && (["employee","karyawan","reseller","member"].includes(role)||x.isMember===true))map.set(d.id,x);
+   });
+  }catch(e){console.warn("Member "+field+":",e.message)}
  }
+ const arr=[...map.values()].sort((a,b)=>{
+  const na=String(a.nama||a.namaMember||a.namaKaryawan||a.name||a.displayName||a.email||a.id);
+  const nb=String(b.nama||b.namaMember||b.namaKaryawan||b.name||b.displayName||b.email||b.id);
+  return na.localeCompare(nb,"id");
+ });
+ sel.innerHTML='<option value="">-- Pilih Member --</option>'+arr.map(x=>{
+  const nama=x.nama||x.namaMember||x.namaKaryawan||x.name||x.displayName||x.email||x.id;
+  return `<option value="${esc(x.id)}">${esc(nama)}</option>`;
+ }).join("");
+ if(!arr.length)sel.innerHTML='<option value="">-- Tidak ada member --</option>';
 }
 
-async function ambilData(){rows=[];const map=new Map();for(const field of ["ownerUid","ownerId","uid"]){const value=field==="uid"?uid:ownerUid;if(!value)continue;try{const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",value)));s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}))}catch(e){console.warn("pengeluaran",field,e.message)}}rows=[...map.values()].filter(r=>String(r.modul||"").toLowerCase()==="member")}
+async function ambilData(){rows=[];const map=new Map();for(const field of ["ownerUid","ownerId","uid"]){const value=field==="uid"?uid:ownerUid;if(!value)continue;try{const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",value)));s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}))}catch(e){console.warn("pengeluaran",field,e.message)}}rows=[...map.values()].filter(r=>{const m=String(r.modul||"").toLowerCase();const s=String(r.sumberDana||"").toLowerCase();return ["member","kas","pengelola"].includes(m)||["tabungan","kas","pengelola"].includes(s)})}
 function render(){
  const period=$("filterBulan").value||monthNow();
  const data=rows.filter(r=>String(r.tanggal||"").startsWith(period)).sort((a,b)=>String(b.tanggal||"").localeCompare(String(a.tanggal||"")));
  const total=data.reduce((s,r)=>s+(Number(r.nominal)||0),0);
- const kas=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="kas").reduce((s,r)=>s+(Number(r.nominal)||0),0);
- const pengelola=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="pengelola").reduce((s,r)=>s+(Number(r.nominal)||0),0);
- $("total").textContent=money(total);$("kas").textContent=money(kas);$("pengelola").textContent=money(pengelola);$("jumlah").textContent=data.length;
+ const tabungan=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="tabungan" || String(r.jenis||"").toLowerCase()==="pengambilan tabungan member").reduce((s,r)=>s+(Number(r.nominal)||0),0);
+ const kas=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="kas" && String(r.jenis||"").toLowerCase()!=="pengambilan tabungan member").reduce((s,r)=>s+(Number(r.nominal)||0),0);
+ const pengelola=data.filter(r=>String(r.sumberDana||"").toLowerCase()==="pengelola" || String(r.jenis||"").toLowerCase().includes("pengelola")).reduce((s,r)=>s+(Number(r.nominal)||0),0);
+ $("total").textContent=money(total);$("tabungan").textContent=money(tabungan);$("kas").textContent=money(kas);$("pengelola").textContent=money(pengelola);$("jumlah").textContent=data.length;
  $("tbody").innerHTML=data.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.tanggal||"-")}</td><td><span class="badge">${esc(r.jenis||"-")}</span></td><td>${esc(r.keterangan||r.memberNama||"-")}</td><td class="num amount">${money(r.nominal)}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">Belum ada pengeluaran member pada bulan ini.</td></tr>'
 }
 async function simpan(){
@@ -502,7 +483,7 @@ async function simpan(){
  if(isTabungan&&!memberId){showPopup("Member belum dipilih","Pilih member untuk pengambilan tabungan.");return}
  try{
   $("status").textContent="⏳ Menyimpan pengeluaran member ke Firebase...";
-  await addDoc(collection(db,"pengeluaran"),{uid,ownerUid,ownerId:ownerUid,email:auth.currentUser?.email||"",namaKonter:namaKonter||"",modul:"member",sumberDana,tanggal,jenis,memberId,memberNama,nominal,keterangan,createdBy:auth.currentUser?.uid||uid,createdAt:serverTimestamp()});
+  await addDoc(collection(db,"pengeluaran"),{uid,ownerUid,ownerId:ownerUid,email:auth.currentUser?.email||"",namaKonter:namaKonter||"",modul:sumberDana==="tabungan"?"member":sumberDana,sumberDana,tanggal,jenis,memberId:isTabungan?memberId:"",memberNama:isTabungan?memberNama:"",nominal,keterangan,createdBy:auth.currentUser?.uid||uid,createdAt:serverTimestamp()});
   bersihkan();await ambilData();render();
   $("status").innerHTML=`<span class="ok">✓ ${esc(jenis)} berhasil disimpan • ${money(nominal)}</span>`;
   showPopup("Berhasil disimpan",`${jenis} sebesar ${money(nominal)} sudah tersimpan di Firebase.`)
