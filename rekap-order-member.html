@@ -16,19 +16,12 @@ main{max-width:1100px;margin:auto;padding:88px 12px 30px}
 .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
 label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
 input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:3px 3px 0 #111827}
-.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}
-.metric .value{font-size:20px;font-weight:900;margin-top:5px}
-.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}
-.metric.blue{background:#eff6ff}.metric.orange{background:#fffbeb}.metric.green{background:#f0fdf4}.metric.red{background:#fef2f2}
 .money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table{min-width:680px}
-  .expense-table table{min-width:620px}
   th,td{padding:8px 7px;font-size:10px}
   th{font-size:9px}
 }
@@ -37,7 +30,6 @@ th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
 td.num{text-align:right;font-weight:800}
 tr:last-child td{border-bottom:0}
 .total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}
-.section-note{font-size:11px;color:#64748b;line-height:1.6;margin-bottom:10px}
 .badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
 .badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
 .badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
@@ -46,30 +38,28 @@ tr:last-child td{border-bottom:0}
 .primary{background:#111827;color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
 body.dark{background:#0b1220;color:#e5e7eb}
-body.dark .card,body.dark .metric{background:#111827;color:#e5e7eb;border-color:#475569}
+body.dark .card{background:#111827;color:#e5e7eb;border-color:#475569}
 body.dark .title{border-color:#475569}
 body.dark label{color:#9ca3af}
 body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
-body.dark .metric.blue,body.dark .metric.orange,body.dark .metric.green,body.dark .metric.red{background:#1e293b}
-body.dark .money-total,body.dark .total-row td{background:#1c1917}
+body.dark .money-total{background:#1c1917}
 body.dark th{background:#020617}
 body.dark td{border-color:#334155}
-.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.expense-table{margin-top:12px}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
+@media(max-width:850px){.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
 @media(max-width:650px){
-      header{height:68px}
-      .hi h1{font-size:16px}
-      main{padding:80px 8px 24px}
-      .summary-grid{grid-template-columns:1fr}
-      .filters{grid-template-columns:1fr}
-      .acts .btn{padding:8px}
-      .metric .value{font-size:18px}
-      .card{padding:12px}
-    }
-</style><style>.summary-grid{grid-template-columns:repeat(5,1fr)}@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}}@media(max-width:650px){.summary-grid{grid-template-columns:1fr}}</style></head><body>
+  header{height:68px}
+  .hi h1{font-size:16px}
+  main{padding:80px 8px 24px}
+  .filters{grid-template-columns:1fr}
+  .acts .btn{padding:8px}
+  .card{padding:12px}
+}
+</style></head><body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Rekap Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
+
 <div class="card"><div class="title">REKAP ORDER MEMBER</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
-<div class="summary-grid"><div class="metric blue"><div class="label">Jumlah Order</div><div class="value" id="orderCount">0</div><div class="sub">Order member</div></div><div class="metric"><div class="label">Qty Order</div><div class="value" id="qtyTotal">0 pcs</div><div class="sub">Total seluruh pcs</div></div><div class="metric orange"><div class="label">Nilai Barang</div><div class="value" id="nilaiTotal">Rp 0</div><div class="sub">Total nilai barang</div></div><div class="metric green"><div class="label">UP Pengelola</div><div class="value" id="upTotal">Rp 0</div><div class="sub">Sesuai nilai UP per pcs pada order</div></div><div class="metric red"><div class="label">Tabungan Member</div><div class="value" id="tabunganTotal">Rp 0</div><div class="sub">Tabungan sesuai order/member</div></div><div class="metric"><div class="label">Uang Kas Bulanan</div><div class="value" id="kasTotal">Rp 0</div><div class="sub">Iuran bulanan member</div></div></div>
+
 <div class="card"><div class="title">DAFTAR ORDER MEMBER</div><div class="money-total">Total Sisa Tagihan: <b id="sisaTotal">Rp 0</b></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -92,71 +82,50 @@ function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice 
 let uid="",ownerUid="",profile={},orders=[],ready=false;
 function ownerOf(d){
  const role=String(d.role||"").toLowerCase();
- if(role==="owner"||role==="superadmin")return uid;
+ if(role==="owner")return uid;
+ if(role==="superadmin"||role==="super_admin")return "";
  return String(d.ownerUid||d.ownerId||"").trim()||uid;
 }
-
 function isCashOrder(r){
  const vals=[r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,r.metodePembayaran,r.jenisPembayaran,r.caraBayar]
    .map(v=>String(v??"").trim().toLowerCase());
  return vals.some(v=>["member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"].includes(v));
 }
-
 function orderStatus(r){
- // CASH/TUNAI selalu lunas dan tidak mempunyai piutang/jatuh tempo.
  if(isCashOrder(r))return "lunas";
  const p=r._paymentSource||{};
  const states=[r.status,r.approvalStatus,r.statusPembayaran,r.paymentStatus,p.status,p.statusPembayaran,p.paymentStatus]
    .map(v=>String(v??"").trim().toLowerCase());
  if(states.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v)))return "lunas";
  const total=Math.max(0,Number(r.totalBayar??r.total??0)||0);
- const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,
-   Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
+ const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
  const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
  return (sisa<=0 || (total>0 && paid>=total))?"lunas":"tagihan";
 }
-
 function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
  return a.map(x=>{
   const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
   const harga=Math.max(0,Number(x.harga??x.hargaJual??x.hargaSatuan??x.price??0)||0);
-  const modal=Math.max(0,Number(x.modalSatuan??x.modal??x.hargaModal??0)||0);
   const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??x.upPerPcs??0)||0);
   const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??x.menabungMemberPerPcs??x.menabungMember??0)||0);
   const total=Math.max(0,Number(x.total??x.totalHarga??x.subtotal??((harga*qty)-Number(x.diskon||0)))||0);
-  return {
-   produkId:String(x.produkId||x.id||""),
-   nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
-   kode:String(x.kode||x.kodeProduk||""),
-   qty,harga,modal,total,upPengelolaPerPcs:up,tabunganPerPcs:tabungan
-  };
+  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,harga,total,upPengelolaPerPcs:up,tabunganPerPcs:tabungan};
  });
 }
-
 function dueDate(r){
  if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
  if(!raw)return null;
  if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
  const s=String(raw);
- if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-  const [y,m,d]=s.split("-").map(Number);
-  return new Date(y,m-1,d);
- }
- if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
-  const [d,m,y]=s.split("/").map(Number);
-  return new Date(y,m-1,d);
- }
- const d=new Date(s);
- return isNaN(d.getTime())?null:d;
+ if(/^\d{4}-\d{2}-\d{2}$/.test(s)){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+ if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,y]=s.split("/").map(Number);return new Date(y,m-1,d);}
+ const d=new Date(s);return isNaN(d.getTime())?null:d;
 }
-
 function inPeriod(r){
- const p=$("periode").value;
- if(p==="all")return true;
- const raw=r.approvedAt||r.createdAt||r.tanggal||"";
- let d=null;
+ const p=$("periode").value;if(p==="all")return true;
+ const raw=r.approvedAt||r.createdAt||r.tanggal||"";let d=null;
  if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
  else if(String(raw).match(/^\d{4}-\d{2}-\d{2}$/))d=new Date(String(raw)+"T00:00:00");
  else if(raw)d=new Date(raw);
@@ -166,141 +135,79 @@ function inPeriod(r){
  if(p==="year")return d.getFullYear()===now.getFullYear();
  return true;
 }
-
 async function loadOrders(){
  const map=new Map();
- const qs=[
-  query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
- ];
- for(const q of qs){
-  const s=await getDocs(q);
-  s.forEach(d=>{
-   const x={id:d.id,...d.data()};
-   if(!map.has(d.id))map.set(d.id,x);
-  });
- }
- // Sinkronkan informasi pembayaran dari dokumen penjualan asal bila tersedia.
- // Ini penting untuk order lama: pembayaran bisa diperbarui di penjualan,
- // sedangkan order_member menyimpan snapshot saat approval.
+ const qs=[query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),query(collection(db,"order_member"),where("ownerId","==",ownerUid))];
+ for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x);});}catch(e){console.warn("Query order_member:",e.message);}}
  const arr=[...map.values()];
  await Promise.all(arr.map(async x=>{
-  const sid=String(x.sourcePenjualanId||"").trim();
-  if(!sid)return;
+  const sid=String(x.sourcePenjualanId||"").trim();if(!sid)return;
   try{
-   const ps=await getDoc(doc(db,"penjualan",sid));
-   if(!ps.exists())return;
-   const p=ps.data()||{};
-   const own=String(p.ownerUid||p.ownerId||"").trim();
-   if(own && own!==ownerUid)return;
+   const ps=await getDoc(doc(db,"penjualan",sid));if(!ps.exists())return;
+   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();if(own&&own!==ownerUid)return;
    x._paymentSource=p;
-
-   // Order lama kadang belum menyalin UP/Tabungan saat approval.
-   // Gunakan data dari penjualan asal sebagai fallback, termasuk nilai per item.
    const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
    const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
    if(sourceItems.length){
-     const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));
-     const merged=(orderItems.length?orderItems:sourceItems).map(oi=>{
-       const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||"");
-       const si=byKey.get(key)||{};
-       return {
-         ...si, ...oi,
-         upPengelolaPerPcs: Number(oi.upPengelolaPerPcs ?? oi.upPengelola ?? si.upPengelolaPerPcs ?? si.upPengelola ?? 0)||0,
-         tabunganPerPcs: Number(oi.tabunganPerPcs ?? oi.tabungan ?? si.tabunganPerPcs ?? si.tabungan ?? 0)||0
-       };
-     });
-     x.items=merged;
+    const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));
+    x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{
+     const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};
+     return{...si,...oi,upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0};
+    });
    }
    for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){
-     if((x[k]===undefined || x[k]===null || x[k]==="") && p[k]!==undefined) x[k]=p[k];
+    if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k];
    }
-  }catch(e){console.warn("Sinkron pembayaran order",x.id,e.message)}
+  }catch(e){console.warn("Sinkron pembayaran order",x.id,e.message);}
  }));
  orders=arr;
 }
-
 function kasMemberMonthKey(r){
  const m=r.member||r.pelanggan||{};
- const memberId=String(
-   r.memberId ?? r.idMember ?? r.pelangganId ?? m.id ?? m.uid ?? r.uidMember ?? m.email ?? m.wa ?? m.noWa ?? m.nama ?? "-"
- ).trim().toLowerCase();
- const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";
- let d=null;
- if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
- else if(raw){ const x=new Date(raw); if(!isNaN(x.getTime()))d=x; }
+ const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
+ const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";let d=null;
+ if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x;}
  const ym=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`:"tanpa-bulan";
  return memberId+"|"+ym;
 }
-
 function renderRekap(){
  const search=$("search").value.trim().toLowerCase();
- const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return !search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
+ const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return!search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
  let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
-
- // Uang kas hanya dihitung 1 kali untuk member yang sama pada bulan yang sama.
- // Ambil nilai terbesar/non-zero dari seluruh order member pada bulan tersebut,
- // sehingga order kedua/ketiga tidak menggandakan iuran dan order pertama yang
- // belum membawa field kas tetap bisa memakai nilai dari order berikutnya.
  const kasBulananMap=new Map();
- data.forEach(r=>{
-   const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
-   const key=kasMemberMonthKey(r);
-   const prev=kasBulananMap.get(key)||0;
-   if(raw>prev)kasBulananMap.set(key,raw);
- });
+ data.forEach(r=>{const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0,key=kasMemberMonthKey(r),prev=kasBulananMap.get(key)||0;if(raw>prev)kasBulananMap.set(key,raw);});
  const kasSudahDitampilkan=new Set();
-
  const rows=data.map(r=>{
-  const items=itemList(r);
-  const q=items.reduce((a,x)=>a+x.qty,0);
-  const value=items.reduce((a,x)=>a+x.total,0);
-  const cash=isCashOrder(r);
-  const total=Math.max(0,Number(r.totalBayar??r.total??value)||0);
-  const p=r._paymentSource||{};
-  const paid=Math.max(0,
-    Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,
-    Number(p.totalDibayar??p.pembayaran??p.dp??0)||0
-  );
-  // CASH tidak boleh mempunyai tagihan. Untuk TEMPO, jika sumber pembayaran
-  // sudah mencatat lunas/terbayar penuh, gunakan pembayaran tersebut.
-  const explicitPaid=[r.statusPembayaran,r.paymentStatus,p.statusPembayaran,p.paymentStatus]
-    .map(v=>String(v??"").trim().toLowerCase());
+  const items=itemList(r),q=items.reduce((a,x)=>a+x.qty,0),value=items.reduce((a,x)=>a+x.total,0),cash=isCashOrder(r);
+  const total=Math.max(0,Number(r.totalBayar??r.total??value)||0),p=r._paymentSource||{};
+  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
+  const explicitPaid=[r.statusPembayaran,r.paymentStatus,p.statusPembayaran,p.paymentStatus].map(v=>String(v??"").trim().toLowerCase());
   const sourceTotal=Math.max(0,Number(p.totalBayar??p.total??0)||0);
-  const paidFull=explicitPaid.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v))
-    || (sourceTotal>0 && paid>=sourceTotal);
-  const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
-  const st=orderStatus(r);
-  const jenis=cash?"CASH":"TEMPO";
-  const upDefault=Math.max(0,Number(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??0)||0);
-  const tabDefault=Math.max(0,Number(r.tabunganPerPcs??r.tabungan??r.menabungMemberPerPcs??r.menabungMember??0)||0);
-
-  const upRowCalc=items.reduce((a,x)=>{
-    const up=Number(x.upPengelolaPerPcs)||upDefault;
-    return a+(x.qty*up);
-  },0);
-  const tabRowCalc=items.reduce((a,x)=>{
-    const tab=Number(x.tabunganPerPcs)||tabDefault;
-    return a+(x.qty*tab);
-  },0);
-
-  // Fallback untuk order lama yang menyimpan total langsung di dokumen order.
+  const paidFull=explicitPaid.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v))||(sourceTotal>0&&paid>=sourceTotal);
+  const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0),st=orderStatus(r),jenis=cash?"CASH":"TEMPO";
+  const upDefault=Math.max(0,Number(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??0)||0),tabDefault=Math.max(0,Number(r.tabunganPerPcs??r.tabungan??r.menabungMemberPerPcs??r.menabungMember??0)||0);
+  const upRowCalc=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs)||upDefault),0);
+  const tabRowCalc=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs)||tabDefault),0);
   const upRow=upRowCalc>0?upRowCalc:Math.max(0,Number(r.totalUpPengelola??r.totalUPPengelola??r.upPengelolaTotal??r.totalUp??0)||0);
   const tabRow=tabRowCalc>0?tabRowCalc:Math.max(0,Number(r.totalTabunganMember??r.totalTabungan??r.tabunganTotal??0)||0);
-  const kasKey=kasMemberMonthKey(r);
-  const kasRow=!kasSudahDitampilkan.has(kasKey)
-    ? (kasBulananMap.get(kasKey)||0)
-    : 0;
-  kasSudahDitampilkan.add(kasKey);
-
+  const kasKey=kasMemberMonthKey(r),kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||0:0;kasSudahDitampilkan.add(kasKey);
   qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
-  const m=r.member||r.pelanggan||{};
-  const due=dueDate(r);
+  const m=r.member||r.pelanggan||{},due=dueDate(r);
   return `<tr><td><b>${esc(r.nomorNota||r.id)}</b></td><td>${esc(m.nama||"-")}</td><td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td><td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td><td>${due?due.toLocaleDateString("id-ID"):"-"}</td><td class="num">${q.toLocaleString("id-ID")}</td><td class="num">${rp(value)}</td><td class="num">${rp(upRow)}</td><td class="num">${rp(tabRow)}</td><td class="num">${rp(kasRow)}</td><td class="num">${rp(sisa)}</td></tr>`;
  }).join("");
- $("orderCount").textContent=data.length.toLocaleString("id-ID");$("qtyTotal").textContent=qty.toLocaleString("id-ID")+" pcs";$("nilaiTotal").textContent=rp(nilai);$("upTotal").textContent=rp(up);$("tabunganTotal").textContent=rp(tabungan);$("kasTotal").textContent=rp(kas);$("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+ $("orderCount")?.remove();$("qtyTotal")?.remove();$("nilaiTotal")?.remove();$("upTotal")?.remove();$("tabunganTotal")?.remove();$("kasTotal")?.remove();
+ $("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
 }
 function renderAll(){if(!ready)return;renderRekap();}
-$("periode").onchange=renderAll;$("search").oninput=renderAll;$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
-onAuthStateChanged(auth,async u=>{if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};ownerUid=ownerOf(profile);$("email").textContent=u.email||"-";await loadOrders();ready=true;renderAll();notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");}catch(e){console.error(e);notice("Gagal memuat Rekap Order Member: "+e.message,"err");}});
+$("periode").onchange=renderAll;$("search").oninput=renderAll;
+$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+onAuthStateChanged(auth,async u=>{
+ if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}
+ try{
+  uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+  profile=s.data()||{};ownerUid=ownerOf(profile);if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
+  $("email").textContent=u.email||"-";await loadOrders();ready=true;renderAll();
+  notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");
+ }catch(e){console.error(e);notice("Gagal memuat Rekap Order Member: "+e.message,"err");}
+});
 </script></body></html>
