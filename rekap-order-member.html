@@ -118,15 +118,20 @@ function orderStatus(r){
 
 function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
- return a.map(x=>({
-  produkId:String(x.produkId||x.id||""),
-  nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
-  kode:String(x.kode||x.kodeProduk||""),
-  qty:Math.max(0,Number(x.qty||x.jumlah||0)||0),
-  harga:Math.max(0,Number(x.harga||x.hargaJual||0)||0),
-  modal:Math.max(0,Number(x.modalSatuan??x.modal??0)||0),
-  total:Math.max(0,Number(x.total??((Number(x.harga||x.hargaJual||0)*Number(x.qty||x.jumlah||0))-Number(x.diskon||0)))||0)
- }));
+ return a.map(x=>{
+  const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
+  const harga=Math.max(0,Number(x.harga??x.hargaJual??x.hargaSatuan??x.price??0)||0);
+  const modal=Math.max(0,Number(x.modalSatuan??x.modal??x.hargaModal??0)||0);
+  const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??x.upPerPcs??0)||0);
+  const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??x.menabungMemberPerPcs??x.menabungMember??0)||0);
+  const total=Math.max(0,Number(x.total??x.totalHarga??x.subtotal??((harga*qty)-Number(x.diskon||0)))||0);
+  return {
+   produkId:String(x.produkId||x.id||""),
+   nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
+   kode:String(x.kode||x.kodeProduk||""),
+   qty,harga,modal,total,upPengelolaPerPcs:up,tabunganPerPcs:tabungan
+  };
+ });
 }
 
 function dueDate(r){
@@ -219,9 +224,22 @@ function renderRekap(){
   const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
   const st=orderStatus(r);
   const jenis=cash?"CASH":"TEMPO";
-  const upRow=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??0)||0),0);
-  const tabRow=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs??r.tabunganPerPcs??0)||0),0);
-  const kasRow=Number(r.kasBulanan??r.uangKasBulanan??0)||0;
+  const upDefault=Math.max(0,Number(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??0)||0);
+  const tabDefault=Math.max(0,Number(r.tabunganPerPcs??r.tabungan??r.menabungMemberPerPcs??r.menabungMember??0)||0);
+
+  const upRowCalc=items.reduce((a,x)=>{
+    const up=Number(x.upPengelolaPerPcs)||upDefault;
+    return a+(x.qty*up);
+  },0);
+  const tabRowCalc=items.reduce((a,x)=>{
+    const tab=Number(x.tabunganPerPcs)||tabDefault;
+    return a+(x.qty*tab);
+  },0);
+
+  // Fallback untuk order lama yang menyimpan total langsung di dokumen order.
+  const upRow=upRowCalc>0?upRowCalc:Math.max(0,Number(r.totalUpPengelola??r.totalUPPengelola??r.upPengelolaTotal??r.totalUp??0)||0);
+  const tabRow=tabRowCalc>0?tabRowCalc:Math.max(0,Number(r.totalTabunganMember??r.totalTabungan??r.tabunganTotal??0)||0);
+  const kasRow=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
   qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
