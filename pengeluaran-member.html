@@ -433,19 +433,53 @@ async function ambilProfile(){
 async function muatMember(){
  const sel=$("memberPick");
  if(!sel||!ownerUid)return;
+
  const map=new Map();
+
+ // Ambil member dari koleksi users.
  for(const field of ["ownerUid","ownerId"]){
   try{
    const s=await getDocs(query(collection(db,"users"),where(field,"==",ownerUid)));
    s.forEach(d=>{
     const x={id:d.id,...d.data()};
     const role=String(x.role||x.profileRole||"").toLowerCase();
-    if((role==="member"||role==="reseller"||x.isMember===true)&&String(x.status||"").toLowerCase()!=="nonaktif")map.set(d.id,x);
+    const aktif=String(x.status||"").toLowerCase()!=="nonaktif";
+    if(aktif&&(role==="member"||role==="reseller"||x.isMember===true)){
+      map.set(d.id,x);
+    }
    });
-  }catch(e){console.warn("member",field,e.message)}
+  }catch(e){console.warn("users member",field,e.message)}
  }
- const arr=[...map.values()].sort((a,b)=>String(a.nama||a.namaMember||a.name||a.email||"").localeCompare(String(b.nama||b.namaMember||b.name||b.email||""),"id"));
- sel.innerHTML='<option value="">-- Pilih Member --</option>'+arr.map(x=>`<option value="${esc(x.id)}">${esc(x.nama||x.namaMember||x.name||x.email||x.id)}</option>`).join("");
+
+ // Fallback/pendukung: ambil dari koleksi members jika data member
+ // memang disimpan terpisah dari users.
+ for(const field of ["ownerUid","ownerId"]){
+  try{
+   const s=await getDocs(query(collection(db,"members"),where(field,"==",ownerUid)));
+   s.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    if(String(x.status||"").toLowerCase()!=="nonaktif"){
+      map.set(d.id,x);
+    }
+   });
+  }catch(e){console.warn("members",field,e.message)}
+ }
+
+ const arr=[...map.values()].sort((a,b)=>{
+   const na=String(a.nama||a.namaMember||a.name||a.namaLengkap||a.email||"");
+   const nb=String(b.nama||b.namaMember||b.name||b.namaLengkap||b.email||"");
+   return na.localeCompare(nb,"id");
+ });
+
+ sel.innerHTML='<option value="">-- Pilih Member --</option>'+
+   arr.map(x=>{
+     const nama=x.nama||x.namaMember||x.name||x.namaLengkap||x.email||x.id;
+     return `<option value="${esc(x.id)}">${esc(nama)}</option>`;
+   }).join("");
+
+ if(!arr.length){
+   sel.innerHTML='<option value="">-- Tidak ada member --</option>';
+ }
 }
 async function ambilData(){rows=[];const map=new Map();for(const field of ["ownerUid","ownerId","uid"]){const value=field==="uid"?uid:ownerUid;if(!value)continue;try{const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",value)));s.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()}))}catch(e){console.warn("pengeluaran",field,e.message)}}rows=[...map.values()].filter(r=>String(r.modul||"").toLowerCase()==="member")}
 function render(){
