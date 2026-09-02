@@ -27,6 +27,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 </div>
 <div class="summary-grid">
 <div class="metric blue"><div class="label">Total Member</div><div class="value" id="totalMember">0</div><div class="sub">Akun member pada owner ini</div></div>
+ <div class="metric green"><div class="label">Total Pendapatan</div><div class="value" id="totalPendapatan">Rp 0</div><div class="sub">Pembayaran member dari order approved</div></div>
 <div class="metric green"><div class="label">Total Tabungan</div><div class="value" id="totalTabungan">Rp 0</div><div class="sub">Dihitung dari order yang sudah approved</div></div>
 <div class="metric orange"><div class="label">Total Qty</div><div class="value" id="totalQty">0 pcs</div><div class="sub">Qty order yang masuk tabungan</div></div>
 <div class="metric green"><div class="label">Total UP Pengelola</div><div class="value" id="totalUp">Rp 0</div><div class="sub">UP/Pcs × qty approved</div></div>
@@ -34,8 +35,8 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 <div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Saat ini belum ada transaksi pengambilan</div></div>
 </div>
 <div class="card"><div class="title">SALDO PER MEMBER</div>
-<div class="table-wrap"><table><thead><tr><th>No</th><th>Nama Member</th><th>Email</th><th>No. WA</th><th>Kode Member</th><th class="num">Tabungan/Pcs</th><th class="num">Qty</th><th class="num">Total Tabungan</th><th class="num">UP/Pcs</th><th class="num">Total UP</th><th class="num">Kas Bulanan</th><th class="num">Bulan Kas</th><th class="num">Pengambilan</th><th class="num">Saldo</th><th>Status</th></tr></thead><tbody id="tbody"><tr><td colspan="15" class="empty">Memuat Firebase...</td></tr></tbody></table></div>
-<div class="note"><b>Aturan:</b> CASH, TEMPO, dan TABUNGAN tetap dihitung dari order yang sudah approved. <b>Tabungan/Pcs</b> dan <b>UP Pengelola/Pcs</b> memakai nilai yang tersimpan pada order saat dibuat/approval.</div>
+<div class="table-wrap"><table><thead><tr><th>No</th><th>Nama Member</th><th>Email</th><th>No. WA</th><th>Kode Member</th><th class="num">Tabungan/Pcs</th><th class="num">Qty</th><th class="num">Total Tabungan</th><th class="num">UP/Pcs</th><th class="num">Total UP</th><th class="num">Pendapatan</th><th class="num">Kas Bulanan</th><th class="num">Bulan Kas</th><th class="num">Pengambilan</th><th class="num">Saldo</th><th>Status</th></tr></thead><tbody id="tbody"><tr><td colspan="16" class="empty">Memuat Firebase...</td></tr></tbody></table></div>
+<div class="note"><b>Aturan:</b> Pendapatan dihitung dari pembayaran member yang tercatat pada order approved (CASH/TUNAI = nilai order penuh; TEMPO/TAGIHAN = DP/pembayaran yang sudah masuk). CASH, TEMPO, dan TABUNGAN tetap dihitung dari order yang sudah approved. <b>Tabungan/Pcs</b> dan <b>UP Pengelola/Pcs</b> memakai nilai yang tersimpan pada order saat dibuat/approval.</div>
 <div class="note danger-note"><b>UANG KAS:</b> dihitung berdasarkan <b>bulan kalender</b>. Satu member hanya mendapat 1 tagihan kas dalam 1 bulan, walaupun order berkali-kali pada bulan yang sama. Bulan berikutnya baru dihitung lagi.</div>
 </div>
 </main>
@@ -117,11 +118,18 @@ function withdrawalFor(by,r){
 }
 function aggregate(){
  const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
- members.forEach(m=>{const rec={member:m,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);if(nama(m))byName.set(norm(nama(m)),rec)});
+ members.forEach(m=>{const rec={member:m,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(m.id,rec);if(email(m))byEmail.set(norm(email(m)),rec);if(kode(m))byCode.set(norm(kode(m)),rec);if(nama(m))byName.set(norm(nama(m)),rec)});
  orders.forEach(r=>{
    let rec=findRec({id:byId,email:byEmail,code:byCode,name:byName},r);
-   if(!rec){const m=r.member||{};const temp={id:String(r.memberUid||r.memberId||m.uid||m.userId||""),...m,email:r.memberEmail||m.email||"",kodeMember:m.kodeMember||m.kode||r.kodeMember||"",nama:m.nama||m.namaMember||r.memberNama||"-",role:"member",status:m.status||"aktif"};if(temp.id){rec={member:temp,qty:0,total:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(temp.id,rec);if(email(temp))byEmail.set(norm(email(temp)),rec);if(kode(temp))byCode.set(norm(kode(temp)),rec);byName.set(norm(nama(temp)),rec);}}
+   if(!rec){const m=r.member||{};const temp={id:String(r.memberUid||r.memberId||m.uid||m.userId||""),...m,email:r.memberEmail||m.email||"",kodeMember:m.kodeMember||m.kode||r.kodeMember||"",nama:m.nama||m.namaMember||r.memberNama||"-",role:"member",status:m.status||"aktif"};if(temp.id){rec={member:temp,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};byId.set(temp.id,rec);if(email(temp))byEmail.set(norm(email(temp)),rec);if(kode(temp))byCode.set(norm(kode(temp)),rec);byName.set(norm(nama(temp)),rec);}}
    if(!rec)return;
+   // PENDAPATAN MEMBER: uang yang sudah dibayar pada order approved.
+   // CASH/TUNAI dianggap lunas penuh; TEMPO/TAGIHAN memakai pembayaran/DP yang tercatat.
+   const orderTotal=num(r.approvedTotal??r.totalBayar??r.total??0);
+   const paidRecorded=num(r.totalDibayar??r.pembayaran??r.approvedDp??r.dp??r.uangMuka??0);
+   const paymentType=norm(r.tipeOrder||r.jenisTransaksi||r.metodePembayaran||r.paymentMethod||r.pembayaranJenis||'');
+   const cashOrder=/cash|tunai/.test(paymentType)||paymentType==='member_cash';
+   rec.paid+=Math.min(orderTotal,Math.max(0,cashOrder?orderTotal:paidRecorded));
    const fallbackTab=num(r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??r.member?.tabunganMember??rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;
    const fallbackUp=num(r.upPengelolaPerPcs??r.upPengelola??rec.member.upPengelolaPerPcs??0);
    const items=itemList(r);
@@ -142,11 +150,11 @@ function render(){
  if(!ready)return;
  const search=norm($("search")?.value),sf=norm($("statusFilter")?.value);
  const data=aggregate().filter(r=>{const a=r.member,text=[nama(a),email(a),wa(a),kode(a)].map(norm).join(" ");return(!search||text.includes(search))&&(!sf||norm(a.status||"aktif")===sf)});
- let total=0,qty=0,up=0,kas=0,withdraw=0;
- data.forEach(r=>{total+=r.total;qty+=r.qty;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});
- setText("totalMember",data.length.toLocaleString("id-ID"));setText("totalTabungan",rp(total));setText("totalQty",qty.toLocaleString("id-ID")+" pcs");setText("totalUp",rp(up));setText("totalKas",rp(kas));setText("saldoTabungan",rp(total-withdraw));
+ let total=0,qty=0,up=0,kas=0,withdraw=0,paid=0;
+ data.forEach(r=>{total+=r.total;qty+=r.qty;up+=r.up;kas+=r.kas;withdraw+=r.withdraw;paid+=r.paid});
+ setText("totalMember",data.length.toLocaleString("id-ID"));setText("totalPendapatan",rp(paid));setText("totalTabungan",rp(total));setText("totalQty",qty.toLocaleString("id-ID")+" pcs");setText("totalUp",rp(up));setText("totalKas",rp(kas));setText("saldoTabungan",rp(total-withdraw));
  const body=$("tbody");if(!body)return;
- body.innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const tabPcs=r.qty&&r.total?r.total/r.qty:tabunganDefault(a);const upPcs=r.upPcs||num(a.upPengelolaPerPcs??a.upPengelola??0);const months=[...r.kasMonths].sort().join(", ")||"-";return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||"-")}</div></td><td>${esc(email(a)||"-")}</td><td>${esc(wa(a)||"-")}</td><td>${esc(kode(a)||"-")}</td><td class="num">${rp(tabPcs)}</td><td class="num">${r.qty.toLocaleString("id-ID")}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==="nonaktif"?"off":"active"}">${esc(a.status||"aktif")}</span></td></tr>`}).join(""):"<tr><td colspan=\"15\" class=\"empty\">Belum ada data member/order yang sesuai.</td></tr>";
+ body.innerHTML=data.length?data.map((r,i)=>{const a=r.member,s=r.total-r.withdraw;const tabPcs=r.qty&&r.total?r.total/r.qty:tabunganDefault(a);const upPcs=r.upPcs||num(a.upPengelolaPerPcs??a.upPengelola??0);const months=[...r.kasMonths].sort().join(", ")||"-";return `<tr><td>${i+1}</td><td><div class="member-name">${esc(nama(a))}</div><div class="subtext">Role: ${esc(a.role||"-")}</div></td><td>${esc(email(a)||"-")}</td><td>${esc(wa(a)||"-")}</td><td>${esc(kode(a)||"-")}</td><td class="num">${rp(tabPcs)}</td><td class="num">${r.qty.toLocaleString("id-ID")}</td><td class="num">${rp(r.total)}</td><td class="num">${rp(upPcs)}</td><td class="num">${rp(r.up)}</td><td class="num">${rp(r.paid)}</td><td class="num">${rp(r.kas)}</td><td class="num">${esc(months)}</td><td class="num">${rp(r.withdraw)}</td><td class="num"><b>${rp(s)}</b></td><td><span class="badge ${norm(a.status)==="nonaktif"?"off":"active"}">${esc(a.status||"aktif")}</span></td></tr>`}).join(""):"<tr><td colspan=\"15\" class=\"empty\">Belum ada data member/order yang sesuai.</td></tr>";
 }
 async function load(){
  if(!ownerUid||loading)return;loading=true;ready=false;notice("Menghubungkan Firebase FIXZY...","ok");
