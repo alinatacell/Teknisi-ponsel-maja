@@ -169,12 +169,6 @@ function render(){
      <div class="member-main">
        <div class="member-contact"><b>Email:</b> ${esc(email(a)||"-")} &nbsp; • &nbsp; <b>WA:</b> ${esc(wa(a)||"-")}</div>
        <div class="saving-box"><div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div><div class="saving-total">${rp(r.total)}</div><div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved.</div></div>
-       <div class="saving-balance-grid">
-         <div class="saving-balance-box awal"><div class="k">TABUNGAN AWAL</div><div class="v">${rp(r.total)}</div></div>
-         <div class="saving-balance-box ambil"><div class="k">PENGAMBILAN</div><div class="v">${rp(r.withdraw)}</div></div>
-         <div class="saving-balance-box sisa"><div class="k">SISA TABUNGAN</div><div class="v">${rp(saldo)}</div></div>
-       </div>
-       <div class="saving-formula">Sisa Tabungan <b>${esc(nama(a))}</b> = Tabungan Awal ${rp(r.total)} − Pengambilan ${rp(r.withdraw)} = <b>${rp(saldo)}</b></div>
        <div class="member-extra-panels">
          <div class="extra-panel pengelola">
            <div class="ep-label">PANEL PENGELOLA</div>
