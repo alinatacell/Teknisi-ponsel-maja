@@ -220,10 +220,37 @@ async function loadOrders(){
  orders=arr;
 }
 
+function kasMemberMonthKey(r){
+ const m=r.member||r.pelanggan||{};
+ const memberId=String(
+   r.memberId ?? r.idMember ?? r.pelangganId ?? m.id ?? m.uid ?? r.uidMember ?? m.email ?? m.wa ?? m.noWa ?? m.nama ?? "-"
+ ).trim().toLowerCase();
+ const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";
+ let d=null;
+ if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
+ else if(raw){ const x=new Date(raw); if(!isNaN(x.getTime()))d=x; }
+ const ym=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`:"tanpa-bulan";
+ return memberId+"|"+ym;
+}
+
 function renderRekap(){
  const search=$("search").value.trim().toLowerCase();
  const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return !search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
  let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
+
+ // Uang kas hanya dihitung 1 kali untuk member yang sama pada bulan yang sama.
+ // Ambil nilai terbesar/non-zero dari seluruh order member pada bulan tersebut,
+ // sehingga order kedua/ketiga tidak menggandakan iuran dan order pertama yang
+ // belum membawa field kas tetap bisa memakai nilai dari order berikutnya.
+ const kasBulananMap=new Map();
+ data.forEach(r=>{
+   const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
+   const key=kasMemberMonthKey(r);
+   const prev=kasBulananMap.get(key)||0;
+   if(raw>prev)kasBulananMap.set(key,raw);
+ });
+ const kasSudahDitampilkan=new Set();
+
  const rows=data.map(r=>{
   const items=itemList(r);
   const q=items.reduce((a,x)=>a+x.qty,0);
@@ -260,7 +287,12 @@ function renderRekap(){
   // Fallback untuk order lama yang menyimpan total langsung di dokumen order.
   const upRow=upRowCalc>0?upRowCalc:Math.max(0,Number(r.totalUpPengelola??r.totalUPPengelola??r.upPengelolaTotal??r.totalUp??0)||0);
   const tabRow=tabRowCalc>0?tabRowCalc:Math.max(0,Number(r.totalTabunganMember??r.totalTabungan??r.tabunganTotal??0)||0);
-  const kasRow=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
+  const kasKey=kasMemberMonthKey(r);
+  const kasRow=!kasSudahDitampilkan.has(kasKey)
+    ? (kasBulananMap.get(kasKey)||0)
+    : 0;
+  kasSudahDitampilkan.add(kasKey);
+
   qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
