@@ -37,8 +37,8 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric{bac
 </div>
 <div class="card"><div class="title">SALDO TABUNGAN PER MEMBER</div>
 <div id="memberPanels" class="member-panels"><div class="empty">Memuat Firebase...</div></div>
-<div class="note"><b>Aturan:</b> Pendapatan dihitung dari pembayaran member yang tercatat pada order approved (CASH/TUNAI = nilai order penuh; TEMPO/TAGIHAN = DP/pembayaran yang sudah masuk). CASH, TEMPO, dan TABUNGAN tetap dihitung dari order yang sudah approved. <b>Tabungan/Pcs</b> dan <b>UP Pengelola/Pcs</b> memakai nilai yang tersimpan pada order saat dibuat/approval.</div>
-<div class="note danger-note"><b>UANG KAS:</b> dihitung berdasarkan <b>bulan kalender</b>. Satu member hanya mendapat 1 tagihan kas dalam 1 bulan, walaupun order berkali-kali pada bulan yang sama. Bulan berikutnya baru dihitung lagi.</div>
+
+
 </div>
 </main>
 <script type="module">
@@ -172,12 +172,6 @@ function render(){
      <div class="member-main">
        <div class="member-contact"><b>Email:</b> ${esc(email(a)||"-")} &nbsp; • &nbsp; <b>WA:</b> ${esc(wa(a)||"-")}</div>
        <div class="saving-box"><div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div><div class="saving-total">${rp(r.total)}</div><div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved, sebelum pengambilan.</div></div>
-       <div class="saving-balance-grid">
-         <div class="saving-balance-box awal"><div class="k">Tabungan Awal</div><div class="v">${rp(r.total)}</div></div>
-         <div class="saving-balance-box ambil"><div class="k">Pengambilan Tabungan</div><div class="v">− ${rp(r.withdraw)}</div></div>
-         <div class="saving-balance-box sisa"><div class="k">Sisa Tabungan</div><div class="v">${rp(saldo)}</div></div>
-       </div>
-       <div class="saving-formula">Sisa Tabungan ${esc(nama(a))} = Tabungan Awal ${rp(r.total)} − Pengambilan ${rp(r.withdraw)} = <b>${rp(saldo)}</b></div>
        <div class="member-extra-panels">
          <div class="extra-panel pengelola">
            <div class="ep-label">PANEL PENGELOLA</div>
@@ -193,7 +187,7 @@ function render(){
          </div>
        </div>
      </div>
-     <div class="member-panel-foot">Tabungan ini khusus milik <b>${esc(nama(a))}</b>. Uang kas dihitung maksimal 1× untuk member yang sama pada bulan kalender yang sama.</div>
+     <div class="member-panel-foot"><b>Pemilik tabungan:</b> ${esc(nama(a))} • Pengambilan mengurangi saldo tabungan milik member ini. Uang kas maksimal 1× per bulan kalender.</div>
    </div>`;
  }).join(""):`<div class="empty-panel">Belum ada data member/order yang sesuai.</div>`;
 }
