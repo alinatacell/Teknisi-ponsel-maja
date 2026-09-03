@@ -254,14 +254,14 @@ Terima kasih 🙏
    const namaKonter = profile.namaKonter || profile.namaToko || "FIXZY";  
        const pesan=`Halo ${n} 👋  
   
-Akun FIXZY kamu sudah aktif di konter *${namaKonter}*.  
+Akun kamu sudah aktif di komunitas *${namaKonter}*.  
   
 🔐 *DATA LOGIN*:  
 • Nama: ${n}  
 • Email: ${email}  
 • Password: ${pass}  
-• Role: ${r==="employee"?"Karyawan":"Reseller"}  
-• Jabatan: ${j||"-"}  
+• Role: Member
+• Jabatan:Member
 • Upah/Hari: ${rupiah(upah)}  
 • Status: Aktif  
   
@@ -271,7 +271,7 @@ https://alinatacell.github.io/Teknisi-ponsel-maja/
 📌 Simpan email & password ini. Jangan bagikan ke orang lain.  
   
 Terima kasih 🙏  
-*${namaKonter} - FIXZY*`;  
+*${namaKonter} *`;  
    window._waPending={phone:wa,message:pesan,name:n,email,password:pass,role:r};await load();tampilWaPopup(window._waPending);  
  }catch(e){console.error(e);let m=e.message||String(e);if(e.code==="auth/email-already-in-use")m="Email sudah digunakan.";tampilNotice("❌ Gagal Menyimpan",esc(m))}  
 };  
