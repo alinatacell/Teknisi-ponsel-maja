@@ -12,9 +12,9 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 @media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.quick{grid-template-columns:repeat(3,1fr)}}
 </style></head>
 <body>
-<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
+<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
-<div class="card"><div class="title">Informasi Pesanan</div><div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis</span><b>MEMBER • TEMPO • MENUNGGU APPROVAL</b></div></div></div>
+<div class="card"><div class="title">Informasi Pesanan</div><div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis Transaksi</span><b>TUNAI • TEMPO</b></div></div></div>
 <div class="card"><div class="title">Data Member</div><div class="grid">
 <div><label>NAMA MEMBER *</label><input id="nama" readonly></div>
 <div><label>NO. WA *</label><input id="wa" inputmode="tel" readonly></div>
@@ -22,7 +22,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 <div><label>CATATAN</label><input id="catatan"></div>
 <div class="full"><label>ALAMAT</label><textarea id="alamat"></textarea></div>
 </div><div id="memberAutoInfo" class="notice ok" style="margin-top:9px">Nama dan No. WA otomatis mengikuti akun yang sedang login.</div></div>
-<div class="card"><div class="title">🛒 Keranjang Order Member</div>
+<div class="card"><div class="title">🛒 Keranjang Order</div>
   <div class="notice">Produk dimasukkan langsung dari <b>Stok Produk</b>. Tambah produk dari halaman stok, lalu keranjang ini digunakan untuk mengatur qty sebelum order diajukan.</div>
   <div class="actions" style="margin-bottom:10px">
     <button type="button" class="btn primary" onclick="kembaliKeStok()">＋ Tambah Produk dari Stok</button>
@@ -36,7 +36,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
     Total pesanan: <b id="total">Rp 0</b>
   </div>
 </div>
-<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
+<div class="card"><div class="title">Pembayaran Tunai & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
 <div class="card"><div class="title">Simpan Pesanan</div><div style="font-size:11px;color:#64748b;line-height:1.7;margin-bottom:10px">Pesanan <b>belum mengurangi stok</b>. Setelah disimpan, Admin melakukan <b>Approval Member</b> untuk mencocokkan stok. Hanya produk/qty yang disetujui yang mengurangi stok dan masuk ke <b>Data Order Member</b>.</div><div class="actions"><button class="btn secondary" onclick="simpan()">💾 Simpan Pesanan</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button></div><div><div id="save" class="notice">Menunggu akun...</div></div>
 </main>
 <script type="module">
