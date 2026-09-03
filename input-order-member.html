@@ -285,37 +285,11 @@ window.simpan=async()=>{
   try{
     let d=build();
     $("save").textContent="Menyimpan...";
-    // Simpan order seperti biasa, sekaligus catat Kas & UP ke saldo Owner.
-    // Tabungan Member TIDAK disentuh di sini.
+    // Simpan pesanan sebagai MENUNGGU APPROVAL saja.
+    // Stok, UP Pengelola, dan Uang Kas baru diproses saat Approval.
     const batch=writeBatch(db);
     const orderRef=doc(collection(db,"penjualan"));
     batch.set(orderRef,d);
-
-    const kasNominal=Number(d.kasBulanan)||0;
-    const upNominal=Number(d.totalUpPengelolaOrder)||0;
-    const saldoRef=doc(db,"saldo_owner",businessUid);
-    const perubahan={updatedAt:serverTimestamp()};
-    if(upNominal)perubahan.saldoPengelola=increment(upNominal);
-
-    // Kas adalah iuran bulanan: satu member hanya menambah Kas satu kali
-    // untuk satu bulan, walaupun membuat beberapa order.
-    const bulan=String(d.tanggal||today()).slice(0,7);
-    const kasRef=doc(db,"saldo_owner_kas_bulanan",businessUid+"_"+uid+"_"+bulan);
-    if(kasNominal){
-      const kasSnap=await getDoc(kasRef);
-      if(!kasSnap.exists()){
-        perubahan.saldoKas=increment(kasNominal);
-        batch.set(kasRef,{
-          ownerUid:businessUid,
-          memberUid:uid,
-          bulan,
-          nominal:kasNominal,
-          sumber:"input-order-member",
-          createdAt:serverTimestamp()
-        });
-      }
-    }
-    if(Object.keys(perubahan).length>1)batch.set(saldoRef,perubahan,{merge:true});
     await batch.commit();
     localStorage.removeItem(cartKey());
     cart=[];
