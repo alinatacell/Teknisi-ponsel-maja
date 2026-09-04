@@ -36,7 +36,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
     Total pesanan: <b id="total">Rp 0</b>
   </div>
 </div>
-<div class="card"><div class="title">Pembayaran Tunai & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
+<div class="card"><div class="title">Pembayaran Tunai & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button><button type="button" data-tempo-days="45" onclick="tempo(45,this)">45 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs • 45 Hari = 15 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
 <div class="card"><div class="title">Simpan Pesanan</div><div style="font-size:11px;color:#64748b;line-height:1.7;margin-bottom:10px">Pesanan <b>belum mengurangi stok</b>. Setelah disimpan, Admin melakukan <b>Approval Member</b> untuk mencocokkan stok. Hanya produk/qty yang disetujui yang mengurangi stok dan masuk ke <b>Data Order Member</b>.</div><div class="actions"><button class="btn secondary" onclick="simpan()">💾 Simpan Pesanan</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button></div><div><div id="save" class="notice">Menunggu akun...</div></div>
 </main>
 <script type="module">
@@ -226,7 +226,7 @@ window.refreshCartFromStock=async()=>{
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 
 function totalQtyCart(){return cart.reduce((n,x)=>n+(Number(x.qty)||0),0)}
-function minQtyTempo(days){if(Number(days)===7)return 2;if(Number(days)===14)return 5;if(Number(days)===30)return 10;return 1}
+function minQtyTempo(days){if(Number(days)===7)return 2;if(Number(days)===14)return 5;if(Number(days)===30)return 10;if(Number(days)===45)return 15;return 1}
 function updateTempoRules(){
   const q=totalQtyCart();
   document.querySelectorAll(".quick button[data-tempo-days]").forEach(b=>{
@@ -237,7 +237,7 @@ function updateTempoRules(){
     b.style.cursor=ok?"pointer":"not-allowed";
   });
   const rule=$("tempoRule");
-  if(rule)rule.textContent=`Qty keranjang: ${q} pcs • 7 Hari ≥ 2 pcs • 14 Hari ≥ 5 pcs • 30 Hari ≥ 10 pcs`;
+  if(rule)rule.textContent=`Qty keranjang: ${q} pcs • 7 Hari ≥ 2 pcs • 14 Hari ≥ 5 pcs • 30 Hari ≥ 10 pcs • 45 Hari ≥ 15 pcs`;
 }
 function setDue(days, silent=false){
   const q=totalQtyCart(), min=minQtyTempo(days);
@@ -269,7 +269,7 @@ function build(){
   const totalQty=totalQtyCart();
   if(jenisHarga==="tempo"){
     if(!jat)throw Error("Pilih jatuh tempo sesuai minimal jumlah pcs.");
-    if(![7,14,30].includes(tempoHari))throw Error("Tempo hanya boleh 7, 14, atau 30 hari.");
+    if(![7,14,30,45].includes(tempoHari))throw Error("Tempo hanya boleh 7, 14, 30, atau 45 hari.");
     const minTempo=minQtyTempo(tempoHari);
     if(totalQty<minTempo)throw Error(`Tempo ${tempoHari} Hari minimal order ${minTempo} pcs. Total keranjang saat ini ${totalQty} pcs.`);
   }else{
@@ -285,11 +285,37 @@ window.simpan=async()=>{
   try{
     let d=build();
     $("save").textContent="Menyimpan...";
-    // Simpan pesanan sebagai MENUNGGU APPROVAL saja.
-    // Stok, UP Pengelola, dan Uang Kas baru diproses saat Approval.
+    // Simpan order seperti biasa, sekaligus catat Kas & UP ke saldo Owner.
+    // Tabungan Member TIDAK disentuh di sini.
     const batch=writeBatch(db);
     const orderRef=doc(collection(db,"penjualan"));
     batch.set(orderRef,d);
+
+    const kasNominal=Number(d.kasBulanan)||0;
+    const upNominal=Number(d.totalUpPengelolaOrder)||0;
+    const saldoRef=doc(db,"saldo_owner",businessUid);
+    const perubahan={updatedAt:serverTimestamp()};
+    if(upNominal)perubahan.saldoPengelola=increment(upNominal);
+
+    // Kas adalah iuran bulanan: satu member hanya menambah Kas satu kali
+    // untuk satu bulan, walaupun membuat beberapa order.
+    const bulan=String(d.tanggal||today()).slice(0,7);
+    const kasRef=doc(db,"saldo_owner_kas_bulanan",businessUid+"_"+uid+"_"+bulan);
+    if(kasNominal){
+      const kasSnap=await getDoc(kasRef);
+      if(!kasSnap.exists()){
+        perubahan.saldoKas=increment(kasNominal);
+        batch.set(kasRef,{
+          ownerUid:businessUid,
+          memberUid:uid,
+          bulan,
+          nominal:kasNominal,
+          sumber:"input-order-member",
+          createdAt:serverTimestamp()
+        });
+      }
+    }
+    if(Object.keys(perubahan).length>1)batch.set(saldoRef,perubahan,{merge:true});
     await batch.commit();
     localStorage.removeItem(cartKey());
     cart=[];
@@ -317,7 +343,8 @@ window.resetForm=()=>{
   $("tgl").textContent=today();
   renderCart();
   const q=totalQtyCart();
-  if(q>=10)setDue(30,true);
+  if(q>=15)setDue(45,true);
+  else if(q>=10)setDue(30,true);
   else if(q>=5)setDue(14,true);
   else if(q>=2)setDue(7,true);
   else {$("lama").value="";$("jatuh").value="";due();updateTempoRules();}
