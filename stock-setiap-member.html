@@ -208,7 +208,9 @@ async function saveImportedRows(rawRows,sourceLabel){
  let ok=0,skip=0;
  for(const x of data){
   const m=resolveMember(x);if(!m){skip++;continue}
-  if(!isOwnerAdmin()&&m.uid!==uid)throw Error("Akses ditolak: ada baris untuk member lain.");
+  if(!isOwnerAdmin()&&m.uid!==uid){
+   throw Error("Akses ditolak: akun ini bukan Owner. Owner dapat mengimpor stok untuk member mana pun dalam Owner yang sama.");
+  }
   await addDoc(collection(db,"produk_member_manual"),{ownerUid,memberUid:m.uid,memberNama:m.nama,nama:x.nama,kode:x.kode,qty:x.qty,tanggal:x.tanggal,catatan:x.catatan||sourceLabel,sumber:"manual",importSumber:sourceLabel,createdAt:serverTimestamp(),createdBy:uid});
   ok++;
  }
@@ -231,7 +233,12 @@ window.previewMemberSheet=async()=>{const raw=$('sheetUrl').value.trim();if(!raw
 window.saveMemberImport=async()=>{if(!uid){importMsg('Sesi Firebase belum tersedia.','err');return}if(!memberImportRows.length){importMsg('Belum ada data hasil import untuk disimpan.','err');return}try{if(typeof uiConfirm==='function'&&!await uiConfirm(`Simpan ${memberImportRows.length} baris stok manual ke Firebase?`,'Simpan Stok Member','Simpan'))return;const result=await saveImportedRows(memberImportRows,memberImportSource||'Import');await load();clearMemberImportUI();importMsg(`Import selesai: ${result.ok} baris masuk${result.skip?`, ${result.skip} dilewati`:''}.`,'ok')}catch(e){console.error(e);importMsg('Gagal menyimpan import: '+(e.message||e),'err')}};
 
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
-function isOwnerAdmin(){return role==="owner"||profile.isOwner===true}
+function isOwnerAdmin(){
+ const rr=String(profile.role||profile.profileRole||role||"").trim().toLowerCase();
+ const flag=profile.isOwner===true || String(profile.isOwner||"").trim().toLowerCase()==="true";
+ const ownId=String(profile.ownerUid||profile.ownerId||"").trim();
+ return rr==="owner" || flag || (!!uid && !!ownId && ownId===uid) || (!!uid && !!ownerUid && ownerUid===uid);
+}
 function isSuperadmin(){return role==="superadmin"||role==="super_admin"}
 function ownerOf(d){
  const r=String(d.role||"").toLowerCase();
