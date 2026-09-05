@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIXZY | Data Produk Member</title>
+<style>
+*{box-sizing:border-box}
+:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--green:#16a34a;--red:#dc2626;--blue:#2563eb}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
+.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
+.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
+.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}
+.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:88px 12px 24px}
+.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
+.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
+.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.filters{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}
+label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
+input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.stat{border:2px solid #111827;border-radius:9px;padding:10px;background:#fffbeb}.stat b{display:block;font-size:17px}.stat span{font-size:10px;color:#64748b;font-weight:800}
+.table-wrap{overflow:auto;border:2px solid #111827;border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:760px;background:#fff}
+th,td{padding:10px;border-bottom:1px solid #d1d5db;text-align:left;font-size:12px;vertical-align:middle}
+th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
+tr:last-child td{border-bottom:0}.product{font-weight:900}.muted{font-size:10px;color:#64748b;margin-top:3px}
+.qty{font-size:16px;font-weight:900}.source{display:inline-block;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}
+.source.order{background:#dcfce7;color:#166534}.source.manual{background:#dbeafe;color:#1d4ed8}
+.owner{font-weight:900}
+.actions{display:flex;gap:5px;flex-wrap:wrap}.actions .btn{padding:7px 9px;font-size:10px;box-shadow:2px 2px 0 #111827}
+.add{background:var(--green);color:#fff}.minus{background:#fee2e2;color:#991b1b}.edit{background:#e5e7eb}.danger{background:#fee2e2;color:#991b1b}
+.empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:10000}
+.modal.show{display:flex}.modal-box{width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;box-shadow:5px 5px 0 #111827}
+.modal-title{font-size:16px;font-weight:900;margin-bottom:12px}
+.form{display:grid;gap:10px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.save{background:#16a34a;color:#fff}.cancel{background:#e5e7eb}
+body.dark{background:#0b1220;color:#e5e7eb}
+body.dark .card,body.dark .modal-box,body.dark .stat{background:#111827;color:#e5e7eb;border-color:#475569}
+body.dark .title{border-color:#475569}
+body.dark label{color:#9ca3af}
+body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
+body.dark .table-wrap{border-color:#475569}
+body.dark table{background:#111827}
+body.dark th{background:#020617}
+body.dark td{border-color:#334155}
+body.dark .muted{color:#94a3b8}
+body.dark .modal-box{box-shadow:5px 5px 0 #000}
+@media(max-width:800px){
+ .filters{grid-template-columns:1fr}.summary{grid-template-columns:1fr}
+ .form-row{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ header{height:68px}.head h1{font-size:16px}main{padding-top:80px}
+ .refresh{padding:8px}.logo{width:48px;height:48px}
+}
+</style>
+</head>
+<body>
+<header><div class="head">
+<img class="logo" src="logo.png" alt="FIXZY">
+<div class="hi"><h1>Data Produk Member</h1><span id="email" class="email">-</span></div>
+<div class="acts"><button class="btn refresh" onclick="load()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div>
+</div></header>
+
+<main>
+<div id="notice" class="notice">Memuat data...</div>
+
+<div class="card">
+ <div class="title">Stok Produk Member</div>
+ <div class="filters">
+  <div><label>CARI PRODUK / KODE / MEMBER</label><input id="search" placeholder="Ketik pencarian..."></div>
+  <div><label>MEMBER</label><select id="memberFilter"><option value="">Semua Member</option></select></div>
+  <div><label>SUMBER STOK</label><select id="sourceFilter"><option value="">Semua</option><option value="order">Hasil Approval Order</option><option value="manual">Input Manual</option></select></div>
+ </div>
+ <div class="summary">
+  <div class="stat"><span>TOTAL JENIS PRODUK</span><b id="statProducts">0</b></div>
+  <div class="stat"><span>TOTAL STOK</span><b id="statQty">0</b></div>
+  <div class="stat"><span>JUMLAH MEMBER</span><b id="statMembers">0</b></div>
+ </div>
+</div>
+
+<div class="card">
+ <div class="title">Daftar Stok Semua Member</div>
+ <div class="table-wrap">
+  <table>
+   <thead><tr>
+    <th>Produk</th><th>Kode</th><th>Stok</th><th>Pemilik / Member</th><th>Sumber</th><th>Tanggal Masuk</th><th>Aksi</th>
+   </tr></thead>
+   <tbody id="list"></tbody>
+  </table>
+ </div>
+</div>
+</main>
+
+<div id="modal" class="modal">
+ <div class="modal-box">
+  <div id="modalTitle" class="modal-title">Tambah Stok</div>
+  <div class="form">
+   <div><label>PRODUK</label><input id="fNama" placeholder="Nama produk"></div>
+   <div><label>KODE PRODUK</label><input id="fKode" placeholder="Kode produk"></div>
+   <div class="form-row">
+    <div><label>QTY</label><input id="fQty" type="number" min="1" value="1"></div>
+    <div><label>TANGGAL MASUK</label><input id="fTanggal" type="date"></div>
+   </div>
+   <div><label>CATATAN</label><input id="fCatatan" placeholder="Contoh: Stok pribadi / barang datang"></div>
+  </div>
+  <div class="modal-actions">
+   <button class="btn cancel" onclick="closeModal()">Batal</button>
+   <button class="btn save" onclick="saveManual()">Simpan</button>
+  </div>
+ </div>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc,increment}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+
+let uid="",ownerUid="",profile={},role="",rows=[],editingId="",editingMode="";
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const isAdmin=()=>role==="owner"||role==="superadmin";
+const getOwner=d=>{let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid};
+const memberName=r=>String(r.memberNama||r.member?.nama||r.pelanggan?.nama||r.namaMember||"-");
+const memberUid=r=>String(r.memberUid||r.member?.uid||r.member?.memberUid||r.uidMember||"");
+const productName=r=>String(r.nama||r.namaProduk||r.produk||r.kode||r.kodeProduk||"-");
+const productCode=r=>String(r.kode||r.kodeProduk||"-");
+
+function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
+
+async function load(){
+ try{
+  rows=[];
+  const map=new Map();
+
+  // Approved orders: source of automatic member stock.
+  const qs=[
+   query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"order_member"),where("uid","==",ownerUid))
+  ];
+
+  for(const q of qs){
+   const s=await getDocs(q);
+   s.forEach(d=>{
+    const o={id:d.id,...d.data()};
+    if(String(o.status||"").toLowerCase()!=="order_member")return;
+    const mu=memberUid(o),mn=memberName(o);
+    const items=Array.isArray(o.items)?o.items:[];
+    items.forEach((x,i)=>{
+     const qty=Number(x.qty||x.jumlah||0);
+     if(qty<=0)return;
+     const key=`order_${d.id}_${i}`;
+     map.set(key,{
+      id:key,source:"order",sourceOrderId:d.id,
+      ownerUid,memberUid:mu,memberNama:mn,
+      nama:productName(x),kode:productCode(x),
+      qty, tanggal:o.createdAt?.toDate?o.createdAt.toDate().toISOString().slice(0,10):(o.tanggal||today()),
+      catatan:"Stok dari order yang di-approve",
+      harga:Number(x.harga||x.hargaJual||0)
+     });
+    });
+   });
+  }
+
+  // Manual member stock is stored separately.
+  const qm=query(collection(db,"produk_member_manual"),where("ownerUid","==",ownerUid));
+  const sm=await getDocs(qm);
+  sm.forEach(d=>{
+   const x={id:d.id,...d.data(),source:"manual"};
+   map.set("manual_"+d.id,x);
+  });
+
+  rows=[...map.values()];
+  render();
+  msg("Data produk member berhasil dimuat.","ok");
+ }catch(e){
+  console.error(e);msg("Gagal memuat data: "+e.message,"err");
+ }
+}
+
+function visibleRows(){
+ const key=$("search").value.trim().toLowerCase();
+ const mf=$("memberFilter").value;
+ const sf=$("sourceFilter").value;
+ return rows.filter(r=>{
+  const text=[r.nama,r.kode,r.memberNama].join(" ").toLowerCase();
+  return text.includes(key)&&(mf===""||memberUid(r)===mf)&&(sf===""||r.source===sf);
+ });
+}
+
+function renderMembers(){
+ const old=$("memberFilter").value;
+ const map=new Map();
+ rows.forEach(r=>{const k=memberUid(r);if(k&&!map.has(k))map.set(k,memberName(r)||k)});
+ $("memberFilter").innerHTML='<option value="">Semua Member</option>'+
+  [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");
+ if([...map.keys()].includes(old))$("memberFilter").value=old;
+}
+
+function render(){
+ renderMembers();
+ const list=visibleRows();
+ const totalQty=list.reduce((a,r)=>a+(Number(r.qty)||0),0);
+ const products=new Set(list.map(r=>`${memberUid(r)}|${r.kode}|${r.nama}`));
+ const members=new Set(list.map(r=>memberUid(r)).filter(Boolean));
+ $("statProducts").textContent=products.size;
+ $("statQty").textContent=totalQty;
+ $("statMembers").textContent=members.size;
+
+ $("list").innerHTML=list.length?list.map(renderRow).join(""):'<tr><td colspan="7" class="empty">Tidak ada data produk member.</td></tr>';
+}
+
+function canAct(r){
+ // Automatic approved-order rows are read-only here.
+ // Manual rows can be edited only by their owner; admin can manage all.
+ if(isAdmin())return true;
+ return String(r.memberUid||"")===uid;
+}
+
+function renderRow(r){
+ const own=canAct(r);
+ const source=r.source==="order"
+   ?'<span class="source order">APPROVED ORDER</span>'
+   :'<span class="source manual">MANUAL</span>';
+
+ const actions=own
+   ?`<div class="actions">
+      <button class="btn add" onclick="openAdd('${r.id}')">＋ Tambah</button>
+      <button class="btn minus" onclick="openMinus('${r.id}')">− Kurangi</button>
+      ${r.source==="manual"?`<button class="btn edit" onclick="openEdit('${r.id}')">✎ Edit</button><button class="btn danger" onclick="deleteManual('${r.id}')">Hapus</button>`:""}
+     </div>`
+   :'<span class="muted">Lihat saja</span>';
+
+ return `<tr>
+  <td><div class="product">${esc(r.nama)}</div>${r.harga?`<div class="muted">${rp(r.harga)}/pcs</div>`:""}</td>
+  <td>${esc(r.kode)}</td>
+  <td><span class="qty">${Number(r.qty)||0}</span> pcs</td>
+  <td><div class="owner">${esc(r.memberNama||"-")}</div>${r.memberUid?`<div class="muted">${esc(r.memberUid)}</div>`:""}</td>
+  <td>${source}</td>
+  <td>${esc(r.tanggal||"-")}</td>
+  <td>${actions}</td>
+ </tr>`;
+}
+
+function openModal(title){
+ $("modalTitle").textContent=title;
+ $("modal").classList.add("show");
+}
+window.closeModal=()=>{$("modal").classList.remove("show");editingId="";editingMode=""};
+
+window.openAdd=id=>{
+ const r=rows.find(x=>x.id===id);if(!r||!canAct(r))return;
+ editingId=id;editingMode="add";
+ $("fNama").value=r.nama||"";$("fKode").value=r.kode||"";$("fQty").value=1;$("fTanggal").value=today();$("fCatatan").value="";
+ $("fNama").readOnly=true;$("fKode").readOnly=true;
+ openModal("Tambah Stok Member");
+};
+
+window.openMinus=id=>{
+ const r=rows.find(x=>x.id===id);if(!r||!canAct(r))return;
+ const qty=Number(r.qty)||0;
+ if(qty<=0){msg("Stok sudah 0.","err");return}
+ editingId=id;editingMode="minus";
+ $("fNama").value=r.nama||"";$("fKode").value=r.kode||"";$("fQty").value=1;$("fQty").max=qty;$("fTanggal").value=today();$("fCatatan").value="";
+ $("fNama").readOnly=true;$("fKode").readOnly=true;
+ openModal("Kurangi Stok Member");
+};
+
+window.openEdit=id=>{
+ const r=rows.find(x=>x.id===id);if(!r||r.source!=="manual"||!canAct(r))return;
+ editingId=id;editingMode="edit";
+ $("fNama").value=r.nama||"";$("fKode").value=r.kode||"";$("fQty").value=Number(r.qty)||0;$("fQty").removeAttribute("max");$("fTanggal").value=r.tanggal||today();$("fCatatan").value=r.catatan||"";
+ $("fNama").readOnly=false;$("fKode").readOnly=false;
+ openModal("Edit Stok Manual");
+};
+
+window.saveManual=async()=>{
+ const qty=Math.max(0,Number($("fQty").value)||0);
+ const nama=$("fNama").value.trim(),kode=$("fKode").value.trim(),tanggal=$("fTanggal").value||today(),catatan=$("fCatatan").value.trim();
+ if(!nama)return msg("Nama produk wajib diisi.","err");
+ if(editingMode==="minus"&&qty<1)return msg("Qty pengurangan minimal 1.","err");
+ if(editingMode==="add"&&qty<1)return msg("Qty penambahan minimal 1.","err");
+
+ try{
+  if(editingMode==="edit"){
+   const r=rows.find(x=>x.id===editingId);
+   if(!r||!canAct(r)||r.source!=="manual")throw Error("Akses stok ditolak.");
+   await runTransaction(db,async tx=>{
+    const ref=doc(db,"produk_member_manual",r.id),s=await tx.get(ref);
+    if(!s.exists())throw Error("Data stok tidak ditemukan.");
+    const d=s.data()||{};
+    if(!isAdmin()&&String(d.memberUid||"")!==uid)throw Error("Anda tidak berhak mengubah stok member lain.");
+    tx.update(ref,{nama,kode,qty,tanggal,catatan,updatedAt:serverTimestamp(),updatedBy:uid});
+   });
+  }else if(editingMode==="add"||editingMode==="minus"){
+   const r=rows.find(x=>x.id===editingId);
+   if(!r||!canAct(r))throw Error("Akses stok ditolak.");
+   if(r.source==="order"){
+    // Changes to approved stock are kept in a manual adjustment document.
+    // This avoids modifying the original approved order.
+    const newQty=editingMode==="add"?qty:-qty;
+    const ref=doc(db,"penyesuaian_stok_member");
+    await addDoc(collection(db,"penyesuaian_stok_member"),{
+     ownerUid,memberUid:r.memberUid,memberNama:r.memberNama,
+     nama:r.nama,kode:r.kode,qty:newQty,tanggal,catatan:catatan||(editingMode==="add"?"Penambahan stok":"Pengurangan stok"),
+     sumber:"penyesuaian",sourceOrderId:r.sourceOrderId||"",
+     createdAt:serverTimestamp(),createdBy:uid
+    });
+   }else{
+    await runTransaction(db,async tx=>{
+     const ref=doc(db,"produk_member_manual",r.id),s=await tx.get(ref);
+     if(!s.exists())throw Error("Data stok tidak ditemukan.");
+     const d=s.data()||{};
+     if(!isAdmin()&&String(d.memberUid||"")!==uid)throw Error("Anda tidak berhak mengubah stok member lain.");
+     const old=Number(d.qty)||0,newQty=editingMode==="add"?old+qty:old-qty;
+     if(newQty<0)throw Error(`Stok tidak cukup. Stok saat ini ${old} pcs.`);
+     tx.update(ref,{qty:newQty,updatedAt:serverTimestamp(),updatedBy:uid});
+     const logRef=doc(collection(db,"riwayat_stok_member"));
+     tx.set(logRef,{ownerUid,memberUid:r.memberUid,memberNama:r.memberNama,nama:r.nama,kode:r.kode,jenis:editingMode==="add"?"tambah":"kurang",qty,stokSebelum:old,stokSesudah:newQty,tanggal,catatan,createdAt:serverTimestamp(),createdBy:uid});
+    });
+   }
+  }
+  closeModal();await load();msg("Perubahan stok berhasil disimpan.","ok");
+ }catch(e){console.error(e);msg("Gagal: "+e.message,"err")}
+};
+
+window.deleteManual=async id=>{
+ const r=rows.find(x=>x.id===id);if(!r||r.source!=="manual"||!canAct(r))return;
+ if(!confirm(`Hapus stok manual "${r.nama}"?`))return;
+ try{
+  const ref=doc(db,"produk_member_manual",id);
+  await runTransaction(db,async tx=>{
+   const s=await tx.get(ref);if(!s.exists())throw Error("Data tidak ditemukan.");
+   const d=s.data()||{};
+   if(!isAdmin()&&String(d.memberUid||"")!==uid)throw Error("Anda tidak berhak menghapus stok member lain.");
+   tx.delete(ref);
+  });
+  await load();msg("Stok manual dihapus.","ok");
+ }catch(e){msg("Gagal menghapus: "+e.message,"err")}
+};
+
+$("search").oninput=render;
+$("memberFilter").onchange=render;
+$("sourceFilter").onchange=render;
+$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+
+onAuthStateChanged(auth,async u=>{
+ if(!u){msg("Belum login.","err");return}
+ try{
+  uid=u.uid;
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+  profile=s.data()||{};
+  role=String(profile.role||"").toLowerCase();
+  ownerUid=getOwner(profile);
+  $("email").textContent=u.email||"-";
+  await load();
+ }catch(e){console.error(e);msg(e.message,"err")}
+});
+</script>
+</body>
+</html>
