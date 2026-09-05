@@ -231,7 +231,7 @@ window.previewMemberSheet=async()=>{const raw=$('sheetUrl').value.trim();if(!raw
 window.saveMemberImport=async()=>{if(!uid){importMsg('Sesi Firebase belum tersedia.','err');return}if(!memberImportRows.length){importMsg('Belum ada data hasil import untuk disimpan.','err');return}try{if(typeof uiConfirm==='function'&&!await uiConfirm(`Simpan ${memberImportRows.length} baris stok manual ke Firebase?`,'Simpan Stok Member','Simpan'))return;const result=await saveImportedRows(memberImportRows,memberImportSource||'Import');await load();clearMemberImportUI();importMsg(`Import selesai: ${result.ok} baris masuk${result.skip?`, ${result.skip} dilewati`:''}.`,'ok')}catch(e){console.error(e);importMsg('Gagal menyimpan import: '+(e.message||e),'err')}};
 
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
-function isOwnerAdmin(){return role==="owner"}
+function isOwnerAdmin(){return role==="owner"||profile.isOwner===true}
 function isSuperadmin(){return role==="superadmin"||role==="super_admin"}
 function ownerOf(d){
  const r=String(d.role||"").toLowerCase();
