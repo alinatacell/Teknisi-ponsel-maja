@@ -177,7 +177,6 @@ let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustT
 
 
 function normKey(v){return String(v??"").trim().toLowerCase().replace(/[\s_\-\/]+/g,"")}
-function cleanKey(v){return normKey(v)}
 function rowVal(r,names){
  const map={};Object.keys(r||{}).forEach(k=>map[normKey(k)]=r[k]);
  for(const n of names){const v=map[normKey(n)];if(v!==undefined&&String(v).trim()!=="")return v}
@@ -224,7 +223,7 @@ let memberImportSource="";
 function importMsg(t,c=""){$("memberImportMsg").style.display="block";$('memberImportMsg').textContent=t;$('memberImportMsg').className="notice "+c}
 function clearMemberImportUI(){memberImportRows=[];memberImportSource="";$('memberImportMsg').style.display="none";$('memberDuplicateInfo').style.display="none";$('memberDuplicateInfo').textContent="";$('memberPreview').style.display="none";$('memberPreviewHead').innerHTML="";$('memberPreviewBody').innerHTML="";$('memberSaveImportBtn').style.display="none"}
 function parseMemberCSV(text){const out=[];let row=[],cell="",q=false;text=String(text||"").replace(/^\uFEFF/,"");for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'){if(q&&n==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=""}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&n==='\n')i++;row.push(cell);cell="";if(row.some(v=>String(v).trim()!==""))out.push(row);row=[]}else cell+=c}if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()!==""))out.push(row)}return out}
-function memberRowsToObjects(rows){if(!rows.length)throw Error("Data kosong.");const h=rows[0].map(x=>cleanKey(x)),out=[];for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.every(x=>String(x).trim()===""))continue;const o={};h.forEach((k,j)=>o[k]=r[j]??"");out.push(o)}return out}
+function memberRowsToObjects(rows){if(!rows.length)throw Error("Data kosong.");const h=rows[0].map(x=>normKey(x)),out=[];for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.every(x=>String(x).trim()===""))continue;const o={};h.forEach((k,j)=>o[k]=r[j]??"");out.push(o)}return out}
 function previewMemberImport(rawRows,source){const data=rawRows.map(normalizeImportRow).filter(x=>x.nama&&x.qty>0);if(!data.length)throw Error("Tidak ada baris valid. Pastikan nama produk dan qty terisi.");memberImportRows=data;memberImportSource=source;const dup=new Map();for(const x of data){const k=(x.memberUid||x.memberNama||"?")+"|"+(x.kode||x.nama).toLowerCase();dup.set(k,(dup.get(k)||0)+1)}const duplicates=[...dup.entries()].filter(([,n])=>n>1);if(duplicates.length){const el=$('memberDuplicateInfo');el.style.display='block';el.textContent=`Peringatan: ${duplicates.length} kombinasi member + produk muncul lebih dari sekali. Semua baris tetap akan diproses sebagai stok manual.`}else $('memberDuplicateInfo').style.display='none';$('memberPreviewHead').innerHTML='<tr><th>Member</th><th>Produk</th><th>Kode</th><th>Qty</th><th>Tanggal</th><th>Catatan</th></tr>';$('memberPreviewBody').innerHTML=data.slice(0,50).map(x=>`<tr><td>${esc(x.memberNama||x.memberUid||'-')}</td><td>${esc(x.nama)}</td><td>${esc(x.kode)}</td><td>${x.qty}</td><td>${esc(x.tanggal)}</td><td>${esc(x.catatan)}</td></tr>`).join('');$('memberPreview').style.display='block';$('memberSaveImportBtn').style.display='block';importMsg(`${source} berhasil dibaca. ${data.length} baris siap disimpan. Preview maksimal 50 baris.`,'ok')}
 window.handleMemberExcelUpload=async file=>{if(!file)return;clearMemberImportUI();try{importMsg('Membaca file Excel...','');const buf=await file.arrayBuffer();const wb=XLSXRead(buf,{type:'array',cellDates:false});const first=wb.SheetNames[0];const rows=XLSXUtils.sheet_to_json(wb.Sheets[first],{header:1,defval:"",raw:false});previewMemberImport(memberRowsToObjects(rows),'Excel')}catch(e){console.error(e);importMsg('Import Excel gagal: '+(e.message||e),'err')}finally{$('excelFile').value=''}};
 function googleMemberSheetCsvUrl(raw){try{const u=new URL(String(raw||'').trim());if(!/^(docs\.google\.com)$/i.test(u.hostname)||!u.pathname.includes('/spreadsheets/'))return '';const gid=u.searchParams.get('gid')||(String(raw).match(/[#&?]gid=([^&#]+)/i)||[])[1]||'0';const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/i);if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);if(id)return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;return ''}catch{return ''}}
@@ -535,7 +534,6 @@ window.showHistory=async key=>{
 };
 
 $("search").oninput=render;$("memberFilter").onchange=render;$("sourceFilter").onchange=render;
-$("excelFile").addEventListener("change",e=>importExcel(e.target.files?.[0]));
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 
 onAuthStateChanged(auth,async u=>{
