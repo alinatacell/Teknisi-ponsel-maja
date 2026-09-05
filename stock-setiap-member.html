@@ -177,6 +177,7 @@ let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustT
 
 
 function normKey(v){return String(v??"").trim().toLowerCase().replace(/[\s_\-\/]+/g,"")}
+function cleanKey(v){return normKey(v)}
 function rowVal(r,names){
  const map={};Object.keys(r||{}).forEach(k=>map[normKey(k)]=r[k]);
  for(const n of names){const v=map[normKey(n)];if(v!==undefined&&String(v).trim()!=="")return v}
