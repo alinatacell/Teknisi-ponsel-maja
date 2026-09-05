@@ -33,7 +33,7 @@ tr:last-child td{border-bottom:0}
 .product{font-weight:900}.muted{font-size:10px;color:#64748b;margin-top:3px}
 .qty{font-size:17px;font-weight:900}.owner{font-weight:900}
 .source{display:inline-block;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}
-.source.mixed{background:#fef3c7;color:#92400e}.source.order{background:#dcfce7;color:#166534}.source.manual{background:#dbeafe;color:#1d4ed8}
+.source.mixed{background:#fef3c7;color:#92400e}.source.order{background:#dcfce7;color:#166534}.source.manual{background:#dbeafe;color:#1d4ed8}.check-cell{text-align:center!important;width:38px}.row-check{width:18px;height:18px;box-shadow:none;padding:0}.bulk-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.select-manual{background:#f59e0b;color:#111827}.delete-selected{background:#dc2626;color:#fff}
 .actions{display:flex;gap:5px;flex-wrap:wrap}.actions .btn{padding:7px 9px;font-size:10px;box-shadow:2px 2px 0 #111827}
 .add{background:var(--g);color:#fff}.import{background:#2563eb;color:#fff}.sheet{background:#7c3aed;color:#fff}.import-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.import-help{font-size:10px;color:#64748b;line-height:1.6}@media(max-width:650px){.import-box{grid-template-columns:1fr}}.wa{background:#22c55e;color:#fff;text-decoration:none;display:inline-flex;align-items:center}.minus{background:#fee2e2;color:#991b1b}.edit{background:#e5e7eb}.history{background:#111827;color:#fff}
 .empty{text-align:center;padding:25px;color:#64748b;font-size:12px}
@@ -111,12 +111,16 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
  Semua member dalam Owner yang sama dapat melihat daftar stok ini. Tombol aksi hanya muncul untuk stok yang pemiliknya adalah akun yang sedang login.
  Harga Approved Order = harga awal + Rp20.000. Stok Manual tidak mendapat tambahan Rp20.000. Stok dari order approval tidak mengubah data order asli; tambah/kurang dicatat sebagai penyesuaian agar riwayat tetap aman.
  </div>
+ <div class="bulk-actions">
+  <button class="btn select-manual" type="button" onclick="toggleManualChecks()">☑ Ceklist Manual</button>
+  <button class="btn delete-selected" type="button" onclick="deleteCheckedManual()">🗑 Hapus yang Diceklis</button>
+ </div>
  <div class="table-wrap" style="margin-top:12px">
   <table>
    <thead><tr>
-    <th>Produk</th><th>Kode</th><th>Harga</th><th>Stok</th><th>Member</th><th>Sumber</th><th>Terakhir Masuk</th><th>Aksi</th>
+    <th class="check-cell"><input id="checkAllManual" class="row-check" type="checkbox" title="Ceklis semua stok manual yang tampil" onchange="toggleAllManual(this.checked)"></th><th>Produk</th><th>Kode</th><th>Harga</th><th>Stok</th><th>Member</th><th>Sumber</th><th>Terakhir Masuk</th><th>Aksi</th>
    </tr></thead>
-   <tbody id="list"><tr><td colspan="8" class="empty">Memuat...</td></tr></tbody>
+   <tbody id="list"><tr><td colspan="9" class="empty">Memuat...</td></tr></tbody>
   </table>
  </div>
 </div>
@@ -129,6 +133,7 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
    <div><label>MEMBER PEMILIK STOK</label><select id="fOwner"></select></div>
    <div><label>NAMA PRODUK</label><input id="fNama" placeholder="Contoh: LCD Oppo A10S"></div>
    <div><label>KODE PRODUK</label><input id="fKode" placeholder="Contoh: A10S-LCD"></div>
+   <div><label>HARGA STOCK MANUAL</label><input id="fHarga" type="number" min="0" step="1" value="0" placeholder="Contoh: 125000"></div>
    <div class="form-row">
     <div><label>QTY</label><input id="fQty" type="number" min="1" value="1"></div>
     <div><label>TANGGAL</label><input id="fTanggal" type="date"></div>
@@ -164,7 +169,7 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,deleteDoc,runTransaction,serverTimestamp,addDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import{utils as XLSXUtils,read as XLSXRead,writeFile as XLSXWriteFile}from"https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
@@ -173,7 +178,7 @@ const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="";
+let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="",selectedManualKeys=new Set();
 
 
 function normKey(v){return String(v??"").trim().toLowerCase().replace(/[\s_\-\/]+/g,"")}
@@ -428,14 +433,16 @@ function render(){
  $("statQty").textContent=data.reduce((a,r)=>a+r.qty,0).toLocaleString("id-ID")+" pcs";
  $("statMembers").textContent=new Set(data.map(r=>r.memberUid).filter(Boolean)).size;
  $("statManual").textContent=data.reduce((a,r)=>a+r.manualQty,0).toLocaleString("id-ID")+" pcs";
- $("list").innerHTML=data.length?data.map(renderRow).join(""):'<tr><td colspan="8" class="empty">Tidak ada stok sesuai pencarian/filter.</td></tr>';
+ $("list").innerHTML=data.length?data.map(renderRow).join(""):'<tr><td colspan="9" class="empty">Tidak ada stok sesuai pencarian/filter.</td></tr>';
+ syncManualMasterCheckbox();
 }
 
 function renderRow(r){
   const act=canAct(r);
   const source=r.source==="mixed"?'<span class="source mixed">ORDER + MANUAL</span>':r.source==="order"?'<span class="source order">APPROVED ORDER</span>':'<span class="source manual">MANUAL</span>';
   const wa=waLink(r);
-
+  const checked=selectedManualKeys.has(r.key)?' checked':'';
+  const check=`<input class="row-check" type="checkbox" data-manual-check="${esc(r.key)}"${checked} onchange="setManualCheck('${esc(r.key)}',this.checked)" title="Pilih produk ini">`;
   const actions=act?`<div class="actions">
     <button class="btn add" type="button" onclick="openAdjust('${esc(r.key)}','add')">＋ Tambah</button>
     <button class="btn minus" type="button" onclick="openAdjust('${esc(r.key)}','minus')">− Kurangi</button>
@@ -446,10 +453,11 @@ function renderRow(r){
     ${wa?`<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">☘ WA Pemilik</a>`:""}
     <span class="muted">Lihat saja</span>
    </div>`;
-
   return `<tr>
+   <td class="check-cell">${check}</td>
    <td><div class="product">${esc(r.nama)}</div>${r.produkId?`<div class="muted">ID: ${esc(r.produkId)}</div>`:""}</td>
    <td>${esc(r.kode||"-")}</td>
+   <td><span class="qty">${rp(displayPrice(r))}</span>${r.source==="manual"?'<div class="muted">Harga stok manual</div>':''}</td>
    <td><span class="qty">${r.qty.toLocaleString("id-ID")}</span> pcs<div class="muted">Order: ${r.orderQty} • Manual: ${r.manualQty} • Penyesuaian: ${r.adjustQty>=0?"+":""}${r.adjustQty}</div></td>
    <td><div class="owner">${esc(r.memberNama||"-")}</div></td>
    <td>${source}</td>
@@ -457,6 +465,33 @@ function renderRow(r){
    <td>${actions}</td>
   </tr>`;
 }
+function syncManualMasterCheckbox(){
+ const el=$("checkAllManual");if(!el)return;
+ const data=visible().filter(r=>r.manualId);
+ el.checked=data.length>0&&data.every(r=>selectedManualKeys.has(r.key));
+ el.indeterminate=data.some(r=>selectedManualKeys.has(r.key))&&!el.checked;
+}
+window.setManualCheck=(key,checked)=>{if(checked)selectedManualKeys.add(key);else selectedManualKeys.delete(key);syncManualMasterCheckbox()};
+window.toggleAllManual=checked=>{visible().filter(r=>r.manualId).forEach(r=>checked?selectedManualKeys.add(r.key):selectedManualKeys.delete(r.key));render()};
+window.toggleManualChecks=()=>{
+ const data=visible().filter(r=>r.manualId);
+ if(!data.length)return notice("Tidak ada stok manual yang tampil untuk diceklis.","err");
+ const all=data.every(r=>selectedManualKeys.has(r.key));
+ data.forEach(r=>all?selectedManualKeys.delete(r.key):selectedManualKeys.add(r.key));
+ render();
+};
+window.deleteCheckedManual=async()=>{
+ const picked=rows.filter(r=>selectedManualKeys.has(r.key)&&r.manualId);
+ if(!picked.length)return notice("Belum ada stok manual yang diceklis.","err");
+ const msg=picked.length===1?`Hapus stok manual ${picked[0].nama} milik ${picked[0].memberNama}?`:`Hapus ${picked.length} stok manual yang diceklis?`;
+ if(!window.confirm(msg+"\n\nCatatan: Approved Order dan riwayat penyesuaian tidak dihapus."))return;
+ try{
+  if(picked.some(r=>!canAct(r)))throw Error("Anda hanya boleh menghapus stok milik sendiri.");
+  for(const r of picked)await deleteDoc(doc(db,"produk_member_manual",r.manualId));
+  picked.forEach(r=>selectedManualKeys.delete(r.key));
+  await load();notice(`${picked.length} stok manual berhasil dihapus.`,'ok');
+ }catch(e){console.error(e);notice("Gagal menghapus stok manual: "+(e.message||e),'err')}
+};
 
 function openModal(){ $("modal").classList.add("show") }
 window.closeModal=()=>{$("modal").classList.remove("show");editManualId=""}
@@ -465,7 +500,7 @@ window.openManual=()=>{
  editManualId="";
  $("modalTitle").textContent="Tambah Stok Manual";
  $("fOwner").disabled=false;
- $("fNama").value="";$("fKode").value="";$("fQty").value=1;$("fTanggal").value=today();$("fCatatan").value="";
+ $("fNama").value="";$("fKode").value="";$("fHarga").value=0;$("fQty").value=1;$("fTanggal").value=today();$("fCatatan").value="";
  if(!isOwnerAdmin()){
   const me=members.find(m=>m.uid===uid);
   if(!me){notice("Data member login tidak ditemukan.","err");return}
@@ -480,14 +515,14 @@ window.openEditManual=async id=>{
   editManualId=id;
   $("modalTitle").textContent="Edit Stok Manual";
   $("fOwner").value=String(r.memberUid||"");$("fOwner").disabled=true;
-  $("fNama").value=r.nama||"";$("fKode").value=r.kode||"";$("fQty").value=Number(r.qty)||0;$("fTanggal").value=r.tanggal||today();$("fCatatan").value=r.catatan||"";
+  $("fNama").value=r.nama||"";$("fKode").value=r.kode||"";$("fHarga").value=Number(r.harga??r.hargaJual??r.hargaProduk??0)||0;$("fQty").value=Number(r.qty)||0;$("fTanggal").value=r.tanggal||today();$("fCatatan").value=r.catatan||"";
   openModal();
  }catch(e){notice("Gagal membuka edit: "+e.message,"err")}
 };
 
 window.saveManual=async()=>{
  const mu=$("fOwner").value.trim(),m=members.find(x=>x.uid===mu);
- const nama=$("fNama").value.trim(),kode=$("fKode").value.trim(),qty=Math.max(0,Number($("fQty").value)||0),tanggal=$("fTanggal").value||today(),catatan=$("fCatatan").value.trim();
+ const nama=$("fNama").value.trim(),kode=$("fKode").value.trim(),harga=Math.max(0,Number($("fHarga").value)||0),qty=Math.max(0,Number($("fQty").value)||0),tanggal=$("fTanggal").value||today(),catatan=$("fCatatan").value.trim();
  if(!mu||!m)return notice("Pilih member pemilik stok.","err");
  if(!nama)return notice("Nama produk wajib diisi.","err");
  if(qty<1)return notice("Qty minimal 1.","err");
@@ -498,10 +533,10 @@ window.saveManual=async()=>{
    await runTransaction(db,async tx=>{
     const s=await tx.get(ref);if(!s.exists())throw Error("Data stok manual tidak ditemukan.");
     const d=s.data()||{};if(!isOwnerAdmin()&&String(d.memberUid||"")!==uid)throw Error("Akses ditolak.");
-    tx.update(ref,{memberUid:mu,memberNama:m.nama,nama,kode,qty,tanggal,catatan,updatedAt:serverTimestamp(),updatedBy:uid});
+    tx.update(ref,{memberUid:mu,memberNama:m.nama,nama,kode,harga,qty,tanggal,catatan,updatedAt:serverTimestamp(),updatedBy:uid});
    });
   }else{
-   await addDoc(collection(db,"produk_member_manual"),{ownerUid,memberUid:mu,memberNama:m.nama,nama,kode,qty,tanggal,catatan,sumber:"manual",createdAt:serverTimestamp(),createdBy:uid});
+   await addDoc(collection(db,"produk_member_manual"),{ownerUid,memberUid:mu,memberNama:m.nama,nama,kode,harga,qty,tanggal,catatan,sumber:"manual",createdAt:serverTimestamp(),createdBy:uid});
   }
   closeModal();await load();notice(editManualId?"Stok manual diperbarui.":"Stok manual berhasil ditambahkan.","ok");
  }catch(e){console.error(e);notice("Gagal menyimpan stok manual: "+e.message,"err")}
