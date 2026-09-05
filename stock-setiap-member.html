@@ -185,7 +185,7 @@ function waNumber(v){
 function waLink(r){
   const n=waNumber(r.memberWA||"");
   if(!n)return "";
-  const text=`Halo ${r.memberNama||"Kak"}, saya ingin menanyakan stok ${r.nama||"produk"}${r.kode?" ("+r.kode+")":""}.`;
+  const text=`Halo ${r.memberNama||"Kak"}, Apakah stock ini masih ada? ${r.nama||"produk"}${r.kode?" ("+r.kode+")":""}.`;
   return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
 }
 function dateValue(v){
