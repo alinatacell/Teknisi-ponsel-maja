@@ -182,7 +182,88 @@ function buildMessage(r,items,statusText){
  return text;
 }
 function sendWAData(r,statusText){const m=member(r);const url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(buildMessage(r,r.items||[],statusText))}`;window.open(url,"_blank")}
-window.sendWA=id=>{const r=rows.find(x=>x.id===id);if(r)sendWAData(r,status(r)==="approved"? "approved":"rejected")};
+window.sendWA=id=>{
+ const r=rows.find(x=>x.id===id);
+ if(!r)return;
+
+ const st=status(r);
+
+ if(st==="menunggu_approval"){
+   const m=member(r);
+   const nama=profile.namaKonter||profile.namaToko||"FIXZY";
+   const nota=r.nomorNota||r.id;
+   const items=normalizeItems(r);
+
+   let total=0;
+   let totalQty=0;
+
+   items.forEach(x=>{
+     const qty=Number(x.qty)||0;
+     const harga=Number(x.harga)||0;
+     const diskon=Math.min(Number(x.diskon)||0,harga*qty);
+     const jumlah=(harga*qty)-diskon;
+
+     totalQty+=qty;
+     total+=jumlah;
+   });
+
+   let text=`Halo Kak ${m.nama||""} 👋\n\n`;
+
+   text+=`📋 *KONFIRMASI PESANAN*\n`;
+   text+=`━━━━━━━━━━━━━━━━━━\n`;
+   text+=`🧾 No. Nota: *${nota}*\n`;
+   text+=`👤 Member: *${m.nama||"-"}*\n`;
+   if(m.kode)text+=`🔑 Kode Member: *${m.kode}*\n`;
+   text+=`━━━━━━━━━━━━━━━━━━\n\n`;
+
+   text+=`📦 *RINCIAN ORDERAN*\n\n`;
+
+   items.forEach((x,i)=>{
+     const qty=Number(x.qty)||0;
+     const harga=Number(x.harga)||0;
+     const diskon=Math.min(Number(x.diskon)||0,harga*qty);
+     const jumlah=(harga*qty)-diskon;
+
+     text+=`${i+1}. *${x.nama}*\n`;
+     text+=`   Kode: ${x.kode||"-"}\n`;
+     text+=`   Qty: *${qty} pcs*\n`;
+     text+=`   Harga: ${rp(harga)}/pcs\n`;
+
+     if(diskon>0){
+       text+=`   Diskon: -${rp(diskon)}\n`;
+     }
+
+     text+=`   Jumlah: *${rp(jumlah)}*\n\n`;
+   });
+
+   text+=`━━━━━━━━━━━━━━━━━━\n`;
+   text+=`📊 *RINGKASAN*\n`;
+   text+=`Total Produk: *${totalQty} pcs*\n`;
+   text+=`💰 Total Pesanan: *${rp(total)}*\n`;
+   text+=`━━━━━━━━━━━━━━━━━━\n\n`;
+
+   text+=`⚠️ *MOHON CEK ULANG ORDERAN ANDA*\n\n`;
+   text+=`Pastikan kembali:\n`;
+   text+=`✅ Nama produk sudah benar\n`;
+   text+=`✅ Kode produk sudah benar\n`;
+   text+=`✅ Jumlah/qty sudah benar\n`;
+   text+=`✅ Harga sudah benar\n`;
+   text+=`✅ Total pesanan sudah benar\n\n`;
+
+   text+=`📦 Setelah Anda memastikan pesanan sudah benar, pesanan akan kami *APPROVAL* dan selanjutnya *DITERUSKAN KE PEMASOK* untuk diproses.\n\n`;
+
+   text+=`❗ *Jika ada kesalahan atau perubahan, segera sampaikan sebelum pesanan kami approval dan diteruskan ke pemasok.*\n\n`;
+
+   text+=`Terima kasih 🙏\n`;
+   text+=`*${nama}*`;
+
+   const url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(text)}`;
+   window.open(url,"_blank");
+   return;
+ }
+
+ sendWAData(r,st==="approved"?"approved":"rejected");
+};
 $("search").oninput=render;$("filter").onchange=render;
 $("list").addEventListener("input",e=>{if(e.target.classList.contains("approved"))recalcOrder(e.target.closest(".order").dataset.id)});
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
