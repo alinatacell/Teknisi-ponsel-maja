@@ -87,14 +87,14 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
  <div class="title">STOK SEMUA MEMBER</div>
  <div class="help">
  Semua member dalam Owner yang sama dapat melihat daftar stok ini. Tombol aksi hanya muncul untuk stok yang pemiliknya adalah akun yang sedang login.
- Stok dari order approval tidak mengubah data order asli; tambah/kurang dicatat sebagai penyesuaian agar riwayat tetap aman.
+ Harga Approved Order = harga awal + Rp20.000. Stok Manual tidak mendapat tambahan Rp20.000. Stok dari order approval tidak mengubah data order asli; tambah/kurang dicatat sebagai penyesuaian agar riwayat tetap aman.
  </div>
  <div class="table-wrap" style="margin-top:12px">
   <table>
    <thead><tr>
-    <th>Produk</th><th>Kode</th><th>Stok</th><th>Member</th><th>Sumber</th><th>Terakhir Masuk</th><th>Aksi</th>
+    <th>Produk</th><th>Kode</th><th>Harga</th><th>Stok</th><th>Member</th><th>Sumber</th><th>Terakhir Masuk</th><th>Aksi</th>
    </tr></thead>
-   <tbody id="list"><tr><td colspan="7" class="empty">Memuat...</td></tr></tbody>
+   <tbody id="list"><tr><td colspan="8" class="empty">Memuat...</td></tr></tbody>
   </table>
  </div>
 </div>
@@ -166,6 +166,14 @@ function memberUidOf(r){return String(r.memberUid||r.member?.uid||r.member?.memb
 function memberNameOf(r){const m=memberObj(r);return String(r.memberNama||r.namaMember||m.nama||r.namaPelanggan||"-")}
 function productName(x){return String(x.nama||x.namaProduk||x.produk||x.kode||x.kodeProduk||"-")}
 function productCode(x){return String(x.kode||x.kodeProduk||"")}
+function priceOf(x){
+  const v=x?.hargaAwal??x?.harga??x?.hargaJual??x?.hargaProduk??x?.price??x?.hargaSatuan??0;
+  return Number(String(v).replace(/[^0-9.-]/g,""))||0;
+}
+function displayPrice(r){
+  const base=Number(r.hargaAwal)||0;
+  return r.source==="manual" ? base : (base>0 ? base+20000 : 0);
+}
 function waOf(x){
   return String(x?.noWA||x?.wa||x?.noWa||x?.noHp||x?.noWhatsapp||x?.nomorWA||x?.phone||"").trim();
 }
@@ -234,9 +242,10 @@ async function load(){
      const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);
      items.forEach(x=>{
       const qty=Math.max(0,Number(x.qty??x.jumlah??0)||0);if(!qty)return;
-      const nama=productName(x),kode=productCode(x),pid=String(x.produkId||x.id||"");
+      const nama=productName(x),kode=productCode(x),pid=String(x.produkId||x.id||""); const hargaAwal=priceOf(x);
       const key=productKey(mu,nama,kode,pid);
-      const old=orderMap.get(key)||{key,memberUid:mu,memberNama:mn,nama,kode,produkId:pid,orderQty:0,manualQty:0,adjustQty:0,lastDate:o.approvedAt||o.createdAt||o.tanggal||today(),sourceOrderCount:0};
+      const old=orderMap.get(key)||{key,memberUid:mu,memberNama:mn,nama,kode,produkId:pid,hargaAwal,orderQty:0,manualQty:0,adjustQty:0,lastDate:o.approvedAt||o.createdAt||o.tanggal||today(),sourceOrderCount:0};
+       if(!old.hargaAwal&&hargaAwal)old.hargaAwal=hargaAwal;
       old.orderQty+=qty;old.sourceOrderCount++;
       if(dateValue(o.approvedAt||o.createdAt||o.tanggal)>dateValue(old.lastDate))old.lastDate=o.approvedAt||o.createdAt||o.tanggal;
       orderMap.set(key,old);
@@ -283,7 +292,7 @@ async function load(){
   }
   for(const [key,m] of manualMap){
    if(map.has(key))continue;
-   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
+   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),hargaAwal:priceOf(m),orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
   }
 
   rows=[...map.values()].map(r=>{
@@ -327,7 +336,7 @@ function render(){
  $("statQty").textContent=data.reduce((a,r)=>a+r.qty,0).toLocaleString("id-ID")+" pcs";
  $("statMembers").textContent=new Set(data.map(r=>r.memberUid).filter(Boolean)).size;
  $("statManual").textContent=data.reduce((a,r)=>a+r.manualQty,0).toLocaleString("id-ID")+" pcs";
- $("list").innerHTML=data.length?data.map(renderRow).join(""):'<tr><td colspan="7" class="empty">Tidak ada stok sesuai pencarian/filter.</td></tr>';
+ $("list").innerHTML=data.length?data.map(renderRow).join(""):'<tr><td colspan="8" class="empty">Tidak ada stok sesuai pencarian/filter.</td></tr>';
 }
 
 function renderRow(r){
