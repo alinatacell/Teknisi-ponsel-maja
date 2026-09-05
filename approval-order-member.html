@@ -181,8 +181,7 @@ function buildMessage(r,items,statusText){
  }else{text+=`Pesanan member *${nota}* sudah kami cek.\n\n❌ DI BATALKAN Alasan pembatalan:
 Bisa stock tidak tersedia atau terdapat permintaan pembaruan order dari member.
 Pembatalan dilakukan agar data stok dan order tetap sesuai dengan kondisi terbaru.
-Apabila stok tersedia kembali atau data order sudah diperbarui, produk/order dapat diproses kembali.
-Terima kasih atas pengertian dan kerja samanya. 🙏.\n\n${r.alasanApproval||""}\n\nSilakan konfirmasi kembali kepada kami untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;}
+Apabila stok tersedia kembali atau data order sudah diperbarui, produk/order dapat diproses kembali 🙏.\n\n${r.alasanApproval||""}\n\nSilakan isi kembali keranjag opder nya untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;}
  return text;
 }
 function sendWAData(r,statusText){const m=member(r);const url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(buildMessage(r,r.items||[],statusText))}`;window.open(url,"_blank")}
