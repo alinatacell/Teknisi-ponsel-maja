@@ -178,7 +178,7 @@ const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="",selectedManualKeys=new Set();
+let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="",selectedManualKeys=new Set(),ownerPengelolaPerPcs=0;
 
 
 function normKey(v){return String(v??"").trim().toLowerCase().replace(/[\s_\-\/]+/g,"")}
@@ -272,7 +272,9 @@ function priceOf(x){
 }
 function displayPrice(r){
   const base=Number(r.hargaAwal)||0;
-  return r.source==="manual" ? base : (base>0 ? base+20000 : 0);
+  if(r.source==="manual")return base;
+  const pengelola=Number(r.upPengelolaPerPcs??ownerPengelolaPerPcs)||0;
+  return base>0 ? base+pengelola+20000 : 0;
 }
 function waOf(x){
   return String(x?.noWA||x?.wa||x?.noWa||x?.noHp||x?.noWhatsapp||x?.nomorWA||x?.phone||"").trim();
@@ -299,6 +301,17 @@ async function load(){
  if(!ownerUid){notice("Akun ini tidak memiliki Owner bisnis.","err");return}
  try{
   const orderMap=new Map(), adjustmentMap=new Map(), manualMap=new Map(), memberMap=new Map();
+
+  // Ambil UP Pengelola sesuai pengaturan Owner/Pengelola.
+  // Tabungan tidak ikut dalam harga halaman Data Produk Member.
+  try{
+   const os=await getDoc(doc(db,"users",ownerUid));
+   if(os.exists()){
+    const od=os.data()||{};
+    ownerPengelolaPerPcs=Number(od.upPengelolaPerPcs??od.upPengelola??od.upPengelolaGlobal??od.pengelolaPerPcs??0)||0;
+   }
+  }catch(e){console.warn("pengaturan pengelola:",e.message);ownerPengelolaPerPcs=0}
+
 
   // 0) Load MEMBER accounts directly from users.
   // Member tetap muncul walaupun belum pernah mempunyai order/stok.
@@ -344,8 +357,10 @@ async function load(){
       const qty=Math.max(0,Number(x.qty??x.jumlah??0)||0);if(!qty)return;
       const nama=productName(x),kode=productCode(x),pid=String(x.produkId||x.id||""); const hargaAwal=priceOf(x);
       const key=productKey(mu,nama,kode,pid);
-      const old=orderMap.get(key)||{key,memberUid:mu,memberNama:mn,nama,kode,produkId:pid,hargaAwal,orderQty:0,manualQty:0,adjustQty:0,lastDate:o.approvedAt||o.createdAt||o.tanggal||today(),sourceOrderCount:0};
+      const upPengelolaPerPcs=Number(x.upPengelolaPerPcs??x.upPengelola??o.upPengelolaPerPcs??o.upPengelola??ownerPengelolaPerPcs??0)||0;
+       const old=orderMap.get(key)||{key,memberUid:mu,memberNama:mn,nama,kode,produkId:pid,hargaAwal,upPengelolaPerPcs,orderQty:0,manualQty:0,adjustQty:0,lastDate:o.approvedAt||o.createdAt||o.tanggal||today(),sourceOrderCount:0};
        if(!old.hargaAwal&&hargaAwal)old.hargaAwal=hargaAwal;
+       if(!old.upPengelolaPerPcs&&upPengelolaPerPcs)old.upPengelolaPerPcs=upPengelolaPerPcs;
       old.orderQty+=qty;old.sourceOrderCount++;
       if(dateValue(o.approvedAt||o.createdAt||o.tanggal)>dateValue(old.lastDate))old.lastDate=o.approvedAt||o.createdAt||o.tanggal;
       orderMap.set(key,old);
@@ -394,7 +409,7 @@ async function load(){
   }
   for(const [key,m] of manualMap){
    if(map.has(key))continue;
-   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),hargaAwal:priceOf(m),orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
+   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),hargaAwal:priceOf(m),upPengelolaPerPcs:0,orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
   }
 
   rows=[...map.values()].map(r=>{
