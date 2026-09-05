@@ -83,7 +83,7 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
   </div>
   <div>
    <label>GOOGLE SHEETS — LINK PUBLISH / PUBLIC</label>
-   <input id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml?gid=19469794&single=true">
+   <input id="sheetUrl" placeholder="Tempel link Google Sheets yang sudah Publish to web">
    <div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap">
     <button class="btn sheet" type="button" onclick="importSheet()">↗ Import Google Sheets</button>
     <button class="btn import" type="button" onclick="downloadTemplate()">⬇ Template Excel</button>
@@ -222,30 +222,21 @@ window.importExcel=async file=>{
 function googleSheetCsvUrl(raw){
  try{
   const u=new URL(String(raw||"").trim());
-  if(u.protocol!=="https:"||u.hostname!=="docs.google.com")return "";
-  const pub=u.pathname.match(/^\/spreadsheets\/d\/e\/([^\/]+)\/(?:pubhtml|pub)\/?$/i);
-  if(pub){
-   const gid=u.searchParams.get("gid")||"0";
-   const single=u.searchParams.get("single")||"true";
-   return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=${encodeURIComponent(single)}&output=csv`;
-  }
-  const normal=u.pathname.match(/^\/spreadsheets\/d\/([^\/]+)(?:\/|$)/i);
-  if(normal){
-   const gid=u.searchParams.get("gid")||"0";
-   return `https://docs.google.com/spreadsheets/d/${normal[1]}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`;
-  }
+  if(u.hostname.toLowerCase()!=="docs.google.com"||!u.pathname.includes("/spreadsheets/"))return "";
+  const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^\/]+)\/(?:pubhtml|pub)\/?$/i);
+  const gid=u.searchParams.get("gid")||"0";
+  if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+  const normal=u.pathname.match(/\/spreadsheets\/d\/([^\/]+)(?:\/|$)/i);
+  if(normal)return `https://docs.google.com/spreadsheets/d/${normal[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;
   return "";
  }catch{return ""}
 }
 window.importSheet=async()=>{
  const raw=$("sheetUrl").value.trim();if(!raw)return notice("Tempel link Google Sheets terlebih dahulu.","err");
  try{notice("Mengambil data Google Sheets...");
-  const url=googleSheetCsvUrl(raw);if(!url)throw Error("Link Google Sheets tidak valid. Gunakan link Publish to web / pubhtml.");
-  let res;try{res=await fetch(url,{cache:"no-store"})}catch(e){throw Error("Google Sheets tidak dapat diakses. Pastikan sudah Publish to web dan dapat dibuka publik.")}
-  if(!res.ok)throw Error("Sheet tidak dapat diakses. Pastikan sudah Publish to web/public.");
-  const text=await res.text();
-  if(/<html|sign in|access denied|request access/i.test(text.slice(0,1500)))throw Error("Sheet belum publik. Gunakan File → Share → Publish to web.");
-  if(!text.trim())throw Error("Sheet publik tetapi tidak mengembalikan data. Periksa gid tab yang dipublikasikan.");
+  const url=googleSheetCsvUrl(raw);if(!url)throw Error("Link Google Sheets tidak valid.");
+  const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw Error("Sheet tidak dapat diakses. Pastikan sudah Publish to web/public.");
+  const text=await res.text();if(/<html|sign in|access denied/i.test(text.slice(0,1000)))throw Error("Sheet belum publik. Gunakan File → Share → Publish to web.");
   const wb=XLSXRead(text,{type:"string"}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSXUtils.sheet_to_json(ws,{defval:""});
   const r=await saveImportedRows(data,"Google Sheets");await load();notice(`Import Google Sheets selesai: ${r.ok} baris masuk${r.skip?`, ${r.skip} dilewati`:""}.`,"ok");
  }catch(e){console.error(e);notice("Import Google Sheets gagal: "+e.message,"err")}
