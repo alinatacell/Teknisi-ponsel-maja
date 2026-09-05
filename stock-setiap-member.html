@@ -178,6 +178,28 @@ async function load(){
  try{
   const orderMap=new Map(), adjustmentMap=new Map(), manualMap=new Map(), memberMap=new Map();
 
+  // 0) Load MEMBER accounts directly from users.
+  // Member tetap muncul walaupun belum pernah mempunyai order/stok.
+  try{
+   const uq=[
+    query(collection(db,"users"),where("ownerUid","==",ownerUid)),
+    query(collection(db,"users"),where("ownerId","==",ownerUid))
+   ];
+   for(const q of uq){
+    try{
+     const s=await getDocs(q);
+     s.forEach(d=>{
+      const x={uid:d.id,...d.data()};
+      const rr=String(x.role||"").toLowerCase();
+      if(rr!=="member")return;
+      const mu=String(x.uid||d.id).trim();
+      if(!mu)return;
+      memberMap.set(mu,{uid:mu,nama:String(x.nama||x.namaMember||x.name||x.displayName||x.email||"Member")});
+     });
+    }catch(e){console.warn("users member query:",e.message)}
+   }
+  }catch(e){console.warn("users member:",e.message)}
+
   // 1) Approved orders are the automatic starting stock.
   const oq=[query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),query(collection(db,"order_member"),where("ownerId","==",ownerUid))];
   for(const q of oq){
@@ -246,7 +268,10 @@ async function load(){
   members=[...memberMap.values()].filter(x=>x.uid);
   render();
   buildOwnerOptions();
-  notice("Data produk member berhasil dimuat.","ok");
+  notice(members.length
+   ? `Data produk member berhasil dimuat. ${members.length} member tersedia.`
+   : "Data produk berhasil dimuat, tetapi akun dengan role MEMBER dalam Owner ini belum ditemukan.",
+   members.length?"ok":"err");
  }catch(e){console.error(e);notice("Gagal memuat data: "+e.message,"err")}
 }
 
