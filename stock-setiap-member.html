@@ -226,7 +226,11 @@ async function load(){
      const o={id:d.id,...d.data()};
      if(String(o.status||"").toLowerCase()!=="order_member")return;
      const mu=memberUidOf(o),mn=memberNameOf(o);
-     if(mu)memberMap.set(mu,{uid:mu,nama:mn,wa:waOf(o.member||o.pelanggan||o)});
+     if(mu){
+       const oldM=memberMap.get(mu)||{};
+       const ow=waOf(o.member||o.pelanggan||o);
+       memberMap.set(mu,{uid:mu,nama:mn||oldM.nama||"-",wa:ow||oldM.wa||""});
+      }
      const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);
      items.forEach(x=>{
       const qty=Math.max(0,Number(x.qty??x.jumlah??0)||0);if(!qty)return;
@@ -247,7 +251,10 @@ async function load(){
    const s=await getDocs(mq);
    s.forEach(d=>{
     const x={id:d.id,...d.data(),source:"manual"};
-    const mu=String(x.memberUid||"").trim();if(mu)memberMap.set(mu,{uid:mu,nama:String(x.memberNama||x.namaMember||"-")});
+    const mu=String(x.memberUid||"").trim();if(mu){
+      const oldM=memberMap.get(mu)||{};
+      memberMap.set(mu,{uid:mu,nama:String(x.memberNama||x.namaMember||oldM.nama||"-"),wa:waOf(x)||oldM.wa||""});
+     }
     const key=productKey(mu,x.nama,x.kode,x.produkId);
     manualMap.set(key,x);
    });
@@ -259,7 +266,10 @@ async function load(){
    const s=await getDocs(aq);
    s.forEach(d=>{
     const x={id:d.id,...d.data()};
-    const mu=String(x.memberUid||"").trim();if(mu)memberMap.set(mu,{uid:mu,nama:String(x.memberNama||x.namaMember||"-")});
+    const mu=String(x.memberUid||"").trim();if(mu){
+      const oldM=memberMap.get(mu)||{};
+      memberMap.set(mu,{uid:mu,nama:String(x.memberNama||x.namaMember||oldM.nama||"-"),wa:waOf(x)||oldM.wa||""});
+     }
     const key=productKey(mu,x.nama,x.kode,x.produkId);
     adjustmentMap.set(key,(adjustmentMap.get(key)||0)+(Number(x.qty)||0));
    });
@@ -321,24 +331,30 @@ function render(){
 }
 
 function renderRow(r){
- const act=canAct(r);
- const source=r.source==="mixed"?'<span class="source mixed">ORDER + MANUAL</span>':r.source==="order"?'<span class="source order">APPROVED ORDER</span>':'<span class="source manual">MANUAL</span>';
- const actions=act?`<div class="actions">
-   <button class="btn add" type="button" onclick="openAdjust('${esc(r.key)}','add')">＋ Tambah</button>
-   <button class="btn minus" type="button" onclick="openAdjust('${esc(r.key)}','minus')">− Kurangi</button>
-   ${r.manualId?`<button class="btn edit" type="button" onclick="openEditManual('${esc(r.manualId)}')">✎ Edit</button>`:""}
-    ${waLink(r)?`<a class="btn wa" href="${esc(waLink(r))}" target="_blank" rel="noopener">☘ WA</a>`:""}
-   <button class="btn history" type="button" onclick="showHistory('${esc(r.key)}')">Riwayat</button>
-  </div>`:'<span class="muted">Lihat saja</span>';
- return `<tr>
-  <td><div class="product">${esc(r.nama)}</div>${r.produkId?`<div class="muted">ID: ${esc(r.produkId)}</div>`:""}</td>
-  <td>${esc(r.kode||"-")}</td>
-  <td><span class="qty">${r.qty.toLocaleString("id-ID")}</span> pcs<div class="muted">Order: ${r.orderQty} • Manual: ${r.manualQty} • Penyesuaian: ${r.adjustQty>=0?"+":""}${r.adjustQty}</div></td>
-  <td><div class="owner">${esc(r.memberNama||"-")}</div></td>
-  <td>${source}</td>
-  <td>${esc(dateValue(r.manualTanggal||r.lastDate||today()))}</td>
-  <td>${actions}</td>
- </tr>`;
+  const act=canAct(r);
+  const source=r.source==="mixed"?'<span class="source mixed">ORDER + MANUAL</span>':r.source==="order"?'<span class="source order">APPROVED ORDER</span>':'<span class="source manual">MANUAL</span>';
+  const wa=waLink(r);
+
+  const actions=act?`<div class="actions">
+    <button class="btn add" type="button" onclick="openAdjust('${esc(r.key)}','add')">＋ Tambah</button>
+    <button class="btn minus" type="button" onclick="openAdjust('${esc(r.key)}','minus')">− Kurangi</button>
+    ${r.manualId?`<button class="btn edit" type="button" onclick="openEditManual('${esc(r.manualId)}')">✎ Edit</button>`:""}
+    ${wa?`<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">☘ WA Pemilik</a>`:""}
+    <button class="btn history" type="button" onclick="showHistory('${esc(r.key)}')">Riwayat</button>
+   </div>`:`<div class="actions">
+    ${wa?`<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">☘ WA Pemilik</a>`:""}
+    <span class="muted">Lihat saja</span>
+   </div>`;
+
+  return `<tr>
+   <td><div class="product">${esc(r.nama)}</div>${r.produkId?`<div class="muted">ID: ${esc(r.produkId)}</div>`:""}</td>
+   <td>${esc(r.kode||"-")}</td>
+   <td><span class="qty">${r.qty.toLocaleString("id-ID")}</span> pcs<div class="muted">Order: ${r.orderQty} • Manual: ${r.manualQty} • Penyesuaian: ${r.adjustQty>=0?"+":""}${r.adjustQty}</div></td>
+   <td><div class="owner">${esc(r.memberNama||"-")}</div></td>
+   <td>${source}</td>
+   <td>${esc(dateValue(r.manualTanggal||r.lastDate||today()))}</td>
+   <td>${actions}</td>
+  </tr>`;
 }
 
 function openModal(){ $("modal").classList.add("show") }
