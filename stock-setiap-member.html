@@ -35,7 +35,7 @@ tr:last-child td{border-bottom:0}
 .source{display:inline-block;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}
 .source.mixed{background:#fef3c7;color:#92400e}.source.order{background:#dcfce7;color:#166534}.source.manual{background:#dbeafe;color:#1d4ed8}
 .actions{display:flex;gap:5px;flex-wrap:wrap}.actions .btn{padding:7px 9px;font-size:10px;box-shadow:2px 2px 0 #111827}
-.add{background:var(--g);color:#fff}.wa{background:#22c55e;color:#fff;text-decoration:none;display:inline-flex;align-items:center}.minus{background:#fee2e2;color:#991b1b}.edit{background:#e5e7eb}.history{background:#111827;color:#fff}
+.add{background:var(--g);color:#fff}.import{background:#2563eb;color:#fff}.sheet{background:#7c3aed;color:#fff}.import-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.import-help{font-size:10px;color:#64748b;line-height:1.6}@media(max-width:650px){.import-box{grid-template-columns:1fr}}.wa{background:#22c55e;color:#fff;text-decoration:none;display:inline-flex;align-items:center}.minus{background:#fee2e2;color:#991b1b}.edit{background:#e5e7eb}.history{background:#111827;color:#fff}
 .empty{text-align:center;padding:25px;color:#64748b;font-size:12px}
 .help{font-size:11px;color:#64748b;line-height:1.7}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:10000}
@@ -74,6 +74,22 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
   <div><label>MEMBER</label><select id="memberFilter"><option value="">Semua Member</option></select></div>
   <div><label>SUMBER STOK</label><select id="sourceFilter"><option value="">Semua</option><option value="order">Approved Order</option><option value="manual">Manual</option><option value="mixed">Gabungan</option></select></div>
   <div class="filter-action"><button class="btn add" type="button" onclick="openManual()">＋ Tambah Stok Manual</button></div>
+ </div>
+ <div class="import-box">
+  <div>
+   <label>UPLOAD STOK DARI EXCEL</label>
+   <input id="excelFile" type="file" accept=".xlsx,.xls,.csv">
+   <div class="import-help">Kolom: <b>memberUid/memberId</b>, <b>memberNama/namaMember</b>, <b>nama/namaProduk</b>, <b>kode/kodeProduk</b>, <b>qty/jumlah/stok</b>, <b>tanggal</b>, <b>catatan</b>.</div>
+  </div>
+  <div>
+   <label>GOOGLE SHEETS — LINK PUBLISH / PUBLIC</label>
+   <input id="sheetUrl" placeholder="Tempel link Google Sheets yang sudah Publish to web">
+   <div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap">
+    <button class="btn sheet" type="button" onclick="importSheet()">↗ Import Google Sheets</button>
+    <button class="btn import" type="button" onclick="downloadTemplate()">⬇ Template Excel</button>
+   </div>
+   <div class="import-help">Publish lewat <b>File → Share → Publish to web</b>. Data yang diimpor menjadi <b>stok manual</b> dan tidak mengubah Approved Order.</div>
+  </div>
  </div>
  <div class="stats">
   <div class="stat"><span>JENIS PRODUK</span><b id="statProducts">0</b></div>
@@ -143,6 +159,7 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{utils as XLSXUtils,read as XLSXRead,writeFile as XLSXWriteFile}from"https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
@@ -151,6 +168,73 @@ const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="";
+
+
+function normKey(v){return String(v??"").trim().toLowerCase().replace(/[\s_\-\/]+/g,"")}
+function rowVal(r,names){
+ const map={};Object.keys(r||{}).forEach(k=>map[normKey(k)]=r[k]);
+ for(const n of names){const v=map[normKey(n)];if(v!==undefined&&String(v).trim()!=="")return v}
+ return "";
+}
+function excelDate(v){
+ if(typeof v==="number"){const d=new Date(Math.round((v-25569)*86400*1000));if(!isNaN(d))return d.toISOString().slice(0,10)}
+ return dateValue(v);
+}
+function normalizeImportRow(r){
+ return {memberUid:String(rowVal(r,["memberUid","memberId","uidMember","idMember"])||"").trim(),
+ memberNama:String(rowVal(r,["memberNama","namaMember","member","namaPemilik","pemilik"])||"").trim(),
+ nama:String(rowVal(r,["nama","namaProduk","produk","product"])||"").trim(),
+ kode:String(rowVal(r,["kode","kodeProduk","code","sku"])||"").trim(),
+ qty:Math.max(0,Number(String(rowVal(r,["qty","jumlah","stok","stock","quantity"])||0).replace(/[^0-9.-]/g,""))||0),
+ tanggal:excelDate(rowVal(r,["tanggal","date","tgl"])||today()),
+ catatan:String(rowVal(r,["catatan","keterangan","note","notes"])||"Import stok").trim()};
+}
+function resolveMember(x){
+ if(x.memberUid){const m=members.find(m=>m.uid===x.memberUid);if(m)return m}
+ if(x.memberNama){const q=x.memberNama.toLowerCase();const m=members.find(m=>String(m.nama||"").toLowerCase()===q);if(m)return m}
+ if(!isOwnerAdmin())return members.find(m=>m.uid===uid)||null;
+ return null;
+}
+async function saveImportedRows(rawRows,sourceLabel){
+ const data=rawRows.map(normalizeImportRow).filter(x=>x.nama&&x.qty>0);
+ if(!data.length)throw Error("Tidak ada baris valid. Pastikan nama produk dan qty terisi.");
+ if(!isOwnerAdmin())data.forEach(x=>{if(!x.memberUid&&!x.memberNama)x.memberUid=uid});
+ let ok=0,skip=0;
+ for(const x of data){
+  const m=resolveMember(x);if(!m){skip++;continue}
+  if(!isOwnerAdmin()&&m.uid!==uid)throw Error("Akses ditolak: ada baris untuk member lain.");
+  await addDoc(collection(db,"produk_member_manual"),{ownerUid,memberUid:m.uid,memberNama:m.nama,nama:x.nama,kode:x.kode,qty:x.qty,tanggal:x.tanggal,catatan:x.catatan||sourceLabel,sumber:"manual",importSumber:sourceLabel,createdAt:serverTimestamp(),createdBy:uid});
+  ok++;
+ }
+ return {ok,skip,total:data.length};
+}
+window.downloadTemplate=()=>{
+ const data=[{memberUid:members[0]?.uid||"",memberNama:members[0]?.nama||"",nama:"LCD Oppo A10S",kode:"A10S-LCD",qty:5,tanggal:today(),catatan:"Stok manual"}];
+ const ws=XLSXUtils.json_to_sheet(data),wb=XLSXUtils.book_new();XLSXUtils.book_append_sheet(wb,ws,"Stok Member");XLSXWriteFile(wb,"template-stok-member-fixzy.xlsx");
+};
+window.importExcel=async file=>{
+ if(!file)return;
+ try{notice("Membaca file Excel...");
+  const buf=await file.arrayBuffer(),wb=XLSXRead(buf,{type:"array",cellDates:true}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSXUtils.sheet_to_json(ws,{defval:""});
+  const r=await saveImportedRows(data,"Excel");await load();notice(`Import Excel selesai: ${r.ok} baris masuk${r.skip?`, ${r.skip} dilewati`:""}.`,"ok");
+ }catch(e){console.error(e);notice("Import Excel gagal: "+e.message,"err")} $("excelFile").value="";
+};
+function googleSheetCsvUrl(raw){
+ try{const u=new URL(String(raw||"").trim());const m=u.pathname.match(/\/spreadsheets\/d\/([^\/]+)/);
+  if(m){const gid=u.searchParams.get("gid")||"0";return `https://docs.google.com/spreadsheets/d/${m[1]}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`}
+  return u.href;
+ }catch{return ""}
+}
+window.importSheet=async()=>{
+ const raw=$("sheetUrl").value.trim();if(!raw)return notice("Tempel link Google Sheets terlebih dahulu.","err");
+ try{notice("Mengambil data Google Sheets...");
+  const url=googleSheetCsvUrl(raw);if(!url)throw Error("Link Google Sheets tidak valid.");
+  const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw Error("Sheet tidak dapat diakses. Pastikan sudah Publish to web/public.");
+  const text=await res.text();if(/<html|sign in|access denied/i.test(text.slice(0,1000)))throw Error("Sheet belum publik. Gunakan File → Share → Publish to web.");
+  const wb=XLSXRead(text,{type:"string"}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSXUtils.sheet_to_json(ws,{defval:""});
+  const r=await saveImportedRows(data,"Google Sheets");await load();notice(`Import Google Sheets selesai: ${r.ok} baris masuk${r.skip?`, ${r.skip} dilewati`:""}.`,"ok");
+ }catch(e){console.error(e);notice("Import Google Sheets gagal: "+e.message,"err")}
+};
 
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
 function isOwnerAdmin(){return role==="owner"}
@@ -185,7 +269,7 @@ function waNumber(v){
 function waLink(r){
   const n=waNumber(r.memberWA||"");
   if(!n)return "";
-  const text=`Halo ${r.memberNama||"Kak"}, Apakah stock ini masih ada? ${r.nama||"produk"}${r.kode?" ("+r.kode+")":""}.`;
+  const text=`Halo ${r.memberNama||"Kak"}, saya ingin menanyakan stok ${r.nama||"produk"}${r.kode?" ("+r.kode+")":""}.`;
   return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
 }
 function dateValue(v){
@@ -456,6 +540,7 @@ window.showHistory=async key=>{
 };
 
 $("search").oninput=render;$("memberFilter").onchange=render;$("sourceFilter").onchange=render;
+$("excelFile").addEventListener("change",e=>importExcel(e.target.files?.[0]));
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 
 onAuthStateChanged(auth,async u=>{
