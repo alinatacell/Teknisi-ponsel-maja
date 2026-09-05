@@ -357,6 +357,8 @@ async function load(){
    const s=await getDocs(mq);
    s.forEach(d=>{
     const x={id:d.id,...d.data(),source:"manual"};
+    // Data yang sudah dihapus secara logis tidak ditampilkan lagi.
+    if(x.deleted===true || x.deletedAt)return;
     const mu=String(x.memberUid||"").trim();if(mu){
       const oldM=memberMap.get(mu)||{};
       memberMap.set(mu,{uid:mu,nama:String(x.memberNama||x.namaMember||oldM.nama||"-"),wa:waOf(x)||oldM.wa||""});
@@ -487,7 +489,24 @@ window.deleteCheckedManual=async()=>{
  if(!window.confirm(msg+"\n\nCatatan: Approved Order dan riwayat penyesuaian tidak dihapus."))return;
  try{
   if(picked.some(r=>!canAct(r)))throw Error("Anda hanya boleh menghapus stok milik sendiri.");
-  for(const r of picked)await deleteDoc(doc(db,"produk_member_manual",r.manualId));
+  for(const r of picked){
+   const ref=doc(db,"produk_member_manual",r.manualId);
+   try{
+    // Hapus permanen bila Firestore Rules mengizinkan delete.
+    await deleteDoc(ref);
+   }catch(delErr){
+    // Jika Rules hanya mengizinkan update (bukan delete), gunakan hapus-logis.
+    // Di tampilan data tetap hilang, tetapi dokumen aman tidak disentuh/dihapus paksa.
+    if(delErr?.code!=="permission-denied")throw delErr;
+    await runTransaction(db,async tx=>{
+     const s=await tx.get(ref);
+     if(!s.exists())return;
+     const d=s.data()||{};
+     if(!isOwnerAdmin()&&String(d.memberUid||"")!==uid)throw Error("Akses ditolak.");
+     tx.update(ref,{qty:0,deleted:true,deletedAt:serverTimestamp(),deletedBy:uid,updatedAt:serverTimestamp(),updatedBy:uid});
+    });
+   }
+  }
   picked.forEach(r=>selectedManualKeys.delete(r.key));
   await load();notice(`${picked.length} stok manual berhasil dihapus.`,'ok');
  }catch(e){console.error(e);notice("Gagal menghapus stok manual: "+(e.message||e),'err')}
