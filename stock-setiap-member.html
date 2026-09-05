@@ -35,7 +35,7 @@ tr:last-child td{border-bottom:0}
 .source{display:inline-block;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}
 .source.mixed{background:#fef3c7;color:#92400e}.source.order{background:#dcfce7;color:#166534}.source.manual{background:#dbeafe;color:#1d4ed8}
 .actions{display:flex;gap:5px;flex-wrap:wrap}.actions .btn{padding:7px 9px;font-size:10px;box-shadow:2px 2px 0 #111827}
-.add{background:var(--g);color:#fff}.minus{background:#fee2e2;color:#991b1b}.edit{background:#e5e7eb}.history{background:#111827;color:#fff}
+.add{background:var(--g);color:#fff}.wa{background:#22c55e;color:#fff;text-decoration:none;display:inline-flex;align-items:center}.minus{background:#fee2e2;color:#991b1b}.edit{background:#e5e7eb}.history{background:#111827;color:#fff}
 .empty{text-align:center;padding:25px;color:#64748b;font-size:12px}
 .help{font-size:11px;color:#64748b;line-height:1.7}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:10000}
@@ -166,6 +166,20 @@ function memberUidOf(r){return String(r.memberUid||r.member?.uid||r.member?.memb
 function memberNameOf(r){const m=memberObj(r);return String(r.memberNama||r.namaMember||m.nama||r.namaPelanggan||"-")}
 function productName(x){return String(x.nama||x.namaProduk||x.produk||x.kode||x.kodeProduk||"-")}
 function productCode(x){return String(x.kode||x.kodeProduk||"")}
+function waOf(x){
+  return String(x?.noWA||x?.wa||x?.noWa||x?.noHp||x?.noWhatsapp||x?.nomorWA||x?.phone||"").trim();
+}
+function waNumber(v){
+  let n=String(v||"").replace(/[^0-9]/g,"");
+  if(n.startsWith("0"))n="62"+n.slice(1);
+  return n;
+}
+function waLink(r){
+  const n=waNumber(r.memberWA||"");
+  if(!n)return "";
+  const text=`Halo ${r.memberNama||"Kak"}, saya ingin menanyakan stok ${r.nama||"produk"}${r.kode?" ("+r.kode+")":""}.`;
+  return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
+}
 function dateValue(v){
  if(typeof v==="object"&&v?.seconds)return new Date(v.seconds*1000).toISOString().slice(0,10);
  const s=String(v||"");return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:today();
@@ -197,7 +211,7 @@ async function load(){
       if(!["employee","karyawan","reseller","member","everyone"].includes(rr))return;
       const mu=String(x.uid||d.id).trim();
       if(!mu)return;
-      memberMap.set(mu,{uid:mu,nama:String(x.nama||x.namaMember||x.name||x.displayName||x.email||"Member")});
+      memberMap.set(mu,{uid:mu,nama:String(x.nama||x.namaMember||x.name||x.displayName||x.email||"Member"),wa:waOf(x)});
      });
     }catch(e){console.warn("users member query:",e.message)}
    }
@@ -212,7 +226,7 @@ async function load(){
      const o={id:d.id,...d.data()};
      if(String(o.status||"").toLowerCase()!=="order_member")return;
      const mu=memberUidOf(o),mn=memberNameOf(o);
-     if(mu)memberMap.set(mu,{uid:mu,nama:mn});
+     if(mu)memberMap.set(mu,{uid:mu,nama:mn,wa:waOf(o.member||o.pelanggan||o)});
      const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);
      items.forEach(x=>{
       const qty=Math.max(0,Number(x.qty??x.jumlah??0)||0);if(!qty)return;
@@ -255,11 +269,11 @@ async function load(){
   const map=new Map();
   for(const [key,o] of orderMap){
    const m=manualMap.get(key);
-   map.set(key,{...o,manualId:m?.id||"",manualQty:Number(m?.qty)||0,manualTanggal:m?.tanggal||"",manualCatatan:m?.catatan||"",adjustQty:Number(adjustmentMap.get(key)||0)});
+   map.set(key,{...o,memberWA:memberMap.get(o.memberUid)?.wa||waOf(o)||"",manualId:m?.id||"",manualQty:Number(m?.qty)||0,manualTanggal:m?.tanggal||"",manualCatatan:m?.catatan||"",adjustQty:Number(adjustmentMap.get(key)||0)});
   }
   for(const [key,m] of manualMap){
    if(map.has(key))continue;
-   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
+   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
   }
 
   rows=[...map.values()].map(r=>{
@@ -313,6 +327,7 @@ function renderRow(r){
    <button class="btn add" type="button" onclick="openAdjust('${esc(r.key)}','add')">＋ Tambah</button>
    <button class="btn minus" type="button" onclick="openAdjust('${esc(r.key)}','minus')">− Kurangi</button>
    ${r.manualId?`<button class="btn edit" type="button" onclick="openEditManual('${esc(r.manualId)}')">✎ Edit</button>`:""}
+    ${waLink(r)?`<a class="btn wa" href="${esc(waLink(r))}" target="_blank" rel="noopener">☘ WA</a>`:""}
    <button class="btn history" type="button" onclick="showHistory('${esc(r.key)}')">Riwayat</button>
   </div>`:'<span class="muted">Lihat saja</span>';
  return `<tr>
