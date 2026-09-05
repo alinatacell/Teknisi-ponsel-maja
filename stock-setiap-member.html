@@ -77,20 +77,26 @@ body.dark th{background:#020617}body.dark td{border-color:#334155}body.dark .mut
  </div>
  <div class="import-box">
   <div>
-   <label>UPLOAD STOK DARI EXCEL</label>
-   <input id="excelFile" type="file" accept=".xlsx,.xls,.csv">
-   <div class="import-help">Kolom: <b>memberUid/memberId</b>, <b>memberNama/namaMember</b>, <b>nama/namaProduk</b>, <b>kode/kodeProduk</b>, <b>qty/jumlah/stok</b>, <b>tanggal</b>, <b>catatan</b>.</div>
+   <label>UPLOAD STOK DARI EXCEL / CSV</label>
+   <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" onchange="handleMemberExcelUpload(this.files[0])">
+   <div class="import-help">Format kolom: <b>memberUid/memberId</b>, <b>memberNama/namaMember</b>, <b>nama/namaProduk</b>, <b>kode/kodeProduk</b>, <b>qty/jumlah/stok</b>, <b>tanggal</b>, <b>catatan</b>.</div>
   </div>
   <div>
    <label>GOOGLE SHEETS — LINK PUBLISH / PUBLIC</label>
    <input id="sheetUrl" placeholder="Tempel link Google Sheets yang sudah Publish to web">
    <div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap">
-    <button class="btn sheet" type="button" onclick="importSheet()">↗ Import Google Sheets</button>
+    <button class="btn sheet" type="button" id="sheetLoadBtn" onclick="previewMemberSheet()">↗ Cek & Muat Google Sheets</button>
     <button class="btn import" type="button" onclick="downloadTemplate()">⬇ Template Excel</button>
    </div>
-   <div class="import-help">Publish lewat <b>File → Share → Publish to web</b>. Data yang diimpor menjadi <b>stok manual</b> dan tidak mengubah Approved Order.</div>
+   <div class="import-help">Data hanya menjadi <b>stok manual member</b>. Approved Order tidak diubah.</div>
   </div>
  </div>
+ <div id="memberImportMsg" class="notice" style="display:none"></div>
+ <div id="memberDuplicateInfo" class="dup-info" style="display:none"></div>
+ <div id="memberPreview" class="table-wrap" style="display:none;margin-top:10px">
+  <table style="min-width:820px"><thead id="memberPreviewHead"></thead><tbody id="memberPreviewBody"></tbody></table>
+ </div>
+ <button id="memberSaveImportBtn" class="btn add" type="button" style="display:none;width:100%;margin-top:10px" onclick="saveMemberImport()">⬆ SIMPAN HASIL IMPORT KE FIREBASE</button>
  <div class="stats">
   <div class="stat"><span>JENIS PRODUK</span><b id="statProducts">0</b></div>
   <div class="stat"><span>TOTAL STOK</span><b id="statQty">0 pcs</b></div>
@@ -196,14 +202,23 @@ function resolveMember(x){
  return null;
 }
 async function saveImportedRows(rawRows,sourceLabel){
+ // Upload Excel/Google Sheets mengikuti logika STOK MANUAL:
+ // yang menyimpan adalah member, dan stok masuk ke member yang sedang login.
+ // Owner hanya mengelola/melihat data member; Owner tidak menjadi pemilik stok upload.
+ if(isOwnerAdmin())throw Error("Owner hanya mengelola data member. Upload/simpan stok dilakukan oleh member pemiliknya.");
  const data=rawRows.map(normalizeImportRow).filter(x=>x.nama&&x.qty>0);
  if(!data.length)throw Error("Tidak ada baris valid. Pastikan nama produk dan qty terisi.");
- if(!isOwnerAdmin())data.forEach(x=>{if(!x.memberUid&&!x.memberNama)x.memberUid=uid});
+ data.forEach(x=>{x.memberUid=uid;x.memberNama=""});
+ const m=members.find(x=>x.uid===uid);
+ if(!m)throw Error("Data member login tidak ditemukan di Owner ini.");
  let ok=0,skip=0;
  for(const x of data){
-  const m=resolveMember(x);if(!m){skip++;continue}
-  if(!isOwnerAdmin()&&m.uid!==uid)throw Error("Akses ditolak: karyawan hanya boleh mengimpor stok untuk dirinya sendiri.");
-  await addDoc(collection(db,"produk_member_manual"),{ownerUid,memberUid:m.uid,memberNama:m.nama,nama:x.nama,kode:x.kode,qty:x.qty,tanggal:x.tanggal,catatan:x.catatan||sourceLabel,sumber:"manual",importSumber:sourceLabel,createdAt:serverTimestamp(),createdBy:uid});
+  await addDoc(collection(db,"produk_member_manual"),{
+   ownerUid,memberUid:uid,memberNama:m.nama,nama:x.nama,kode:x.kode,qty:x.qty,
+   tanggal:x.tanggal,catatan:x.catatan||sourceLabel,
+   sumber:"upload_member",importSumber:sourceLabel,
+   createdAt:serverTimestamp(),createdBy:uid
+  });
   ok++;
  }
  return {ok,skip,total:data.length};
@@ -212,40 +227,24 @@ window.downloadTemplate=()=>{
  const data=[{memberUid:members[0]?.uid||"",memberNama:members[0]?.nama||"",nama:"LCD Oppo A10S",kode:"A10S-LCD",qty:5,tanggal:today(),catatan:"Stok manual"}];
  const ws=XLSXUtils.json_to_sheet(data),wb=XLSXUtils.book_new();XLSXUtils.book_append_sheet(wb,ws,"Stok Member");XLSXWriteFile(wb,"template-stok-member-fixzy.xlsx");
 };
-window.importExcel=async file=>{
- if(!file)return;
- try{notice("Membaca file Excel...");
-  const buf=await file.arrayBuffer(),wb=XLSXRead(buf,{type:"array",cellDates:true}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSXUtils.sheet_to_json(ws,{defval:""});
-  const r=await saveImportedRows(data,"Excel");await load();notice(`Import Excel selesai: ${r.ok} baris masuk${r.skip?`, ${r.skip} dilewati`:""}.`,"ok");
- }catch(e){console.error(e);notice("Import Excel gagal: "+e.message,"err")} $("excelFile").value="";
-};
-function googleSheetCsvUrl(raw){
- try{const u=new URL(String(raw||"").trim());const m=u.pathname.match(/\/spreadsheets\/d\/([^\/]+)/);
-  if(m){const gid=u.searchParams.get("gid")||"0";return `https://docs.google.com/spreadsheets/d/${m[1]}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`}
-  return u.href;
- }catch{return ""}
-}
-window.importSheet=async()=>{
- const raw=$("sheetUrl").value.trim();if(!raw)return notice("Tempel link Google Sheets terlebih dahulu.","err");
- try{notice("Mengambil data Google Sheets...");
-  const url=googleSheetCsvUrl(raw);if(!url)throw Error("Link Google Sheets tidak valid.");
-  const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw Error("Sheet tidak dapat diakses. Pastikan sudah Publish to web/public.");
-  const text=await res.text();if(/<html|sign in|access denied/i.test(text.slice(0,1000)))throw Error("Sheet belum publik. Gunakan File → Share → Publish to web.");
-  const wb=XLSXRead(text,{type:"string"}),ws=wb.Sheets[wb.SheetNames[0]],data=XLSXUtils.sheet_to_json(ws,{defval:""});
-  const r=await saveImportedRows(data,"Google Sheets");await load();notice(`Import Google Sheets selesai: ${r.ok} baris masuk${r.skip?`, ${r.skip} dilewati`:""}.`,"ok");
- }catch(e){console.error(e);notice("Import Google Sheets gagal: "+e.message,"err")}
-};
+let memberImportRows=[];
+let memberImportSource="";
+function importMsg(t,c=""){$("memberImportMsg").style.display="block";$('memberImportMsg').textContent=t;$('memberImportMsg').className="notice "+c}
+function clearMemberImportUI(){memberImportRows=[];memberImportSource="";$('memberImportMsg').style.display="none";$('memberDuplicateInfo').style.display="none";$('memberDuplicateInfo').textContent="";$('memberPreview').style.display="none";$('memberPreviewHead').innerHTML="";$('memberPreviewBody').innerHTML="";$('memberSaveImportBtn').style.display="none"}
+function parseMemberCSV(text){const out=[];let row=[],cell="",q=false;text=String(text||"").replace(/^\uFEFF/,"");for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'){if(q&&n==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=""}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&n==='\n')i++;row.push(cell);cell="";if(row.some(v=>String(v).trim()!==""))out.push(row);row=[]}else cell+=c}if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()!==""))out.push(row)}return out}
+function memberRowsToObjects(rows){if(!rows.length)throw Error("Data kosong.");const h=rows[0].map(x=>normKey(x)),out=[];for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.every(x=>String(x).trim()===""))continue;const o={};h.forEach((k,j)=>o[k]=r[j]??"");out.push(o)}return out}
+function previewMemberImport(rawRows,source){const data=rawRows.map(normalizeImportRow).filter(x=>x.nama&&x.qty>0);if(!data.length)throw Error("Tidak ada baris valid. Pastikan nama produk dan qty terisi.");memberImportRows=data;memberImportSource=source;const dup=new Map();for(const x of data){const k=(x.memberUid||x.memberNama||"?")+"|"+(x.kode||x.nama).toLowerCase();dup.set(k,(dup.get(k)||0)+1)}const duplicates=[...dup.entries()].filter(([,n])=>n>1);if(duplicates.length){const el=$('memberDuplicateInfo');el.style.display='block';el.textContent=`Peringatan: ${duplicates.length} kombinasi member + produk muncul lebih dari sekali. Semua baris tetap akan diproses sebagai upload stok member.`}else $('memberDuplicateInfo').style.display='none';$('memberPreviewHead').innerHTML='<tr><th>Member</th><th>Produk</th><th>Kode</th><th>Qty</th><th>Tanggal</th><th>Catatan</th></tr>';$('memberPreviewBody').innerHTML=data.slice(0,50).map(x=>`<tr><td>${esc(x.memberNama||x.memberUid||'-')}</td><td>${esc(x.nama)}</td><td>${esc(x.kode)}</td><td>${x.qty}</td><td>${esc(x.tanggal)}</td><td>${esc(x.catatan)}</td></tr>`).join('');$('memberPreview').style.display='block';$('memberSaveImportBtn').style.display='block';importMsg(`${source} berhasil dibaca. ${data.length} baris siap disimpan. Preview maksimal 50 baris.`,'ok')}
+window.handleMemberExcelUpload=async file=>{if(!file)return;clearMemberImportUI();try{importMsg('Membaca file Excel...','');const buf=await file.arrayBuffer();const wb=XLSXRead(buf,{type:'array',cellDates:false});const first=wb.SheetNames[0];const rows=XLSXUtils.sheet_to_json(wb.Sheets[first],{header:1,defval:"",raw:false});previewMemberImport(memberRowsToObjects(rows),'Excel')}catch(e){console.error(e);importMsg('Import Excel gagal: '+(e.message||e),'err')}finally{$('excelFile').value=''}};
+function googleMemberSheetCsvUrl(raw){try{const u=new URL(String(raw||'').trim());if(!/^(docs\.google\.com)$/i.test(u.hostname)||!u.pathname.includes('/spreadsheets/'))return '';const gid=u.searchParams.get('gid')||(String(raw).match(/[#&?]gid=([^&#]+)/i)||[])[1]||'0';const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/i);if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);if(id)return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;return ''}catch{return ''}}
+window.previewMemberSheet=async()=>{const raw=$('sheetUrl').value.trim();if(!raw)return importMsg('Tempel link Google Sheets terlebih dahulu.','err');clearMemberImportUI();const btn=$('sheetLoadBtn');btn.disabled=true;btn.textContent='MEMBACA SHEET...';try{const url=googleMemberSheetCsvUrl(raw);if(!url)throw Error('Link Google Sheets tidak valid.');importMsg('Mengambil data Google Sheets...','');const res=await fetch(url,{method:'GET',mode:'cors',cache:'no-store',redirect:'follow'});if(!res.ok)throw Error('HTTP '+res.status);const text=await res.text();const first=text.trim().slice(0,300).toLowerCase();if(!text.trim())throw Error('CSV kosong.');if(first.startsWith('<!doctype')||first.startsWith('<html')||first.includes('<html'))throw Error('Google tidak mengirim CSV. Pastikan Sheet sudah Publish to web/public.');previewMemberImport(memberRowsToObjects(parseMemberCSV(text)),'Google Sheets')}catch(e){console.error(e);importMsg('Import Google Sheets gagal: '+(e.message||e),'err')}finally{btn.disabled=false;btn.textContent='↗ Cek & Muat Google Sheets'}};
+window.saveMemberImport=async()=>{if(!uid){importMsg('Sesi Firebase belum tersedia.','err');return}if(!memberImportRows.length){importMsg('Belum ada data hasil import untuk disimpan.','err');return}try{if(typeof uiConfirm==='function'&&!await uiConfirm(`Simpan ${memberImportRows.length} baris upload stok milik member ke Firebase?`,'Simpan Stok Member','Simpan'))return;const result=await saveImportedRows(memberImportRows,memberImportSource||'Import');await load();clearMemberImportUI();importMsg(`Import selesai: ${result.ok} baris masuk${result.skip?`, ${result.skip} dilewati`:''}.`,'ok')}catch(e){console.error(e);importMsg('Gagal menyimpan import: '+(e.message||e),'err')}};
 
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
 function isOwnerAdmin(){
-  const rr=String(profile.role||profile.profileRole||role||"").trim().toLowerCase();
-  const flag=profile.isOwner===true || String(profile.isOwner||"").trim().toLowerCase()==="true";
-  const explicitOwner=rr==="owner" || flag;
-  const currentIsMember=members.some(m=>String(m.uid||"").trim()===String(uid||"").trim());
-  // Owner tidak harus mempunyai produk/member sendiri. Jika akun adalah pemilik
-  // Owner aktif dan bukan akun member/karyawan, Owner boleh mengelola semua member.
-  const ownerByScope=String(ownerUid||"").trim()===String(uid||"").trim() && !currentIsMember && !["employee","karyawan","reseller","member"].includes(rr);
-  return explicitOwner || ownerByScope;
+ const rr=String(profile.role||profile.profileRole||role||"").trim().toLowerCase();
+ const flag=profile.isOwner===true || String(profile.isOwner||"").trim().toLowerCase()==="true";
+ const ownId=String(profile.ownerUid||profile.ownerId||"").trim();
+ return rr==="owner" || flag || (!!uid && !!ownId && ownId===uid) || (!!uid && !!ownerUid && ownerUid===uid);
 }
 function isSuperadmin(){return role==="superadmin"||role==="super_admin"}
 function ownerOf(d){
@@ -549,7 +548,6 @@ window.showHistory=async key=>{
 };
 
 $("search").oninput=render;$("memberFilter").onchange=render;$("sourceFilter").onchange=render;
-$("excelFile").addEventListener("change",e=>importExcel(e.target.files?.[0]));
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 
 onAuthStateChanged(auth,async u=>{
