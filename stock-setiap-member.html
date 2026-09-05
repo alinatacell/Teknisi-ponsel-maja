@@ -190,8 +190,11 @@ async function load(){
      const s=await getDocs(q);
      s.forEach(d=>{
       const x={uid:d.id,...d.data()};
-      const rr=String(x.role||"").toLowerCase();
-      if(rr!=="member")return;
+      const rr=String(x.role||x.profileRole||"").trim().toLowerCase();
+      // Mengikuti acuan Data Tabungan Member FIXZY:
+      // akun employee/karyawan/reseller/member/everyone dapat menjadi
+      // pemilik stok member dalam Owner yang sama.
+      if(!["employee","karyawan","reseller","member","everyone"].includes(rr))return;
       const mu=String(x.uid||d.id).trim();
       if(!mu)return;
       memberMap.set(mu,{uid:mu,nama:String(x.nama||x.namaMember||x.name||x.displayName||x.email||"Member")});
@@ -270,7 +273,7 @@ async function load(){
   buildOwnerOptions();
   notice(members.length
    ? `Data produk member berhasil dimuat. ${members.length} member tersedia.`
-   : "Data produk berhasil dimuat, tetapi akun dengan role MEMBER dalam Owner ini belum ditemukan.",
+   : "Data produk berhasil dimuat, tetapi akun karyawan/member dalam Owner ini belum ditemukan.",
    members.length?"ok":"err");
  }catch(e){console.error(e);notice("Gagal memuat data: "+e.message,"err")}
 }
