@@ -178,7 +178,7 @@ const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="",selectedManualKeys=new Set(),ownerPengelolaPerPcs=0;
+let uid="",ownerUid="",profile={},role="",ready=false,rows=[],members=[],adjustTarget=null,adjustMode="",editManualId="",selectedManualKeys=new Set();
 
 
 function normKey(v){return String(v??"").trim().toLowerCase().replace(/[\s_\-\/]+/g,"")}
@@ -231,7 +231,7 @@ async function saveImportedRows(rawRows,sourceLabel){
  return {ok,skip,total:data.length};
 }
 window.downloadTemplate=()=>{
- const data=[{memberUid:members[0]?.uid||"",memberNama:members[0]?.nama||"",nama:"LCD Oppo A10S",kode:"A10S-LCD",qty:5,tanggal:today(),catatan:"Stok manual"}];
+ const data=[{memberUid:members[0]?.uid||"",memberNama:members[0]?.nama||"",nama:"LCD Oppo A10S",kode:"A10S-LCD",harga:125000,qty:5,tanggal:today(),catatan:"Upload stok member"}];
  const ws=XLSXUtils.json_to_sheet(data),wb=XLSXUtils.book_new();XLSXUtils.book_append_sheet(wb,ws,"Stok Member");XLSXWriteFile(wb,"template-stok-member-fixzy.xlsx");
 };
 let memberImportRows=[];
@@ -271,10 +271,17 @@ function priceOf(x){
   return Number(String(v).replace(/[^0-9.-]/g,""))||0;
 }
 function displayPrice(r){
-  const base=Number(r.hargaAwal)||0;
-  if(r.source==="manual")return base;
-  const pengelola=Number(r.upPengelolaPerPcs??ownerPengelolaPerPcs)||0;
-  return base>0 ? base+pengelola+20000 : 0;
+  const manual=Number(r.hargaManual)||0;
+  const order=Number(r.hargaAwal)||0;
+  if(r.source==="order") return order>0 ? order+20000 : 0;
+  if(r.source==="mixed") return manual>0 ? manual : (order>0 ? order+20000 : 0);
+  return manual;
+}
+function priceHtml(r){
+  const manual=Number(r.hargaManual)||0;
+  const order=Number(r.hargaAwal)||0;
+  if(r.source==="mixed") return `<div><b>Order: ${rp(order>0?order+20000:0)}</b></div><div class="muted">Manual/Upload: ${rp(manual)}</div>`;
+  return `<span class="qty">${rp(displayPrice(r))}</span>${r.source==="manual"?'<div class="muted">Harga stok manual</div>':r.source==="upload_member"?'<div class="muted">Harga sesuai upload</div>':''}`;
 }
 function waOf(x){
   return String(x?.noWA||x?.wa||x?.noWa||x?.noHp||x?.noWhatsapp||x?.nomorWA||x?.phone||"").trim();
@@ -301,17 +308,6 @@ async function load(){
  if(!ownerUid){notice("Akun ini tidak memiliki Owner bisnis.","err");return}
  try{
   const orderMap=new Map(), adjustmentMap=new Map(), manualMap=new Map(), memberMap=new Map();
-
-  // Ambil UP Pengelola sesuai pengaturan Owner/Pengelola.
-  // Tabungan tidak ikut dalam harga halaman Data Produk Member.
-  try{
-   const os=await getDoc(doc(db,"users",ownerUid));
-   if(os.exists()){
-    const od=os.data()||{};
-    ownerPengelolaPerPcs=Number(od.upPengelolaPerPcs??od.upPengelola??od.upPengelolaGlobal??od.pengelolaPerPcs??0)||0;
-   }
-  }catch(e){console.warn("pengaturan pengelola:",e.message);ownerPengelolaPerPcs=0}
-
 
   // 0) Load MEMBER accounts directly from users.
   // Member tetap muncul walaupun belum pernah mempunyai order/stok.
@@ -357,10 +353,8 @@ async function load(){
       const qty=Math.max(0,Number(x.qty??x.jumlah??0)||0);if(!qty)return;
       const nama=productName(x),kode=productCode(x),pid=String(x.produkId||x.id||""); const hargaAwal=priceOf(x);
       const key=productKey(mu,nama,kode,pid);
-      const upPengelolaPerPcs=Number(x.upPengelolaPerPcs??x.upPengelola??o.upPengelolaPerPcs??o.upPengelola??ownerPengelolaPerPcs??0)||0;
-       const old=orderMap.get(key)||{key,memberUid:mu,memberNama:mn,nama,kode,produkId:pid,hargaAwal,upPengelolaPerPcs,orderQty:0,manualQty:0,adjustQty:0,lastDate:o.approvedAt||o.createdAt||o.tanggal||today(),sourceOrderCount:0};
+      const old=orderMap.get(key)||{key,memberUid:mu,memberNama:mn,nama,kode,produkId:pid,hargaAwal,orderQty:0,manualQty:0,adjustQty:0,lastDate:o.approvedAt||o.createdAt||o.tanggal||today(),sourceOrderCount:0};
        if(!old.hargaAwal&&hargaAwal)old.hargaAwal=hargaAwal;
-       if(!old.upPengelolaPerPcs&&upPengelolaPerPcs)old.upPengelolaPerPcs=upPengelolaPerPcs;
       old.orderQty+=qty;old.sourceOrderCount++;
       if(dateValue(o.approvedAt||o.createdAt||o.tanggal)>dateValue(old.lastDate))old.lastDate=o.approvedAt||o.createdAt||o.tanggal;
       orderMap.set(key,old);
@@ -374,7 +368,7 @@ async function load(){
    const mq=query(collection(db,"produk_member_manual"),where("ownerUid","==",ownerUid));
    const s=await getDocs(mq);
    s.forEach(d=>{
-    const x={id:d.id,...d.data(),source:"manual"};
+    const x={id:d.id,...d.data(),source:String(d.data()?.sumber||"manual").toLowerCase()};
     // Data yang sudah dihapus secara logis tidak ditampilkan lagi.
     if(x.deleted===true || x.deletedAt)return;
     const mu=String(x.memberUid||"").trim();if(mu){
@@ -405,17 +399,17 @@ async function load(){
   const map=new Map();
   for(const [key,o] of orderMap){
    const m=manualMap.get(key);
-   map.set(key,{...o,memberWA:memberMap.get(o.memberUid)?.wa||waOf(o)||"",manualId:m?.id||"",manualQty:Number(m?.qty)||0,manualTanggal:m?.tanggal||"",manualCatatan:m?.catatan||"",adjustQty:Number(adjustmentMap.get(key)||0)});
+   map.set(key,{...o,memberWA:memberMap.get(o.memberUid)?.wa||waOf(o)||"",manualId:m?.id||"",manualQty:Number(m?.qty)||0,hargaManual:m?priceOf(m):0,manualSource:m?String(m.sumber||"manual").toLowerCase():"",manualTanggal:m?.tanggal||"",manualCatatan:m?.catatan||"",adjustQty:Number(adjustmentMap.get(key)||0)});
   }
   for(const [key,m] of manualMap){
    if(map.has(key))continue;
-   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),hargaAwal:priceOf(m),upPengelolaPerPcs:0,orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
+   map.set(key,{key,memberUid:String(m.memberUid||""),memberNama:String(m.memberNama||m.namaMember||"-"),nama:productName(m),kode:productCode(m),produkId:String(m.produkId||""),hargaAwal:0,hargaManual:priceOf(m),manualSource:String(m.sumber||"manual").toLowerCase(),orderQty:0,manualQty:Number(m.qty)||0,adjustQty:Number(adjustmentMap.get(key)||0),manualId:m.id,memberWA:memberMap.get(String(m.memberUid||""))?.wa||waOf(m)||"",manualTanggal:m.tanggal||today(),manualCatatan:m.catatan||"",lastDate:m.tanggal||today(),sourceOrderCount:0});
   }
 
   rows=[...map.values()].map(r=>{
    const total=Math.max(0,Number(r.orderQty)+Number(r.manualQty)+Number(r.adjustQty));
    const hasOrder=Number(r.orderQty)>0,hasManual=Number(r.manualQty)>0;
-   return {...r,qty:total,source:hasOrder&&hasManual?"mixed":hasOrder?"order":"manual"};
+   return {...r,qty:total,source:hasOrder&&hasManual?"mixed":hasOrder?("order"):(r.manualSource||r.source||"manual")};
   }).filter(r=>r.qty>0||r.orderQty>0||r.manualQty>0);
 
   members=[...memberMap.values()].filter(x=>x.uid);
@@ -459,7 +453,7 @@ function render(){
 
 function renderRow(r){
   const act=canAct(r);
-  const source=r.source==="mixed"?'<span class="source mixed">ORDER + MANUAL</span>':r.source==="order"?'<span class="source order">APPROVED ORDER</span>':'<span class="source manual">MANUAL</span>';
+  const source=r.source==="mixed"?'<span class="source mixed">ORDER + MANUAL/UPLOAD</span>':r.source==="order"?'<span class="source order">APPROVED ORDER</span>':r.source==="upload_member"?'<span class="source manual">UPLOAD MEMBER</span>':'<span class="source manual">MANUAL</span>';
   const wa=waLink(r);
   const checked=selectedManualKeys.has(r.key)?' checked':'';
   const check=`<input class="row-check" type="checkbox" data-manual-check="${esc(r.key)}"${checked} onchange="setManualCheck('${esc(r.key)}',this.checked)" title="Pilih produk ini">`;
@@ -477,7 +471,7 @@ function renderRow(r){
    <td class="check-cell">${check}</td>
    <td><div class="product">${esc(r.nama)}</div>${r.produkId?`<div class="muted">ID: ${esc(r.produkId)}</div>`:""}</td>
    <td>${esc(r.kode||"-")}</td>
-   <td><span class="qty">${rp(displayPrice(r))}</span>${r.source==="manual"?'<div class="muted">Harga stok manual</div>':''}</td>
+   <td>${priceHtml(r)}</td>
    <td><span class="qty">${r.qty.toLocaleString("id-ID")}</span> pcs<div class="muted">Order: ${r.orderQty} • Manual: ${r.manualQty} • Penyesuaian: ${r.adjustQty>=0?"+":""}${r.adjustQty}</div></td>
    <td><div class="owner">${esc(r.memberNama||"-")}</div></td>
    <td>${source}</td>
