@@ -240,12 +240,14 @@ window.approveOrder=async id=>{
     return {...x,approvedQty:q,harga};
   }).filter(x=>x.approvedQty>0);
  if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
+  if(approved.some(x=>!x.produkId))return msg("Semua produk yang disetujui harus memiliki produk stok yang valid.","err");
  const ref=doc(db,"penjualan",id);
  try{
   msg("Memeriksa stok dan membuat order member...");
   const result=await runTransaction(db,async tx=>{
    const fresh=await tx.get(ref);if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
-   const freshData=fresh.data()||{};if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
+   const freshData=fresh.data()||{};const dataOwner=String(freshData.ownerUid||freshData.ownerId||freshData.businessUid||"").trim();
+    if(dataOwner && dataOwner!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
    if(String(freshData.status||"")!=="menunggu_approval")throw Error("Pesanan sudah diproses.");
    const stockSnaps=[];
    for(const x of approved){if(!x.produkId)throw Error("Produk manual tidak dapat diproses approval stok.");stockSnaps.push({x,s:await tx.get(doc(db,"stok",x.produkId))})}
@@ -293,7 +295,7 @@ window.approveOrder=async id=>{
 };
 window.rejectOrder=async id=>{
  const r=rows.find(x=>x.id===id);if(!r)return;const alasan=prompt("Alasan penolakan / stok kosong:","Stok tidak tersedia");if(alasan===null)return;
- try{await runTransaction(db,async tx=>{const ref=doc(db,"penjualan",id),s=await tx.get(ref);if(!s.exists())throw Error("Pesanan tidak ditemukan.");const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Bukan akun ini.");tx.update(ref,{status:"rejected",approvalStatus:"rejected",alasanApproval:alasan,approvedBy:uid,updatedAt:serverTimestamp()})});msg("Pesanan ditolak. Tidak ada stok yang dikurangi.","ok");await load();}catch(e){msg("Gagal menolak: "+e.message,"err")}
+ try{await runTransaction(db,async tx=>{const ref=doc(db,"penjualan",id),s=await tx.get(ref);if(!s.exists())throw Error("Pesanan tidak ditemukan.");const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Bukan akun ini.");if(String(d.status||"")!=="menunggu_approval")throw Error("Pesanan sudah diproses.");tx.update(ref,{status:"rejected",approvalStatus:"rejected",alasanApproval:alasan,approvedBy:uid,updatedAt:serverTimestamp()})});msg("Pesanan ditolak. Tidak ada stok yang dikurangi.","ok");await load();}catch(e){msg("Gagal menolak: "+e.message,"err")}
 };
 function buildMessage(r,items,statusText){
  const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id;
