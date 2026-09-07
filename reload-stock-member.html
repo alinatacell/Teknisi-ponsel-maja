@@ -550,62 +550,7 @@ html,body{
 }
 </style>
 
-<style>
-/* FIX FINAL: produk menyamping responsif semua layar */
-.product-list{
-  display:grid !important;
-  grid-auto-flow:column !important;
-  grid-template-columns:none !important;
-  grid-auto-columns:minmax(280px, 32vw) !important;
-  gap:10px !important;
-  overflow-x:auto !important;
-  overflow-y:hidden !important;
-  width:100% !important;
-  max-width:100% !important;
-  padding:2px 2px 10px !important;
-  -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x proximity;
-}
-.product-item{width:auto !important; max-width:none !important; min-width:0 !important; scroll-snap-align:start;}
-.product-toolbar{
-  grid-template-columns:minmax(280px,2fr) minmax(220px,1.25fr) minmax(150px,1fr) minmax(150px,1fr) minmax(180px,1.1fr) !important;
-  gap:9px !important;
-  width:100% !important;
-}
-.product-toolbar #productSearch,
-.product-toolbar #supplierSearch,
-.product-toolbar #productCategory,
-.product-toolbar #productStockFilter,
-.product-toolbar #productSupplier{
-  display:block !important;
-  visibility:visible !important;
-  width:100% !important;
-  min-width:0 !important;
-}
-.product-toolbar #supplierSearch{
-  grid-column:auto !important;
-}
-@media(max-width:1100px){
-  .product-toolbar{grid-template-columns:minmax(220px,1.5fr) minmax(190px,1.2fr) minmax(145px,1fr) minmax(145px,1fr) !important;}
-  .product-toolbar #productSupplier{grid-column:1/-1 !important;}
-}
-@media(max-width:900px){
-  .product-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;}
-  .product-toolbar #productSearch,
-  .product-toolbar #supplierSearch{grid-column:1/-1 !important;}
-  .product-toolbar #productSupplier{grid-column:auto !important;}
-  .product-list{grid-auto-columns:minmax(260px,78vw) !important;}
-}
-@media(max-width:600px){
-  .product-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;}
-  .product-toolbar #productSearch,
-  .product-toolbar #supplierSearch{grid-column:1/-1 !important;}
-  .product-toolbar #productCategory,
-  .product-toolbar #productStockFilter,
-  .product-toolbar #productSupplier{grid-column:auto !important;}
-  .product-list{grid-auto-columns:minmax(250px,82vw) !important;gap:8px !important;}
-}
-</style></head>
+</head>
 <body>
 <header class="header"><div class="header-in">
 <div class="brand"><img src="logo.png" class="logo" onerror="this.style.display='none'"><div><h1>FIXZY</h1><p>Stok Produk • <span id="headerRole">Memuat...</span></p></div></div>
@@ -638,7 +583,7 @@ html,body{
 <section class="card">
 <div class="title">📦 Daftar Produk</div>
 <div class="select-actions"><button type="button" class="btn dark" id="selectAllBtn">☑️ CEKLIS SEMUA</button><button type="button" class="btn danger" id="deleteSelectedBtn">🗑️ HAPUS CEKLIS</button></div>
-<div class="product-toolbar"><input id="productSearch" placeholder="Cari nama, kode, merk..." oninput="filterProducts()"><input id="supplierSearch" placeholder="Cari supplier..." oninput="filterProducts()"><select id="productCategory" onchange="filterProducts()"><option value="">Semua kategori</option></select><select id="productStockFilter" onchange="filterProducts()"><option value="">Semua stok</option><option value="ready">Ready Stock</option><option value="empty">Stok Kosong</option></select><select id="productSupplier" onchange="filterProducts()"><option value="">Semua supplier</option></select></div>
+<div class="product-toolbar"><input id="productSearch" placeholder="Cari nama, kode, merk, supplier..." oninput="filterProducts()"><select id="productCategory" onchange="filterProducts()"><option value="">Semua kategori</option></select><select id="productStockFilter" onchange="filterProducts()"><option value="">Semua stok</option><option value="ready">Ready Stock</option><option value="empty">Stok Kosong</option></select><select id="productSupplier" onchange="filterProducts()"><option value="">Semua supplier</option></select></div>
 <div class="product-count" id="productCount">Memuat produk...</div><div id="productList" class="product-list"><div class="empty-list">⏳ Memuat daftar produk...</div></div>
 </section>
 </main>
@@ -830,8 +775,8 @@ function updateStockStats(){
 
 /* ---------------- LIST PRODUK ---------------- */
 function renderCategoryOptions(){const sel=$("productCategory"),old=sel.value,cats=[...new Set(products.map(p=>String(p.kategori||"LAINNYA").trim().toUpperCase()).filter(Boolean))].sort();sel.innerHTML='<option value="">Semua kategori</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");if(cats.includes(old))sel.value=old}
-function renderSupplierOptions(){const sel=$("productSupplier");if(!sel)return;const old=sel.value,sups=[...new Set(products.map(p=>String(p.pemilikProduk||p.supplier||p.pemasok||p.namaSupplier||p.supplierName||p.namaPemasok||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id"));sel.innerHTML='<option value="">Semua supplier</option>'+sups.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");if(sups.includes(old))sel.value=old} function filterProducts(){const q=String($("productSearch").value||"").trim().toLowerCase(),cat=String($("productCategory").value||"").toUpperCase(),sf=String($("productStockFilter").value||""),sup=String($("productSupplier")?.value||"").trim().toLowerCase();const list=products.filter(p=>{const supplier=String(p.pemilikProduk||p.supplier||p.pemasok||p.namaSupplier||p.supplierName||p.namaPemasok||"").trim(),text=[p.nama,p.kode,p.merk,p.kategori,p.catatan,supplier].map(x=>String(x||"").toLowerCase()).join(" "),s=num(p.sisa);return(!q||text.includes(q))&&(!cat||String(p.kategori||"LAINNYA").toUpperCase()===cat)&&(!sf||(sf==="ready"?s>0:s<=0))&&(!sup||supplier.toLowerCase()===sup)});$("productCount").textContent=`Menampilkan ${list.length} dari ${products.length} produk`;renderProductList(list)}
-function renderProductList(list){const el=$("productList");if(!list.length){el.innerHTML='<div class="empty-list" style="grid-column:1/-1">📦 Belum ada produk yang sesuai.</div>';return}el.innerHTML=list.map(p=>{const s=num(p.sisa),sold=calculateSold(p),status=s>0?'<span class="badge ready">READY</span>':'<span class="badge empty">KOSONG</span>';return`<article class="product-item"><div class="product-top"><div style="display:flex;align-items:flex-start;gap:8px;min-width:0"><input class="product-select" data-product-id="${esc(p.id)}" type="checkbox" ${selectedProductIds.has(p.id)?"checked":""} onchange="toggleProductSelection('${p.id}',this.checked)"><div><div class="product-name">${esc(p.nama||"Tanpa nama")}</div><div class="product-code">${esc(p.kode||"-")} • ${esc(p.kategori||"LAINNYA")}</div></div></div>${status}</div><div class="product-meta"><div class="meta-box"><small>Modal</small><b>${money(p.hargaModal)}</b></div><div class="meta-box"><small>Harga Jual</small><b>${money(p.hargaJual)}</b></div><div class="meta-box"><small>Stok</small><b>${s}</b></div><div class="meta-box"><small>Terjual</small><b>${sold.qty}</b></div><div class="meta-box"><small>Nilai Stok</small><b>${money(s*num(p.hargaModal))}</b></div><div class="meta-box"><small>Merk</small><b>${esc(p.merk||"-")}</b></div><div class="meta-box"><small>Supplier</small><b>${esc(p.pemilikProduk||p.supplier||p.pemasok||p.namaSupplier||p.supplierName||p.namaPemasok||"-")}</b></div></div><div class="product-actions"><button class="edit-btn" onclick="editProduct('${p.id}')">✏️ EDIT</button><button class="delete-btn" onclick="deleteProduct('${p.id}')">🗑️ HAPUS</button></div></article>`}).join("")}
+function renderSupplierOptions(){const sel=$("productSupplier");if(!sel)return;const old=sel.value,sups=[...new Set(products.map(p=>String(p.pemilikProduk||p.supplier||p.pemasok||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id"));sel.innerHTML='<option value="">Semua supplier</option>'+sups.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");if(sups.includes(old))sel.value=old} function filterProducts(){const q=String($("productSearch").value||"").trim().toLowerCase(),cat=String($("productCategory").value||"").toUpperCase(),sf=String($("productStockFilter").value||""),sup=String($("productSupplier")?.value||"").trim().toLowerCase();const list=products.filter(p=>{const supplier=String(p.pemilikProduk||p.supplier||p.pemasok||"").trim(),text=[p.nama,p.kode,p.merk,p.kategori,p.catatan,supplier].map(x=>String(x||"").toLowerCase()).join(" "),s=num(p.sisa);return(!q||text.includes(q))&&(!cat||String(p.kategori||"LAINNYA").toUpperCase()===cat)&&(!sf||(sf==="ready"?s>0:s<=0))&&(!sup||supplier.toLowerCase()===sup)});$("productCount").textContent=`Menampilkan ${list.length} dari ${products.length} produk`;renderProductList(list)}
+function renderProductList(list){const el=$("productList");if(!list.length){el.innerHTML='<div class="empty-list" style="grid-column:1/-1">📦 Belum ada produk yang sesuai.</div>';return}el.innerHTML=list.map(p=>{const s=num(p.sisa),sold=calculateSold(p),status=s>0?'<span class="badge ready">READY</span>':'<span class="badge empty">KOSONG</span>';return`<article class="product-item"><div class="product-top"><div style="display:flex;align-items:flex-start;gap:8px;min-width:0"><input class="product-select" data-product-id="${esc(p.id)}" type="checkbox" ${selectedProductIds.has(p.id)?"checked":""} onchange="toggleProductSelection('${p.id}',this.checked)"><div><div class="product-name">${esc(p.nama||"Tanpa nama")}</div><div class="product-code">${esc(p.kode||"-")} • ${esc(p.kategori||"LAINNYA")}</div></div></div>${status}</div><div class="product-meta"><div class="meta-box"><small>Modal</small><b>${money(p.hargaModal)}</b></div><div class="meta-box"><small>Harga Jual</small><b>${money(p.hargaJual)}</b></div><div class="meta-box"><small>Stok</small><b>${s}</b></div><div class="meta-box"><small>Terjual</small><b>${sold.qty}</b></div><div class="meta-box"><small>Nilai Stok</small><b>${money(s*num(p.hargaModal))}</b></div><div class="meta-box"><small>Merk</small><b>${esc(p.merk||"-")}</b></div><div class="meta-box"><small>Supplier</small><b>${esc(p.pemilikProduk||p.supplier||p.pemasok||"-")}</b></div></div><div class="product-actions"><button class="edit-btn" onclick="editProduct('${p.id}')">✏️ EDIT</button><button class="delete-btn" onclick="deleteProduct('${p.id}')">🗑️ HAPUS</button></div></article>`}).join("")}
 window.filterProducts=filterProducts;
 document.addEventListener("change",e=>{
   const box=e.target?.closest?.(".product-select");
@@ -932,7 +877,7 @@ window.deleteProduct=deleteProduct;
 function clearForm(){["fKode","fNama","fModal","fJual","fSisa","fMerk","fSupplier","fNote"].forEach(id=>$(id).value="");$("fSisa").value=1;$("fCat").value="LCD"}
 async function setNextStockCode(){const nums=products.map(p=>{const m=String(p.kode||"").match(/(\d+)$/);return m?Number(m[1]):0});$("fKode").value="STK"+String(Math.max(0,...nums)+1).padStart(3,"0")}
 async function openManual(){$("manualModal").classList.add("show");editingId=null;$("modalTitle").textContent="Tambah Stok Baru";$("manualSave").textContent="SIMPAN STOK";clearForm();await setNextStockCode()}function closeManual(){$("manualModal").classList.remove("show")}window.openManual=openManual;window.closeManual=closeManual;
-async function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;if(!canEditDeleteProduct(p)){toast("Akses ditolak: data bukan milik owner aktif.");return;}editingId=id;$("modalTitle").textContent="Edit Stok";$("manualSave").textContent="UPDATE STOK";$("fKode").value=p.kode||"";$("fNama").value=p.nama||"";$("fCat").value=p.kategori||"LAINNYA";$("fModal").value=p.hargaModal||0;$("fJual").value=p.hargaJual||0;$("fSisa").value=p.sisa??0;$("fMerk").value=p.merk||"";$("fSupplier").value=p.pemilikProduk||p.supplier||p.pemasok||p.namaSupplier||p.supplierName||p.namaPemasok||"";$("fNote").value=p.catatan||"";$("manualModal").classList.add("show")}window.editProduct=editProduct;
+async function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;if(!canEditDeleteProduct(p)){toast("Akses ditolak: data bukan milik owner aktif.");return;}editingId=id;$("modalTitle").textContent="Edit Stok";$("manualSave").textContent="UPDATE STOK";$("fKode").value=p.kode||"";$("fNama").value=p.nama||"";$("fCat").value=p.kategori||"LAINNYA";$("fModal").value=p.hargaModal||0;$("fJual").value=p.hargaJual||0;$("fSisa").value=p.sisa??0;$("fMerk").value=p.merk||"";$("fSupplier").value=p.pemilikProduk||p.supplier||p.pemasok||"";$("fNote").value=p.catatan||"";$("manualModal").classList.add("show")}window.editProduct=editProduct;
 async function saveManual(){if(!uid){toast("Sesi Firebase belum tersedia.");return}const nama=$("fNama").value.trim(),modal=num($("fModal").value),kode=$("fKode").value.trim(),kategori=$("fCat").value;if(!nama||modal<=0){toast("Nama dan harga modal wajib diisi");return}const data={...identityFields(),kode,nama,kategori,hargaModal:modal,hargaJual:num($("fJual").value)||getSellingPrice(modal,num($("pricePercent").value)||15,num($("priceNominal").value)||0),sisa:Math.max(0,num($("fSisa").value)),merk:$("fMerk").value.trim(),pemilikProduk:$("fSupplier").value.trim(),supplier:$("fSupplier").value.trim(),catatan:$("fNote").value.trim(),updatedAt:serverTimestamp(),sumber:"manual"};if(!editingId&&products.find(p=>isSameProduct(data,p))){toast("Produk dengan kode atau nama + kategori yang sama sudah ada.");return}showLoading(true,editingId?"Memperbarui stok...":"Menyimpan stok...");try{
 if(editingId){
   const existing=products.find(x=>String(x.id)===String(editingId));
