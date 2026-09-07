@@ -436,39 +436,90 @@ function memberTabunganOrderHeader(r){
 async function loadMemberSavingsHeader(user, profile){
   const box=document.getElementById("accountSaving"), val=document.getElementById("accountSavingValue");
   if(!box||!val)return;
-  const role=normHeader(profile.role||profile.profileRole);
+
+  // Jangan membatasi berdasarkan role === "member".
+  // Pada data FIXZY lama, akun member bisa tersimpan sebagai employee/karyawan/everyone,
+  // sehingga pembatasan role membuat tabungan tidak pernah tampil di header.
   box.classList.remove("show");
-  if(role!=="member")return;
-  val.textContent="Rp 0"; box.classList.add("show");
+  val.textContent="Rp 0";
+
   try{
     const ordersMap=new Map();
-    for(const field of ["memberUid","memberId","createdByMemberUid","uidMember"]){
-      const s=await getDocs(query(collection(db,"order_member"),where(field,"==",user.uid)));
-      s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
+    const uid=String(user?.uid||"").trim();
+    const em=String(user?.email||profile?.email||"").trim().toLowerCase();
+
+    // Cari order berdasarkan UID akun yang sedang login.
+    if(uid){
+      for(const field of ["memberUid","memberId","createdByMemberUid","uidMember"]){
+        try{
+          const s=await getDocs(query(collection(db,"order_member"),where(field,"==",uid)));
+          s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
+        }catch(e){console.warn("Query "+field+" dilewati",e?.message||e)}
+      }
     }
-    // Email fallback untuk data lama yang tidak menyimpan memberUid.
-    const em=String(user.email||profile.email||"").trim().toLowerCase();
+
+    // Fallback email untuk data lama.
     if(em){
       try{
         const s=await getDocs(query(collection(db,"order_member"),where("memberEmail","==",em)));
         s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
-      }catch(e){console.warn("Query memberEmail dilewati",e?.message||e)}
+      }catch(e){console.warn("Query order memberEmail dilewati",e?.message||e)}
     }
+
     let total=0;
     ordersMap.forEach(r=>{
-      const ap=normHeader(r.approvalStatus||""); const st=normHeader(r.status||"");
-      if(ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st))total+=memberTabunganOrderHeader(r);
+      const ap=normHeader(r.approvalStatus||"");
+      const st=normHeader(r.status||"");
+      if(ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st)){
+        total+=memberTabunganOrderHeader(r);
+      }
     });
+
+    // Ambil pengambilan tabungan milik akun yang sama.
     const withdrawalsMap=new Map();
-    for(const field of ["memberUid","memberId"]){
-      const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",user.uid)));
-      s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
+    if(uid){
+      for(const field of ["memberUid","memberId"]){
+        try{
+          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",uid)));
+          s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
+        }catch(e){console.warn("Query pengeluaran "+field+" dilewati",e?.message||e)}
+      }
     }
-    if(em){try{const s=await getDocs(query(collection(db,"pengeluaran"),where("memberEmail","==",em)));s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}))}catch(e){console.warn("Query pengambilan email dilewati",e?.message||e)}}
+
+    if(em){
+      try{
+        const s=await getDocs(query(collection(db,"pengeluaran"),where("memberEmail","==",em)));
+        s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
+      }catch(e){console.warn("Query pengambilan email dilewati",e?.message||e)}
+    }
+
     let taken=0;
-    withdrawalsMap.forEach(r=>{if(normHeader(r.modul)==="member"&&normHeader(r.jenis)==="pengambilan tabungan member")taken+=Math.max(0,numHeader(r.nominal));});
-    val.textContent=rpHeader(Math.max(0,total-taken));
-  }catch(e){console.warn("Tabungan member di header belum dapat dimuat:",e?.message||e);val.textContent="Rp 0";}
+    withdrawalsMap.forEach(r=>{
+      if(normHeader(r.modul)==="member" &&
+         normHeader(r.jenis)==="pengambilan tabungan member"){
+        taken+=Math.max(0,numHeader(r.nominal));
+      }
+    });
+
+    const saldo=Math.max(0,total-taken);
+
+    // Tampilkan untuk akun yang memang memiliki data member.
+    // Jika belum ada transaksi sama sekali, tetap tampil Rp 0 agar statusnya jelas.
+    // Superadmin/admin tetap tidak perlu menampilkan tabungan bisnis.
+    const role=normHeader(profile?.role||profile?.profileRole);
+    if(role==="superadmin"||role==="admin"){
+      box.classList.remove("show");
+      return;
+    }
+
+    val.textContent=rpHeader(saldo);
+    box.classList.add("show");
+
+  }catch(e){
+    console.warn("Tabungan akun di header belum dapat dimuat:",e?.message||e);
+    val.textContent="Rp 0";
+    box.classList.add("show");
+  }
 }
 
 async function validasiDanTampilkan(user){
