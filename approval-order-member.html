@@ -17,7 +17,7 @@ main{max-width:1100px;margin:auto;padding:88px 12px 24px}.card{background:#fff;b
 input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
 .order{border:2px solid #111827;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}.order-head{padding:12px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-weight:900}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.badge.approved{background:#dcfce7;border-color:#22c55e;color:#166534}.badge.rejected{background:#fee2e2;border-color:#ef4444;color:#991b1b}
 .order-body{padding:12px}.meta{font-size:12px;line-height:1.7}.meta b{color:#111827}.items{margin-top:10px;border:2px solid #111827;border-radius:9px;overflow:hidden}.item{padding:10px;border-bottom:1px solid #e5e7eb}.item:last-child{border-bottom:0}.item-top{display:flex;justify-content:space-between;gap:8px}.item-name{font-weight:900}.stockline{font-size:11px;color:#64748b;margin-top:3px}.stock-ok{color:#15803d;font-weight:900}.stock-no{color:#dc2626;font-weight:900}
-.item-grid{display:grid;grid-template-columns:minmax(0,1.5fr) 100px 120px;gap:8px;align-items:end;margin-top:8px}.item-grid input,.item-grid select{box-shadow:none}.product-select{min-width:0}.qty-label{font-size:10px;color:#64748b;font-weight:800;margin-bottom:4px}
+.item-grid{display:grid;grid-template-columns:minmax(0,1.5fr) 100px 120px;gap:8px;align-items:end;margin-top:8px}.item-grid input,.item-grid select{box-shadow:none}.product-select{min-width:0}.product-search{margin-bottom:6px!important;box-shadow:none!important}.qty-label{font-size:10px;color:#64748b;font-weight:800;margin-bottom:4px}
 .summary{margin-top:10px;border:2px solid #111827;border-radius:9px;padding:10px;background:#fffbeb;font-size:12px;line-height:1.8}.summary b{font-size:13px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.primary{background:#111827;color:#fff}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.secondary{background:#e5e7eb}
 .empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
@@ -142,7 +142,7 @@ function renderOrder(r){
  const itemHtml=items.map((x,i)=>`<div class="item" data-order="${r.id}" data-index="${i}">
  <div class="item-top"><div><div class="item-name">${esc(x.nama)}</div><div class="stockline">Kode: ${esc(x.kode||"-")} • Pesanan: <b>${x.qty}</b> pcs</div></div><div id="stock_${r.id}_${i}" class="stockline">Cek stok...</div></div>
  <div class="item-grid">
-  <div><div class="qty-label">PRODUK / GANTI PRODUK</div><select class="product-select">${productOptions(x.produkId)}</select></div>
+  <div><div class="qty-label">CARI / GANTI PRODUK</div><input class="product-search" type="search" placeholder="Ketik nama / kode produk..."><select class="product-select">${productOptions(x.produkId)}</select></div>
   <div><div class="qty-label">QTY DISETUJUI</div><input class="approved" type="number" min="0" max="${x.qty}" value="${x.approvedQty||x.qty}"></div>
   <div><div class="qty-label">HARGA/PCS</div><input class="price" type="number" min="0" value="${x.harga||0}"></div>
 </div>
@@ -185,6 +185,26 @@ function checkStock(id){
   }catch(e){$(`stock_${id}_${i}`).textContent="Gagal cek stok"}
  });
 }
+function filterProductSelect(input){
+  const item=input.closest(".item");if(!item)return;
+  const select=item.querySelector(".product-select");if(!select)return;
+  const key=String(input.value||"").trim().toLowerCase();
+  const current=select.value;
+  const list=stockCatalog.filter(x=>String(x.ownerUid||x.ownerId||"")===ownerUid);
+  const filtered=key
+    ? list.filter(x=>`${stockName(x)} ${stockCode(x)} ${stockPrice(x)}`.toLowerCase().includes(key))
+    : list;
+  select.innerHTML=`<option value="">-- pilih / ganti produk --</option>`+
+    filtered.map(x=>{
+      const id=String(x.id||"");
+      const label=`${stockName(x)}${stockCode(x)?` • ${stockCode(x)}`:""}${stockPrice(x)?` • ${rp(stockPrice(x))}`:""}`;
+      return `<option value="${id}" ${id===String(current)?"selected":""}>${esc(label)}</option>`;
+    }).join("");
+  if(current && !filtered.some(x=>String(x.id)===String(current))){
+    select.value="";
+  }
+}
+
 function applyProductChange(el){
   const item=el.closest(".item"),id=item?.dataset.order,index=Number(item?.dataset.index);
   if(!item||!id||!Number.isInteger(index))return;
@@ -363,6 +383,7 @@ window.sendWA=id=>{
 $("search").oninput=render;$("filter").onchange=render;
 $("list").addEventListener("input",e=>{
   const order=e.target.closest(".order");if(!order)return;
+  if(e.target.classList.contains("product-search"))filterProductSelect(e.target);
   if(e.target.classList.contains("approved")||e.target.classList.contains("price"))recalcOrder(order.dataset.id);
 });
 $("list").addEventListener("change",e=>{
