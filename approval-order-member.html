@@ -37,7 +37,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <div class="card"><div class="title">Klarifikasi Pesanan Member</div>
 <div class="filters">
 <div><label>CARI NOTA / MEMBER / KODE MEMBER</label><input id="search" placeholder="Ketik pencarian..."></div>
-<div><label>STATUS</label><select id="filter"><option value="">Menunggu Approval</option><option value="menunggu_approval">Menunggu Approval</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option></select></div>
+<div><label>STATUS</label><select id="filter"><option value="menunggu_approval">Menunggu Approval</option></select></div>
 <div><label>CATATAN</label><div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Periksa stok aktual. Hanya qty yang disetujui yang dipindahkan ke <b>order_member</b>.</div></div>
 </div></div>
 <div id="list"></div>
@@ -61,26 +61,36 @@ function member(r){return r.member||r.pelanggan||{}}
 function status(r){return String(r.status||"menunggu_approval").toLowerCase()}
 function isCash(r){return String(r.jenisHarga||"").toLowerCase()==="cash"||String(r.tipeTransaksi||"").toLowerCase()==="member_cash"}
 async function load(){
- rows=[];
- if(!ownerUid)return;
- const qs=[
-  query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
- ];
- const map=new Map();
- for(const q of qs){const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if((x.sumber==="member"||x.tipeTransaksi==="member_tempo"||x.tipeTransaksi==="member_cash"||x.jenisTransaksi==="member")&&!map.has(d.id))map.set(d.id,x)})}
- rows=[...map.values()];
- render();
+  rows=[];
+  if(!ownerUid)return;
+  // Hanya ambil pesanan yang BELUM diproses.
+  // approved/rejected tidak pernah di-load kembali ke halaman Approval.
+  const qs=[
+    query(collection(db,"penjualan"),where("ownerUid","==",ownerUid),where("status","==","menunggu_approval")),
+    query(collection(db,"penjualan"),where("ownerId","==",ownerUid),where("status","==","menunggu_approval"))
+  ];
+  const map=new Map();
+  for(const q of qs){
+    const s=await getDocs(q);
+    s.forEach(d=>{
+      const x={id:d.id,...d.data()};
+      if((x.sumber==="member"||x.tipeTransaksi==="member_tempo"||x.tipeTransaksi==="member_cash"||x.jenisTransaksi==="member")&&!map.has(d.id)){
+        map.set(d.id,x);
+      }
+    });
+  }
+  rows=[...map.values()];
+  render();
 }
 function render(){
- const key=$("search").value.trim().toLowerCase(),fs=$("filter").value;
- const list=rows.filter(r=>{
-  const st=status(r),m=member(r);
-  const okStatus=fs?st===fs:st==="menunggu_approval";
-  const text=[r.nomorNota,r.nota,m.nama,m.wa,m.kode].join(" ").toLowerCase();
-  return okStatus&&text.includes(key);
- });
- $("list").innerHTML=list.length?list.map(renderOrder).join(""):'<div class="card empty">Tidak ada pesanan member sesuai filter.</div>';
+  const key=$("search").value.trim().toLowerCase();
+  const list=rows.filter(r=>{
+    const st=status(r),m=member(r);
+    if(st!=="menunggu_approval")return false;
+    const text=[r.nomorNota,r.nota,m.nama,m.wa,m.kode].join(" ").toLowerCase();
+    return text.includes(key);
+  });
+  $("list").innerHTML=list.length?list.map(renderOrder).join(""):'<div class="card empty">Tidak ada pesanan member yang menunggu approval.</div>';
 }
 function renderOrder(r){
  const m=member(r),items=normalizeItems(r),st=status(r),date=r.tanggal||today();
@@ -162,10 +172,10 @@ window.rejectOrder=async id=>{
   await runTransaction(db,async tx=>{const ref=doc(db,"penjualan",id),s=await tx.get(ref);if(!s.exists())throw Error("Pesanan tidak ditemukan.");const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Bukan akun ini.");tx.update(ref,{status:"rejected",approvalStatus:"rejected",alasanApproval:alasan,approvedBy:uid,updatedAt:serverTimestamp()})});
   // Jangan load() ulang. Update data lokal, kirim WA otomatis, lalu hilangkan kartu dari tampilan.
   const updated={...r,status:"rejected",approvalStatus:"rejected",alasanApproval:alasan,approvedBy:uid};
-  const idx=rows.findIndex(x=>x.id===id);if(idx>=0)rows[idx]=updated;
+  const idx=rows.findIndex(x=>x.id===id);if(idx>=0)rows.splice(idx,1);
   sendWAData(updated,"rejected");
   const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);if(card)card.remove();
-  msg("Pesanan ditolak dan WhatsApp member sudah dibuka. Tidak reload data.","ok");
+  msg("Pesanan ditolak dan WhatsApp member sudah dibuka. Pesanan dihapus dari daftar approval.","ok");
  }catch(e){msg("Gagal menolak: "+e.message,"err")}
 };
 function buildMessage(r,items,statusText){
