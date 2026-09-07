@@ -42,6 +42,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 </div></div>
 <div id="list"></div>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -140,10 +141,19 @@ window.approveOrder=async id=>{
    tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:order.items,approvedTotal:total,approvedDp:dp,approvedSisa:sisa,approvedPiutang:sisa,approvedPendapatan:cash?total:0,orderMemberId:orderRef.id,updatedAt:serverTimestamp()});
    return{orderId:orderRef.id,order};
   });
-  msg("Pesanan berhasil disetujui. Mengirim WhatsApp dan membuka Data Tagihan...","ok");
-  // Jangan load() ulang: hasil approval sudah final. Kirim WA lalu pindah halaman.
+  // PDF WAJIB dibuat dan disimpan terlebih dahulu. Tidak ada load() ulang.
+  msg("Approval berhasil. Menyimpan PDF nota terlebih dahulu...","ok");
+  try {
+    await saveApprovalPdf(result.order);
+  } catch (pdfErr) {
+    console.error(pdfErr);
+    msg("Approval sudah tersimpan, tetapi PDF gagal dibuat: " + pdfErr.message, "err");
+    return;
+  }
+  // Urutan final: Firebase → PDF tersimpan → WhatsApp → pindah halaman.
+  msg("PDF sudah disimpan. Membuka WhatsApp...","ok");
   sendWAData(result.order,"approved");
-  setTimeout(()=>{ window.location.href="data-order-member.html"; },350);
+  setTimeout(()=>{ window.location.href="data-order-member.html"; },700);
  }catch(e){console.error(e);msg("Gagal approval: "+e.message,"err")}
 };
 window.rejectOrder=async id=>{
@@ -165,6 +175,59 @@ function buildMessage(r,items,statusText){
  }else{text+=`Pesanan member *${nota}* sudah kami cek.\n\n❌ Mohon maaf, stok yang dipesan belum tersedia / belum mencukupi.\n\n${r.alasanApproval||""}\n\nSilakan konfirmasi kembali kepada kami untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;}
  return text;
 }
+async function saveApprovalPdf(r){
+  if(!window.jspdf || !window.jspdf.jsPDF) throw new Error("Library PDF belum tersedia.");
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({unit:"mm",format:"a4"});
+  const m=member(r), namaToko=profile.namaKonter||profile.namaToko||"FIXZY";
+  const items=Array.isArray(r.items)?r.items:[];
+  let y=18;
+  const line=(text,x=15,w=180)=>{
+    const parts=pdf.splitTextToSize(String(text??""),w);
+    pdf.text(parts,x,y); y += parts.length*5;
+  };
+  pdf.setFontSize(16); pdf.setFont(undefined,"bold");
+  pdf.text("NOTA ORDER MEMBER",15,y); y+=8;
+  pdf.setFontSize(10); pdf.setFont(undefined,"normal");
+  line(namaToko);
+  line("No. Nota: "+(r.nomorNota||r.id));
+  line("Member: "+(m.nama||"-"));
+  line("Kode Member: "+(m.kode||"-"));
+  line("Tanggal: "+(r.tanggal||today()));
+  line("Status: DISETUJUI");
+  y+=3;
+  pdf.setFont(undefined,"bold"); line("PRODUK"); pdf.setFont(undefined,"normal");
+  items.forEach((x,i)=>{
+    const qty=Number(x.qty||0), harga=Number(x.harga||0), total=Number(x.total??harga*qty);
+    line(`${i+1}. ${x.nama||x.kode||"Produk"} | ${qty} pcs x ${rp(harga)} = ${rp(total)}`);
+  });
+  y+=2;
+  pdf.setFont(undefined,"bold"); line("TOTAL: "+rp(r.total));
+  pdf.setFont(undefined,"normal");
+  if(isCash(r)){
+    line("Pembayaran: CASH / TUNAI - LUNAS");
+    line("Tagihan: Rp 0");
+  }else{
+    line("DP: "+rp(r.dp));
+    line("Sisa Tagihan: "+rp(r.sisa));
+    line("Jatuh Tempo: "+(r.jatuhTempo||"-"));
+  }
+  y+=4;
+  line("Tabungan Member: "+rp(r.totalTabunganMember||0));
+  line("UP Pengelola: "+rp(r.totalUPPengelola||0));
+  line("Uang Kas Bulanan: "+rp(r.kasBulanan||0));
+  y+=4;
+  pdf.setFontSize(9);
+  line("PDF dibuat saat Approval dan disimpan sebelum WhatsApp dibuka.");
+  const safeNota=String(r.nomorNota||r.id).replace(/[^a-z0-9_-]+/gi,"_");
+  const blob=pdf.output("blob");
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=`Nota-Order-Member-${safeNota}.pdf`;
+  a.style.display="none"; document.body.appendChild(a); a.click();
+  await new Promise(resolve=>setTimeout(resolve,500));
+  a.remove(); URL.revokeObjectURL(url);
+}
+
 function sendWAData(r,statusText){const m=member(r);const url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(buildMessage(r,r.items||[],statusText))}`;window.open(url,"_blank")}
 window.sendWA=id=>{const r=rows.find(x=>x.id===id);if(r)sendWAData(r,status(r)==="approved"? "approved":"rejected")};
 $("search").oninput=render;$("filter").onchange=render;
