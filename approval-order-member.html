@@ -99,8 +99,8 @@ async function load(){
 
   msg("Memuat data pesanan dan katalog stok...");
 
-  // Katalog harus dimuat sebelum render agar pilihan produk/harga bisa tampil.
-  await loadStockCatalog();
+  // Muat katalog dan pesanan bersamaan agar tidak menunggu berurutan.
+  const catalogPromise=loadStockCatalog();
 
   const qs=[
    query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
@@ -123,9 +123,10 @@ async function load(){
   }
 
   rows=[...map.values()];
+  await catalogPromise;
   render();
 
-  // Setelah order tampil, langsung cek stok dan hitung total.
+  // Hitung tampilan sekaligus; pengecekan stok memakai katalog yang sudah dimuat.
   rows.forEach(r=>{
     checkStock(r.id);
     recalcOrder(r.id);
@@ -147,7 +148,7 @@ function renderOrder(r){
  const itemHtml=items.map((x,i)=>`<div class="item" data-order="${r.id}" data-index="${i}">
  <div class="item-top"><div><div class="item-name">${esc(x.nama)}</div><div class="stockline">Kode: ${esc(x.kode||"-")} • Pesanan: <b>${x.qty}</b> pcs</div></div><div id="stock_${r.id}_${i}" class="stockline">Cek stok...</div></div>
  <div class="item-grid">
-  <div><div class="qty-label">CARI / GANTI PRODUK</div><input class="product-search" type="search" placeholder="Ketik nama / kode produk..."><select class="product-select">${productOptions(x.produkId,r)}</select></div>
+  <div><div class="qty-label">CARI / GANTI PRODUK</div><input class="product-search" type="search" placeholder="Ketik nama / kode produk..."><select class="product-select">${productOptionsCurrent(x.produkId,r)}</select></div>
   <div><div class="qty-label">QTY DISETUJUI</div><input class="approved" type="number" min="0" max="${x.qty}" value="${x.approvedQty||x.qty}"></div>
   <div><div class="qty-label">HARGA/PCS</div><input class="price" type="number" min="0" value="${x.harga||0}"></div>
 </div>
@@ -183,13 +184,23 @@ function recalcOrder(id){
 
 function checkStock(id){
  const r=rows.find(x=>x.id===id);if(!r)return;
- normalizeItems(r).forEach(async(x,i)=>{
-  if(!x.produkId){$(`stock_${id}_${i}`).textContent="Produk manual";return}
-  try{const s=await getDoc(doc(db,"stok",x.produkId));if(!s.exists()){$(`stock_${id}_${i}`).innerHTML='<span class="stock-no">STOK TIDAK ADA</span>';return}
-   const d=s.data()||{},own=String(d.ownerUid||d.ownerId||"");const st=Number(d.sisa??d.stok??0)||0;
-   $(`stock_${id}_${i}`).innerHTML=own===ownerUid?`<span class="${st>=x.qty?"stock-ok":"stock-no"}">Stok: ${st} • ${st>=x.qty?"TERSEDIA":"KURANG"}</span>`:'<span class="stock-no">BUKAN STOK AKUN</span>';
-  }catch(e){$(`stock_${id}_${i}`).textContent="Gagal cek stok"}
+ const byId=new Map(stockCatalog.map(x=>[String(x.id),x]));
+ normalizeItems(r).forEach((x,i)=>{
+  const el=$(`stock_${id}_${i}`);if(!el)return;
+  if(!x.produkId){el.textContent="Produk manual";return}
+  const d=byId.get(String(x.produkId));
+  if(!d){el.innerHTML='<span class="stock-no">STOK TIDAK ADA</span>';return}
+  const own=String(d.ownerUid||d.ownerId||""),st=Number(d.sisa??d.stok??0)||0;
+  el.innerHTML=own===ownerUid?`<span class="${st>=x.qty?"stock-ok":"stock-no"}">Stok: ${st} • ${st>=x.qty?"TERSEDIA":"KURANG"}</span>`:'<span class="stock-no">BUKAN STOK AKUN</span>';
  });
+}
+function productOptionsCurrent(selectedId,r){
+  const id=String(selectedId||"");
+  if(!id)return '<option value="">-- pilih / ganti produk --</option>';
+  const p=stockCatalog.find(x=>String(x.id)===id);
+  if(!p)return '<option value="">Produk saat ini tidak ditemukan</option>';
+  const label=`${stockName(p)}${stockCode(p)?` • ${stockCode(p)}`:""}${stockPrice(p,r)?` • ${rp(stockPrice(p,r))}`:""}`;
+  return `<option value="${esc(id)}" selected>${esc(label)}</option>`;
 }
 function filterProductSelect(input){
   const item=input.closest(".item");if(!item)return;
@@ -198,10 +209,14 @@ function filterProductSelect(input){
   const current=select.value;
   const orderId=item.dataset.order;
   const r=rows.find(x=>x.id===orderId);
-  const list=stockCatalog.filter(x=>String(x.ownerUid||x.ownerId||"")===ownerUid);
-  const filtered=key
-    ? list.filter(x=>`${stockName(x)} ${stockCode(x)} ${stockPrice(x,r)}`.toLowerCase().includes(key))
-    : list;
+  const list=stockCatalog;
+  // Tanpa kata kunci jangan render seluruh katalog ke setiap select.
+  if(!key){
+    select.innerHTML=productOptionsCurrent(current,r);
+    return;
+  }
+  const filtered=list.filter(x=>String(x.ownerUid||x.ownerId||"")===ownerUid)
+    .filter(x=>`${stockName(x)} ${stockCode(x)} ${stockPrice(x,r)}`.toLowerCase().includes(key));
   select.innerHTML=`<option value="">-- pilih / ganti produk --</option>`+
     filtered.map(x=>{
       const id=String(x.id||"");
@@ -240,14 +255,12 @@ window.approveOrder=async id=>{
     return {...x,approvedQty:q,harga};
   }).filter(x=>x.approvedQty>0);
  if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
-  if(approved.some(x=>!x.produkId))return msg("Semua produk yang disetujui harus memiliki produk stok yang valid.","err");
  const ref=doc(db,"penjualan",id);
  try{
   msg("Memeriksa stok dan membuat order member...");
   const result=await runTransaction(db,async tx=>{
    const fresh=await tx.get(ref);if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
-   const freshData=fresh.data()||{};const dataOwner=String(freshData.ownerUid||freshData.ownerId||freshData.businessUid||"").trim();
-    if(dataOwner && dataOwner!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
+   const freshData=fresh.data()||{};if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
    if(String(freshData.status||"")!=="menunggu_approval")throw Error("Pesanan sudah diproses.");
    const stockSnaps=[];
    for(const x of approved){if(!x.produkId)throw Error("Produk manual tidak dapat diproses approval stok.");stockSnaps.push({x,s:await tx.get(doc(db,"stok",x.produkId))})}
