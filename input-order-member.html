@@ -26,7 +26,7 @@ body.dark .modal-close{border-color:#475569}
 <main><div id="notice" class="notice">Menunggu akun...</div>
 <div id="errorModal" class="modal" aria-hidden="true">
   <div class="modal-box" role="dialog" aria-modal="true">
-    <div class="modal-title">⚠️ Pesanan Tidak Bisa Disimpan</div>
+    <div id="modalTitle" class="modal-title">⚠️ Pesanan Tidak Bisa Disimpan</div>
     <div id="errorModalMsg" class="modal-msg"></div>
     <button type="button" class="modal-close" onclick="closeErrorModal()">OK</button>
   </div>
@@ -73,6 +73,8 @@ function nota(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MBR-"+d.g
 function kodeMember(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MEM-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+(Math.floor(Math.random()*9000)+1000)}
 function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
 function showErrorModal(t){
+  $("modalTitle").textContent="⚠️ Pesanan Tidak Bisa Disimpan";
+  $("modalTitle").style.color="#dc2626";
   $("errorModalMsg").textContent=String(t||"Pesanan tidak dapat disimpan.");
   $("errorModal").classList.add("show");
   $("errorModal").setAttribute("aria-hidden","false");
@@ -81,6 +83,14 @@ window.closeErrorModal=()=>{
   $("errorModal").classList.remove("show");
   $("errorModal").setAttribute("aria-hidden","true");
 };
+function showSuccessModal(t){
+  $("modalTitle").textContent="✅ Pesanan Berhasil Disimpan";
+  $("modalTitle").style.color="#15803d";
+  $("errorModalMsg").textContent=String(t||"Pesanan berhasil disimpan dan menunggu approval.");
+  $("errorModal").classList.add("show");
+  $("errorModal").setAttribute("aria-hidden","false");
+}
+
 
 function business(d){
   let r=String(d.role||"").toLowerCase();
@@ -311,8 +321,11 @@ function build(){
 }return{ownerUid:businessUid,uid:businessUid,createdBy:uid,memberUid:uid,memberEmail:auth.currentUser?.email||"",nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{uid,memberUid:uid,email:auth.currentUser?.email||"",kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:jenisHarga==="cash"?c.total:c.dp,uangMuka:jenisHarga==="cash"?c.total:c.dp,sisa:jenisHarga==="cash"?0:c.sisa,sisaBayar:jenisHarga==="cash"?0:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:jenisHarga==="cash"?0:c.sisa,pendapatan:jenisHarga==="cash"?c.total:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
 window.simpan=async()=>{
   if(!ready)return msg("Halaman belum siap.","err");
+  const saveBtn=document.querySelector('button[onclick="simpan()"]');
+  if(saveBtn?.disabled)return;
   try{
     let d=build();
+    if(saveBtn)saveBtn.disabled=true;
     $("save").textContent="Menyimpan...";
     // Simpan order seperti biasa, sekaligus catat Kas & UP ke saldo Owner.
     // Tabungan Member TIDAK disentuh di sini.
@@ -351,8 +364,11 @@ window.simpan=async()=>{
     $("save").textContent="Pesanan menunggu approval.";
     msg("Pesanan tersimpan. Stok BELUM dikurangi. Lanjutkan ke Approval Member.","ok");
     resetForm();
+    showSuccessModal("Pesanan tersimpan dan menunggu Approval Member. Keranjang sudah dikosongkan agar transaksi yang sama tidak terkirim ulang.");
   }catch(e){
     console.error(e);
+    const saveBtn=document.querySelector('button[onclick="simpan()"]');
+    if(saveBtn)saveBtn.disabled=false;
     $("save").textContent="Siap untuk disimpan.";
     showErrorModal(e.message);
   }
