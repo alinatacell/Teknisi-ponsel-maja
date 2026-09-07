@@ -85,20 +85,48 @@ async function loadStockCatalog(){
       s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x)});
     }
     stockCatalog=[...map.values()];
-  }catch(e){console.error("Gagal memuat katalog stok:",e)}
+  }catch(e){console.error("Gagal memuat katalog stok:",e);msg("Gagal memuat katalog stok: "+(e.message||e),"err")}
 }
 async function load(){
- rows=[];
- if(!ownerUid)return;
- const qs=[
-  query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
- ];
- const map=new Map();
- for(const q of qs){const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if((x.sumber==="member"||x.tipeTransaksi==="member_tempo"||x.tipeTransaksi==="member_cash"||x.jenisTransaksi==="member")&&!map.has(d.id))map.set(d.id,x)})}
- rows=[...map.values()];
- render();
+  rows=[];
+  stockCatalog=[];
+  if(!ownerUid)return;
+
+  msg("Memuat data pesanan dan katalog stok...");
+
+  // Katalog harus dimuat sebelum render agar pilihan produk/harga bisa tampil.
+  await loadStockCatalog();
+
+  const qs=[
+   query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
+  ];
+
+  const map=new Map();
+  for(const q of qs){
+    const s=await getDocs(q);
+    s.forEach(d=>{
+      const x={id:d.id,...d.data()};
+      if(
+        (x.sumber==="member" ||
+         x.tipeTransaksi==="member_tempo" ||
+         x.tipeTransaksi==="member_cash" ||
+         x.jenisTransaksi==="member") &&
+        !map.has(d.id)
+      ) map.set(d.id,x);
+    });
+  }
+
+  rows=[...map.values()];
+  render();
+
+  // Setelah order tampil, langsung cek stok dan hitung total.
+  rows.forEach(r=>{
+    checkStock(r.id);
+    recalcOrder(r.id);
+  });
 }
+
 function render(){
  const key=$("search").value.trim().toLowerCase(),fs=$("filter").value;
  const list=rows.filter(r=>{
