@@ -8,12 +8,30 @@ header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:#
 main{max-width:920px;margin:auto;padding:88px 12px 20px}.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-bottom:5px}input,textarea{width:100%;padding:11px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}textarea{min-height:70px}.info{border:2px solid #111827;border-radius:9px;overflow:hidden}.row{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eee;font-size:12px}.row:last-child{border:0}.row span{color:#667085;font-weight:700}.search{position:relative}.results{display:none;position:absolute;z-index:20;left:0;right:0;top:100%;max-height:250px;overflow:auto;background:#fff;border:1px solid #ddd;box-shadow:0 7px 18px #0002}.results.show{display:block}.result{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eee;padding:10px;cursor:pointer}.pname{font-weight:900}.meta{font-size:11px;color:#667085;margin-top:3px}.selected{margin-top:7px;padding:9px;border:1px dashed #16a34a;background:#f0fdf4;border-radius:8px;font-size:12px}.empty{border-color:#d1d5db;background:#f8fafc;color:#667085}.cartbox{border:2px solid #111827;border-radius:10px;overflow:hidden;box-shadow:3px 3px 0 #111827}.cart-empty{padding:14px;text-align:center;font-size:12px;color:#667085}.cart-item{padding:11px;border-bottom:1px solid #e5e7eb}.cart-item:last-child{border-bottom:0}.cart-head{display:flex;justify-content:space-between;gap:8px}.cart-name{font-weight:900;font-size:13px}.cart-meta{font-size:11px;color:#667085;line-height:1.5;margin-top:3px}.cart-remove{border:2px solid #111827;border-radius:7px;background:#fee2e2;color:#b91c1c;font-weight:900;padding:6px 8px;cursor:pointer}.cart-controls{display:flex;gap:7px;align-items:center;margin-top:8px;flex-wrap:wrap}.cart-controls button{border:2px solid #111827;border-radius:7px;background:#e5e7eb;font-weight:900;padding:7px 12px;cursor:pointer}.qtybox{display:flex;align-items:center;gap:5px}.qtybtn{min-width:42px;font-size:18px!important;padding:5px 10px!important}.qtyvalue{min-width:48px;text-align:center;font-weight:900;border:2px solid #111827;border-radius:7px;padding:7px 5px;background:#fff}.stockhint{font-size:10px;color:#64748b;font-weight:800;margin-left:3px}.cart-total{margin-top:7px;text-align:right;font-weight:900}.money{font-size:12px;color:#667085;line-height:1.8}.money b{color:#111827}.tempo{border:2px solid #111827;border-radius:10px;padding:12px;background:#fffbeb}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.quick button{padding:9px;border:2px solid #111827;border-radius:8px;background:#fff;font-weight:900;box-shadow:2px 2px 0 #111827}.quick button.active{background:#ffc107}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.primary{background:#111827;color:#fff}.secondary{background:#e5e7eb}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
 body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .cart-item{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark input,body.dark textarea{background:#0f172a;color:#fff;border-color:#475569}body.dark .results,body.dark .result{background:#111827;color:#fff;border-color:#334155}body.dark .tempo{background:#1c1917;border-color:#475569}body.dark .cartbox{border-color:#475569}body.dark .money{color:#94a3b8}body.dark .money b{color:#fff}.cart-over{background:#fff7ed!important;border-left:4px solid #dc2626}
 body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
+.modal{display:none;position:fixed;inset:0;z-index:10000;background:#0008;align-items:center;justify-content:center;padding:18px}
+.modal.show{display:flex}
+.modal-box{width:min(420px,100%);background:#fff;border:2px solid #111827;border-radius:14px;box-shadow:6px 6px 0 #111827;padding:18px}
+.modal-title{font-size:18px;font-weight:900;margin-bottom:9px;color:#dc2626}
+.modal-msg{font-size:13px;line-height:1.6;color:#374151;margin-bottom:15px}
+.modal-close{width:100%;border:2px solid #111827;border-radius:9px;padding:10px;background:#ffc107;color:#111827;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
+body.dark .modal-box{background:#111827;color:#fff;border-color:#475569}
+body.dark .modal-msg{color:#d1d5db}
+body.dark .modal-close{border-color:#475569}
+
 
 @media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.quick{grid-template-columns:repeat(3,1fr)}}
 </style></head>
 <body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
+<div id="errorModal" class="modal" aria-hidden="true">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <div class="modal-title">⚠️ Pesanan Tidak Bisa Disimpan</div>
+    <div id="errorModalMsg" class="modal-msg"></div>
+    <button type="button" class="modal-close" onclick="closeErrorModal()">OK</button>
+  </div>
+</div>
+
 <div class="card"><div class="title">Informasi Pesanan</div><div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis Transaksi</span><b>TUNAI • TEMPO</b></div></div></div>
 <div class="card"><div class="title">Data Member</div><div class="grid">
 <div><label>NAMA MEMBER *</label><input id="nama" readonly></div>
@@ -54,6 +72,16 @@ today=()=>new Date().toISOString().slice(0,10);
 function nota(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MBR-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+String(d.getMilliseconds()).padStart(3,"0")}
 function kodeMember(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MEM-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+(Math.floor(Math.random()*9000)+1000)}
 function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
+function showErrorModal(t){
+  $("errorModalMsg").textContent=String(t||"Pesanan tidak dapat disimpan.");
+  $("errorModal").classList.add("show");
+  $("errorModal").setAttribute("aria-hidden","false");
+}
+window.closeErrorModal=()=>{
+  $("errorModal").classList.remove("show");
+  $("errorModal").setAttribute("aria-hidden","true");
+};
+
 function business(d){
   let r=String(d.role||"").toLowerCase();
   if(r==="owner"||r==="superadmin")return uid;
@@ -325,8 +353,8 @@ window.simpan=async()=>{
     resetForm();
   }catch(e){
     console.error(e);
-    $("save").textContent="Gagal: "+e.message;
-    msg("Gagal: "+e.message,"err");
+    $("save").textContent="Siap untuk disimpan.";
+    showErrorModal(e.message);
   }
 };
 window.resetForm=()=>{
