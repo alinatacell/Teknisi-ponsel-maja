@@ -45,10 +45,10 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc,increment}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-let uid="",ownerUid="",profile={},role="",rows=[],ready=false;
+let uid="",ownerUid="",profile={},role="",rows=[],stockProducts=[],ready=false;
 const $=id=>document.getElementById(id),rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
 const today=()=>new Date().toISOString().slice(0,10);
@@ -59,9 +59,27 @@ function normalizeItems(r){let a=Array.isArray(r.items)?r.items:Array.isArray(r.
 function member(r){return r.member||r.pelanggan||{}}
 function status(r){return String(r.status||"menunggu_approval").toLowerCase()}
 function isCash(r){return String(r.jenisHarga||"").toLowerCase()==="cash"||String(r.tipeTransaksi||"").toLowerCase()==="member_cash"}
+async function loadStockProducts(){
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId"]){
+  try{const s=await getDocs(query(collection(db,"stok"),where(field,"==",ownerUid)));
+   s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
+  }catch(e){console.warn("Query stok:",e)}
+ }
+ stockProducts=[...map.values()].filter(x=>Number(x.sisa??x.stok??0)>0);
+}
+function productBase(p,cash){return Number(cash?(p.hargaModal??p.modal??0):(p.hargaJual??p.hargaTempo??p.harga??0))||0}
+function memberTabungan(r){return Number(r.tabunganPerPcs??r.tabunganMember??r.member?.tabunganPerPcs??0)||0}
+function ownerUp(r){return Number(r.upPengelolaPerPcs??r.upPengelola??profile.upPengelolaPerPcs??profile.upPengelola??0)||0}
+function productForApproval(x,r){
+ const p=stockProducts.find(p=>p.id===x.produkId);
+ const cash=isCash(r), base=productBase(p||x,cash), tab=Number(x.tabunganPerPcs??r.tabunganPerPcs??r.tabunganMember??0)||0, up=Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??r.upPengelola??0)||0;
+ return {base,tab,up,harga:base+tab+up};
+}
 async function load(){
  rows=[];
  if(!ownerUid)return;
+ await loadStockProducts();
  const qs=[
   query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
   query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
@@ -83,10 +101,17 @@ function render(){
 }
 function renderOrder(r){
  const m=member(r),items=normalizeItems(r),st=status(r),date=r.tanggal||today();
- const itemHtml=items.map((x,i)=>`<div class="item" data-order="${r.id}" data-index="${i}">
- <div class="item-top"><div><div class="item-name">${esc(x.nama)}</div><div class="stockline">Kode: ${esc(x.kode||"-")} • Pesanan: <b>${x.qty}</b> pcs</div></div><div id="stock_${r.id}_${i}" class="stockline">Cek stok...</div></div>
- <div class="item-grid"><div><div class="qty-label">QTY DISETUJUI</div><input class="approved" type="number" min="0" max="${x.qty}" value="${x.approvedQty||x.qty}"></div><div><div class="qty-label">HARGA/PCS</div><input value="${x.harga||0}" readonly></div><div><div class="qty-label">JUMLAH</div><input class="line" value="0" readonly></div></div>
- </div>`).join("");
+ const itemHtml=items.map((x,i)=>{
+  const p=stockProducts.find(p=>p.id===x.produkId), vals=productForApproval(x,r);
+  const options=stockProducts.map(p=>`<option value="${esc(p.id)}" ${p.id===x.produkId?"selected":""}>${esc(p.nama||p.namaProduk||p.kode||p.id)}${p.kode?" • "+esc(p.kode):""} • stok ${Number(p.sisa??p.stok??0)}</option>`).join("");
+  return `<div class="item" data-order="${r.id}" data-index="${i}" data-produk-id="${esc(x.produkId)}">
+ <div class="item-top"><div><div class="item-name" data-name>${esc(x.nama)}</div><div class="stockline">Produk awal: ${esc(x.kode||"-")} • Pesanan: <b>${x.qty}</b> pcs</div></div><div id="stock_${r.id}_${i}" class="stockline">Cek stok...</div></div>
+ <div style="margin-top:8px"><div class="qty-label">PRODUK DISETUJUI / PENGGANTIAN</div><select class="product-select">${options}</select></div>
+ <div class="item-grid"><div><div class="qty-label">QTY DISETUJUI</div><input class="approved" type="number" min="0" max="${x.qty}" value="${x.approvedQty||x.qty}"></div><div><div class="qty-label">HARGA AWAL/PCS</div><input class="base" value="${vals.base}" readonly></div><div><div class="qty-label">HARGA JUAL/PCS</div><input class="harga" value="${vals.harga}" readonly></div></div>
+ <div class="stockline" style="margin-top:7px">Harga awal ${rp(vals.base)} + Tabungan ${rp(vals.tab)} + UP Pengelola ${rp(vals.up)} = <b class="price-total">${rp(vals.harga)}</b></div>
+ <div class="item-grid" style="grid-template-columns:120px 1fr"><div><div class="qty-label">JUMLAH</div><input class="line" value="0" readonly></div><div></div></div>
+ </div>`;
+ }).join("");
  return `<div class="order" data-id="${r.id}">
  <div class="order-head"><div><div class="order-title">${esc(r.nomorNota||r.id)}</div><div style="font-size:11px;color:#64748b;margin-top:3px">${esc(date)} • ${esc(m.nama||"-")} • Kode Member: <b>${esc(m.kode||"-")}</b></div></div><span class="badge ${st}">${esc(st.replaceAll("_"," "))}</span></div>
  <div class="order-body"><div class="meta"><b>WA:</b> ${esc(m.wa||"-")}<br><b>Alamat:</b> ${esc(m.alamat||"-")}<br><b>Pembayaran:</b> ${isCash(r)?"CASH / TUNAI — LUNAS / TANPA TAGIHAN":`TEMPO ${Number(r.tempoHari||0)} hari • Jatuh tempo: ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"-")}`}</div>
@@ -99,11 +124,25 @@ function renderOrder(r){
 }
 function recalcOrder(id){
  const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);if(!card)return;
- const r=rows.find(x=>x.id===id),cash=isCash(r);let total=0,approved=0,items=card.querySelectorAll(".item");
- items.forEach((el,i)=>{const q=Math.max(0,Number(el.querySelector(".approved").value)||0),original=normalizeItems(r)[i],line=q*Number(original.harga||0);el.querySelector(".line").value=line;total+=line;approved+=q});
+ const r=rows.find(x=>x.id===id),cash=isCash(r),original=normalizeItems(r);let total=0,approved=0;
+ card.querySelectorAll(".item").forEach((el,i)=>{
+  const q=Math.max(0,Math.min(original[i].qty,Number(el.querySelector(".approved").value)||0));
+  const h=Number(el.querySelector(".harga").value)||0; const line=q*h;
+  el.querySelector(".line").value=line; total+=line; approved+=q;
+ });
  if(cash){$(`sum_${id}`).innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br><b>💵 CASH / TUNAI — LUNAS</b><br><small>Tidak ada DP, sisa tagihan, piutang, atau jatuh tempo.</small>`;return;}
  const dp=Math.min(Number(r.dp||r.uangMuka||0),total),sisa=Math.max(0,total-dp);
- $(`sum_${id}`).innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br>DP tercatat: <b>${rp(dp)}</b> • Sisa estimasi: <b>${rp(sisa)}</b><br><small>Jika qty disetujui berbeda, total order akan dihitung ulang dari item yang disetujui.</small>`;
+ $(`sum_${id}`).innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br>DP tercatat: <b>${rp(dp)}</b> • Sisa estimasi: <b>${rp(sisa)}</b><br><small>Produk pengganti dan qty yang dipilih menjadi dasar final order.</small>`;
+}
+function syncApprovalItem(el,r,i){
+ const original=normalizeItems(r)[i], pid=el.querySelector(".product-select")?.value||original.produkId;
+ const p=stockProducts.find(p=>p.id===pid); if(!p)return;
+ const base=productBase(p,isCash(r)),tab=Number(original.tabunganPerPcs??r.tabunganPerPcs??r.tabunganMember??0)||0,up=Number(original.upPengelolaPerPcs??r.upPengelolaPerPcs??r.upPengelola??0)||0,harga=base+tab+up;
+ el.dataset.produkId=pid;
+ el.querySelector("[data-name]").textContent=String(p.nama||p.namaProduk||p.kode||pid);
+ el.querySelector(".base").value=base;el.querySelector(".harga").value=harga;el.querySelector(".price-total").textContent=rp(harga);
+ el.querySelector(".stockline").textContent=`Produk dipilih: ${p.kode||"-"} • Pesanan: ${original.qty} pcs`;
+ const st=Number(p.sisa??p.stok??0)||0; const stockEl=el.querySelector(`[id^="stock_"]`); if(stockEl)stockEl.innerHTML=st>=original.qty?`<span class="stock-ok">Stok: ${st} • TERSEDIA</span>`:`<span class="stock-no">Stok: ${st} • KURANG</span>`;
 }
 function checkStock(id){
  const r=rows.find(x=>x.id===id);if(!r)return;
@@ -117,32 +156,39 @@ function checkStock(id){
 }
 window.approveOrder=async id=>{
  const r=rows.find(x=>x.id===id);if(!r)return;
- const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);const original=normalizeItems(r);const approved=original.map((x,i)=>({...x,approvedQty:Math.max(0,Math.min(x.qty,Number(card.querySelectorAll(".item")[i].querySelector(".approved").value)||0))})).filter(x=>x.approvedQty>0);
+ const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);const original=normalizeItems(r);
+ const approved=original.map((x,i)=>{const el=card.querySelectorAll(".item")[i];const q=Math.max(0,Math.min(x.qty,Number(el.querySelector(".approved").value)||0));const pid=el.querySelector(".product-select")?.value||x.produkId;const p=stockProducts.find(p=>p.id===pid);if(!p)throw Error(`Produk ${x.nama} tidak ditemukan.`);const vals={base:productBase(p,isCash(r)),tab:Number(x.tabunganPerPcs??r.tabunganPerPcs??r.tabunganMember??0)||0,up:Number(x.upPengelolaPerPcs??r.upPengelolaPerPcs??r.upPengelola??0)||0};return {...x,produkId:pid,nama:String(p.nama||p.namaProduk||p.kode||pid),kode:String(p.kode||x.kode||""),approvedQty:q,harga:vals.base+vals.tab+vals.up,hargaDasar:vals.base,tabunganPerPcs:vals.tab,upPengelolaPerPcs:vals.up,modalSatuan:Number(p.hargaModal??p.modal??x.modalSatuan??0)||0};}).filter(x=>x.approvedQty>0);
  if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
  const ref=doc(db,"penjualan",id);
  try{
-  msg("Memeriksa stok dan membuat order member...");
+  msg("Memeriksa stok, harga, kas, UP pengelola, dan membuat order member...");
   const result=await runTransaction(db,async tx=>{
    const fresh=await tx.get(ref);if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
    const freshData=fresh.data()||{};if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
    if(String(freshData.status||"")!=="menunggu_approval")throw Error("Pesanan sudah diproses.");
-   const stockSnaps=[];
-   for(const x of approved){if(!x.produkId)throw Error("Produk manual tidak dapat diproses approval stok.");stockSnaps.push({x,s:await tx.get(doc(db,"stok",x.produkId))})}
-   const changes=[];
-   for(const z of stockSnaps){if(!z.s.exists())throw Error(`Stok ${z.x.nama} tidak ditemukan.`);const d=z.s.data()||{},own=String(d.ownerUid||d.ownerId||"");if(own!==ownerUid)throw Error(`Stok ${z.x.nama} bukan milik akun ini.`);const old=Number(d.sisa??d.stok??0)||0;if(old<z.x.approvedQty)throw Error(`Stok ${z.x.nama} hanya ${old}, disetujui ${z.x.approvedQty}.`);changes.push({ref:doc(db,"stok",z.x.produkId),old,baru:old-z.x.approvedQty})}
-   for(const c of changes)tx.update(c.ref,{sisa:c.baru,stok:c.baru,status:c.baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});
-   const total=approved.reduce((a,x)=>a+(x.harga*x.approvedQty-Math.min(x.diskon,x.harga*x.approvedQty)),0);
-   const cash=String(freshData.jenisHarga||"").toLowerCase()==="cash"||String(freshData.tipeTransaksi||"").toLowerCase()==="member_cash";
-   const dp=cash?total:Math.min(Number(freshData.dp||freshData.uangMuka||0),total),sisa=cash?0:Math.max(0,total-dp);
+   const byProduct=new Map();
+   for(const x of approved){const sref=doc(db,"stok",x.produkId);const s=await tx.get(sref);if(!s.exists())throw Error(`Stok ${x.nama} tidak ditemukan.`);const d=s.data()||{},own=String(d.ownerUid||d.ownerId||"");if(own!==ownerUid)throw Error(`Stok ${x.nama} bukan milik akun ini.`);const old=Number(d.sisa??d.stok??0)||0;const prev=byProduct.get(x.produkId);byProduct.set(x.produkId,{ref:sref,d,old,qty:(prev?.qty||0)+x.approvedQty,nama:x.nama});}
+   for(const z of byProduct.values()){if(z.old<z.qty)throw Error(`Stok ${z.nama} hanya ${z.old}, disetujui ${z.qty}.`);const baru=z.old-z.qty;tx.update(z.ref,{sisa:baru,stok:baru,status:baru>0?"tersedia":"kosong",updatedAt:serverTimestamp()});}
+   const total=approved.reduce((a,x)=>a+(x.harga*x.approvedQty),0);
+   const totalUp=approved.reduce((a,x)=>a+x.approvedQty*x.upPengelolaPerPcs,0);
+   const cash=isCash(freshData),dp=cash?total:Math.min(Number(freshData.dp||freshData.uangMuka||0),total),sisa=cash?0:Math.max(0,total-dp);
+   const memberUid=String(freshData.memberUid||freshData.member?.uid||freshData.member?.userId||freshData.createdBy||"");
+   const kasNominal=Number(freshData.kasBulanan??freshData.uangKasBulanan??0)||0;
    const orderRef=doc(collection(db,"order_member"));
-   const order={ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,nomorNota:freshData.nomorNota||id,tipeOrder:cash?"member_cash":"member_tempo",status:"order_member",member:freshData.member||freshData.pelanggan||{},items:approved.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.approvedQty,harga:x.harga,hargaDasar:x.hargaDasar??0,hargaTempo:x.hargaTempo??0,hargaCash:x.hargaCash??0,hargaJual:x.harga,tabunganPerPcs:Number(x.tabunganPerPcs??freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,upPengelolaPerPcs:Number(x.upPengelolaPerPcs??freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0,diskon:Math.min(x.diskon,x.harga*x.approvedQty),modalSatuan:x.modalSatuan||0,total:x.harga*x.approvedQty-Math.min(x.diskon,x.harga*x.approvedQty)})),subtotal:total,diskon:approved.reduce((a,x)=>a+Math.min(x.diskon,x.harga*x.approvedQty),0),total,totalBayar:total,dp:cash?total:dp,uangMuka:cash?total:dp,sisa:cash?0:sisa,sisaBayar:cash?0:sisa,piutang:cash?0:sisa,pendapatan:cash?total:dp,tabunganPerPcs:Number(freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,upPengelolaPerPcs:Number(freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0,kasBulanan:Number(freshData.kasBulanan??freshData.uangKasBulanan??0)||0,totalTabunganMember:approved.reduce((a,x)=>a+x.approvedQty*(Number(x.tabunganPerPcs??freshData.tabunganPerPcs??freshData.tabunganMember??0)||0),0),totalUPPengelola:approved.reduce((a,x)=>a+x.approvedQty*(Number(x.upPengelolaPerPcs??freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0),0),jenisHarga:cash?"cash":"tempo",tempoHari:cash?0:Number(freshData.tempoHari||0),jatuhTempo:cash?"":(freshData.jatuhTempo||freshData.tanggalJatuhTempo||""),approvedAt:serverTimestamp(),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),stokDikurangi:true};
+   const items=approved.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.approvedQty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:Number(x.hargaTempo??0)||0,hargaCash:Number(x.hargaCash??x.modalSatuan??0)||0,hargaJual:x.harga,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,diskon:0,modalSatuan:x.modalSatuan,total:x.harga*x.approvedQty}));
+   const order={ownerUid,uid:ownerUid,createdBy:uid,memberUid,memberEmail:freshData.memberEmail||freshData.member?.email||"",sourcePenjualanId:id,nomorNota:freshData.nomorNota||id,tanggal:freshData.tanggal||today(),tipeOrder:cash?"member_cash":"member_tempo",status:"order_member",approvalStatus:"approved",member:freshData.member||freshData.pelanggan||{},items,produkList:items.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),subtotal:total,diskon:0,total,totalBayar:total,dp:cash?total:dp,uangMuka:cash?total:dp,sisa:cash?0:sisa,sisaBayar:cash?0:sisa,piutang:cash?0:sisa,pendapatan:cash?total:dp,tabunganPerPcs:Number(freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,upPengelolaPerPcs:Number(freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0,kasBulanan:kasNominal,totalTabunganMember:approved.reduce((a,x)=>a+x.approvedQty*x.tabunganPerPcs,0),totalUPPengelola:totalUp,jenisHarga:cash?"cash":"tempo",tempoHari:cash?0:Number(freshData.tempoHari||0),jatuhTempo:cash?"":(freshData.jatuhTempo||freshData.tanggalJatuhTempo||""),approvedAt:serverTimestamp(),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),stokDikurangi:true};
    tx.set(orderRef,order);
-   tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:order.items,approvedTotal:total,approvedDp:dp,approvedSisa:sisa,approvedPiutang:sisa,approvedPendapatan:cash?total:0,orderMemberId:orderRef.id,updatedAt:serverTimestamp()});
+   // UP dan kas baru masuk setelah approval. Input-order-member tidak lagi mengubah saldo.
+   const saldoRef=doc(db,"saldo_owner",ownerUid);
+   if(totalUp)tx.set(saldoRef,{saldoPengelola:increment(totalUp),updatedAt:serverTimestamp()},{merge:true});
+   if(kasNominal && memberUid){
+    const bulan=String(freshData.tanggal||today()).slice(0,7),kasRef=doc(db,"saldo_owner_kas_bulanan",ownerUid+"_"+memberUid+"_"+bulan),ks=await tx.get(kasRef);
+    if(!ks.exists()){tx.set(kasRef,{ownerUid,memberUid,bulan,nominal:kasNominal,sumber:"approval-order-member",createdAt:serverTimestamp()});tx.set(saldoRef,{saldoKas:increment(kasNominal),updatedAt:serverTimestamp()},{merge:true});}
+   }
+   tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:items,approvedTotal:total,approvedDp:dp,approvedSisa:sisa,approvedPiutang:sisa,approvedPendapatan:cash?total:dp,orderMemberId:orderRef.id,updatedAt:serverTimestamp()});
    return{orderId:orderRef.id,order};
   });
-  msg("Stok sesuai pesanan yang disetujui sudah masuk Data Order Member.","ok");
-  await load();
-  sendWAData(result.order,"approved");
+  msg("Approval selesai. Produk, harga, UP Pengelola, kas, dan order sudah dicatat.","ok");await load();sendWAData(result.order,"approved");
  }catch(e){console.error(e);msg("Gagal approval: "+e.message,"err")}
 };
 window.rejectOrder=async id=>{
