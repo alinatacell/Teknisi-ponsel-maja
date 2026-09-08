@@ -128,10 +128,10 @@ async function load(){
 }
 
 function render(){
- const key=$("search").value.trim().toLowerCase(),fs=$("filter").value;
+ const key=$("search").value.trim().toLowerCase();
  const list=rows.filter(r=>{
   const st=status(r),m=member(r);
-  const okStatus=fs?st===fs:st==="menunggu_approval";
+  const okStatus=st==="menunggu_approval";
   const text=[r.nomorNota,r.nota,m.nama,m.wa,m.kode].join(" ").toLowerCase();
   return okStatus&&text.includes(key);
  });
@@ -391,48 +391,7 @@ $("list").addEventListener("change",e=>{
   if(e.target.classList.contains("product-select"))applyProductChange(e.target);
 });
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
-let authReady=false;
-let authTimer=null;
-
-async function openForUser(u){
-  if(!u)return;
-  try{
-    uid=u.uid;
-    const s=await getDoc(doc(db,"users",uid));
-    if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-    profile=s.data()||{};
-    role=String(profile.role||"").toLowerCase().trim();
-    ownerUid=getOwner(profile);
-    $("email").textContent=u.email||"-";
-    ready=true;
-    authReady=true;
-    await load();
-    msg("Akun aktif • produk, harga, dan qty dapat diedit sebelum approval.","ok");
-  }catch(e){
-    console.error(e);
-    msg(e.message,"err");
-  }
-}
-
-onAuthStateChanged(auth,async u=>{
-  if(u){
-    if(authTimer){clearTimeout(authTimer);authTimer=null}
-    await openForUser(u);
-    return;
-  }
-
-  // Jangan langsung menganggap logout. Firebase dapat membutuhkan waktu
-  // untuk memulihkan sesi yang dibuat di index/login.
-  if(authReady)return;
-  msg("Memulihkan sesi login FIXZY...");
-
-  if(authTimer)clearTimeout(authTimer);
-  authTimer=setTimeout(()=>{
-    if(!auth.currentUser && !authReady){
-      msg("Sesi login FIXZY tidak ditemukan. Silakan kembali ke halaman utama.","err");
-    }
-  },3000);
-});
+onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};role=String(profile.role||"").toLowerCase();ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;await load();msg("Akun aktif • produk, harga, dan qty dapat diedit sebelum approval.","ok")}catch(e){console.error(e);msg(e.message,"err")}});
 </script>
 </body>
 </html>
