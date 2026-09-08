@@ -53,7 +53,14 @@ const $=id=>document.getElementById(id),rp=n=>"Rp "+(Number(n)||0).toLocaleStrin
 const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
 const today=()=>new Date().toISOString().slice(0,10);
 function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
-function getOwner(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid}
+function getOwner(d){
+  const r=String(d.role||"").toLowerCase().trim();
+  // OWNER WAJIB memakai UID akunnya sendiri sebagai ownerUid.
+  // Jangan bergantung pada ownerUid/ownerId di dokumen users.
+  if(r==="owner") return uid;
+  if(r==="superadmin") return uid;
+  return String(d.ownerUid||d.ownerId||"").trim() || uid;
+}
 function itemName(x){return String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-")}
 function stockName(x){return String(x.nama||x.namaProduk||x.namaBarang||x.kode||x.kodeProduk||"-")}
 function stockCode(x){return String(x.kode||x.kodeProduk||x.kodeBarang||"")}
@@ -409,7 +416,14 @@ onAuthStateChanged(auth,async u=>{
     const s=await getDoc(doc(db,"users",uid));
     if(!s.exists())throw Error("Profil akun tidak ditemukan.");
     profile=s.data()||{};
-    role=String(profile.role||"").toLowerCase();
+    role=String(profile.role||"").toLowerCase().trim();
+
+    // OWNER dan SUPERADMIN boleh membuka halaman ini.
+    // Karyawan/member tetap diarahkan ke owner masing-masing melalui ownerUid.
+    if(!["owner","superadmin","admin","karyawan","teknisi"].includes(role)){
+      throw Error("Akses halaman tidak diizinkan untuk role: "+(role||"tidak diketahui"));
+    }
+
     ownerUid=getOwner(profile);
     $("email").textContent=u.email||"-";
     ready=true;
