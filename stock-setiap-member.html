@@ -846,7 +846,7 @@ function refreshHalaman(){const b=document.getElementById("refreshBtn");if(b){b.
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,or,serverTimestamp,getDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,serverTimestamp,getDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -986,36 +986,26 @@ function calculateSold(p){
 }
 function attachSalesListeners(){
   salesUnsubs.forEach(u=>{try{u()}catch(e){}});salesUnsubs=[];sales=[];manualSalesFallback=false;
-  const owner=activeOwnerUid();
-  if(!owner)return;
-
-  // Satu listener per koleksi. Tiga field owner digabung dengan OR,
-  // sehingga tidak perlu membuat 3 listener untuk koleksi yang sama.
-  const collectionSales=new Map();
-
-  for(const name of SALES_COLLECTIONS){
+  const refNames=SALES_COLLECTIONS;
+  const seen=new Map();
+  for(const name of refNames){
     const ref=collection(db,name);
-    const qOwner=query(ref,or(
-      where("ownerUid","==",owner),
-      where("ownerId","==",owner),
-      where("uid","==",owner)
-    ));
-
-    try{
-      salesUnsubs.push(onSnapshot(qOwner,snap=>{
-        const rows=new Map();
-        snap.docs.forEach(d=>{
-          rows.set(d.id,{id:d.id,_collection:name,...d.data()});
-        });
-        collectionSales.set(name,rows);
-
-        sales=[...collectionSales.values()]
-          .flatMap(m=>[...m.values()])
-          .filter(s=>saleOwnerMatch(s));
-
-        updateStockStats();
-      },e=>console.warn("Koleksi transaksi "+name+" tidak tersedia/tidak bisa dibaca:",e)));
-    }catch(e){console.warn(e)}
+    const owner=activeOwnerUid();
+    if(!owner)continue;
+    // Jangan baca seluruh transaksi untuk superadmin.
+    const qs=[
+      query(ref,where("ownerUid","==",owner)),
+      query(ref,where("ownerId","==",owner)),
+      query(ref,where("uid","==",owner))
+    ];
+    for(const q of qs){
+      try{
+        salesUnsubs.push(onSnapshot(q,snap=>{
+          snap.docs.forEach(d=>seen.set(name+"/"+d.id,{id:d.id,_collection:name,...d.data()}));
+          sales=[...seen.values()].filter(s=>saleOwnerMatch(s));updateStockStats();
+        },e=>console.warn("Koleksi transaksi "+name+" tidak tersedia/tidak bisa dibaca:",e)));
+      }catch(e){console.warn(e)}
+    }
   }
 }
 function updateStockStats(){
