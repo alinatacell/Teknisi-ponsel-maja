@@ -418,6 +418,81 @@ html,body{overflow-x:hidden}
   }
 }
 </style>
+
+<style id="header-cart-fixed-patch">
+/* =========================================================
+   HEADER + KERANJANG TETAP — BAGIAN LAIN TETAP SCROLL
+   ========================================================= */
+:root{
+  --fixzy-header-h:68px;
+}
+
+/* Header FIXZY benar-benar tetap di atas layar */
+.header{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  z-index:100 !important;
+}
+
+/* Beri ruang agar konten tidak tertutup header fixed */
+.container{
+  padding-top:calc(var(--fixzy-header-h) + 10px) !important;
+}
+
+/* Keranjang tetap terlihat tepat di bawah header */
+.member-cart-bar{
+  position:sticky !important;
+  top:var(--fixzy-header-h) !important;
+  z-index:90 !important;
+  margin-top:0 !important;
+}
+
+/* Pastikan area konten di bawah keranjang tetap menjadi area scroll */
+@media(max-width:600px){
+  .container{
+    padding-top:calc(var(--fixzy-header-h) + 10px) !important;
+  }
+}
+</style>
+<script>
+/* Mengikuti tinggi header secara otomatis agar posisi keranjang
+   selalu tepat di bawah header, termasuk saat ukuran layar berubah. */
+(function(){
+  function syncFixzyHeaderHeight(){
+    const h=document.querySelector(".header");
+    if(!h)return;
+    const px=Math.ceil(h.getBoundingClientRect().height);
+    document.documentElement.style.setProperty("--fixzy-header-h",px+"px");
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",syncFixzyHeaderHeight,{once:true});
+  }else{
+    syncFixzyHeaderHeight();
+  }
+
+  window.addEventListener("resize",syncFixzyHeaderHeight,{passive:true});
+
+  if(window.ResizeObserver){
+    const start=()=>{
+      const h=document.querySelector(".header");
+      if(h){
+        new ResizeObserver(syncFixzyHeaderHeight).observe(h);
+        syncFixzyHeaderHeight();
+      }
+    };
+    if(document.readyState==="loading"){
+      document.addEventListener("DOMContentLoaded",start,{once:true});
+    }else{
+      start();
+    }
+  }
+})();
+</script>
+
 </head>
 <body><script>
 /* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
