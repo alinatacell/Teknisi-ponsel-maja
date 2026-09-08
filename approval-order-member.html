@@ -44,7 +44,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 </main>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc,increment}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
@@ -393,7 +393,34 @@ $("list").addEventListener("change",e=>{
   if(e.target.classList.contains("product-select"))applyProductChange(e.target);
 });
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
-onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};role=String(profile.role||"").toLowerCase();ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;await load();msg("Akun aktif • produk, harga, dan qty dapat diedit sebelum approval.","ok")}catch(e){console.error(e);msg(e.message,"err")}});
+(async()=>{try{
+  // Pakai sesi Firebase yang sudah dibuat di index/login. Halaman ini tidak punya login sendiri.
+  await setPersistence(auth,browserLocalPersistence);
+}catch(e){console.warn("Persistence auth:",e)}
+onAuthStateChanged(auth,async u=>{
+  if(!u){
+    // Jangan tampilkan halaman login di sini. Kembalikan ke pintu masuk aplikasi.
+    msg("Mengambil sesi login FIXZY...");
+    setTimeout(()=>{location.href="index.html";},350);
+    return;
+  }
+  try{
+    uid=u.uid;
+    const s=await getDoc(doc(db,"users",uid));
+    if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+    profile=s.data()||{};
+    role=String(profile.role||"").toLowerCase();
+    ownerUid=getOwner(profile);
+    $("email").textContent=u.email||"-";
+    ready=true;
+    await load();
+    msg("Akun aktif • produk, harga, dan qty dapat diedit sebelum approval.","ok");
+  }catch(e){
+    console.error(e);
+    msg(e.message,"err");
+  }
+});
+})();
 </script>
 </body>
 </html>
