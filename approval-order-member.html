@@ -37,7 +37,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <div class="card"><div class="title">Klarifikasi Pesanan Member</div>
 <div class="filters">
 <div><label>CARI NOTA / MEMBER / KODE MEMBER</label><input id="search" placeholder="Ketik pencarian..."></div>
-<div><label>STATUS</label><select id="filter"><option value="menunggu_approval">Menunggu Approval</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option></select></div>
+<div><label>STATUS</label><div style="font-size:11px;font-weight:900;color:#15803d;padding:11px 0">Menunggu Approval</div></div>
 <div><label>CATATAN</label><div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Periksa stok aktual. Hanya qty yang disetujui yang dipindahkan ke <b>order_member</b>.</div></div>
 </div></div>
 <div id="list"></div>
@@ -98,8 +98,8 @@ async function load(){
   await loadStockCatalog();
 
   const qs=[
-   query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
-   query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
+   query(collection(db,"penjualan"),where("ownerUid","==",ownerUid),where("status","==","menunggu_approval")),
+   query(collection(db,"penjualan"),where("ownerId","==",ownerUid),where("status","==","menunggu_approval"))
   ];
 
   const map=new Map();
@@ -380,7 +380,7 @@ window.sendWA=id=>{
 
  sendWAData(r,st==="approved"?"approved":"rejected");
 };
-$("search").oninput=render;$("filter").onchange=render;
+$("search").oninput=render;
 $("list").addEventListener("input",e=>{
   const order=e.target.closest(".order");if(!order)return;
   if(e.target.classList.contains("product-search"))filterProductSelect(e.target);
