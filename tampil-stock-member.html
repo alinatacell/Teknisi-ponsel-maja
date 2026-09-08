@@ -400,6 +400,24 @@ html,body{overflow-x:hidden}
 }
 </style>
 
+
+<style id="cart-top-only">
+/* KERANJANG: selalu berada paling atas di bawah header; bagian lain tetap bisa di-scroll. */
+.member-cart-bar{
+  position:sticky;
+  top:0;
+  z-index:15;
+  margin-top:0;
+  margin-bottom:14px;
+  background:#fffbeb;
+}
+@media(max-width:600px){
+  .member-cart-bar{
+    border-radius:12px;
+    padding:10px;
+  }
+}
+</style>
 </head>
 <body><script>
 /* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
@@ -445,6 +463,14 @@ function tutupHalaman(){
 </header>
 
 <main class="container">
+  <div class="member-cart-bar">
+    <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
+    <div class="member-cart-actions">
+      <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
+      <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
+    </div>
+  </div>
+
   <div class="top">
     <button class="btn primary" onclick="openManual()">＋ Tambah Stok Manual</button>
     <button class="btn dark" onclick="document.getElementById('csvUrl').focus()">🔗 Link Google Sheet</button>
@@ -499,14 +525,6 @@ function tutupHalaman(){
       </div>
     </div>
   </section>
-
-  <div class="member-cart-bar">
-    <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
-    <div class="member-cart-actions">
-      <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
-      <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
-    </div>
-  </div>
 
   <section class="card">
     <div class="title">🔎 Cari Stok</div>
