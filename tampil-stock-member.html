@@ -401,95 +401,96 @@ html,body{overflow-x:hidden}
 </style>
 
 
-<style id="cart-top-only">
-/* KERANJANG: selalu berada paling atas di bawah header; bagian lain tetap bisa di-scroll. */
-.member-cart-bar{
-  position:sticky;
-  top:0;
-  z-index:15;
-  margin-top:0;
-  margin-bottom:14px;
-  background:#fffbeb;
-}
-@media(max-width:600px){
-  .member-cart-bar{
-    border-radius:12px;
-    padding:10px;
-  }
-}
-</style>
-
-<style id="header-cart-fixed-patch">
+<style id="cart-header-fixed-final">
 /* =========================================================
-   HEADER + KERANJANG TETAP — BAGIAN LAIN TETAP SCROLL
+   FIXZY — HEADER + KERANJANG BENAR-BENAR TETAP
+   Header dan keranjang tidak ikut scroll.
+   Semua isi di bawahnya tetap menjadi area scroll.
    ========================================================= */
 :root{
   --fixzy-header-h:68px;
+  --fixzy-cart-h:0px;
 }
 
-/* Header FIXZY benar-benar tetap di atas layar */
+/* Header FIXZY tetap di viewport */
 .header{
   position:fixed !important;
   top:0 !important;
   left:0 !important;
   right:0 !important;
   width:100% !important;
-  z-index:100 !important;
+  z-index:1000 !important;
 }
 
-/* Beri ruang agar konten tidak tertutup header fixed */
-.container{
-  padding-top:calc(var(--fixzy-header-h) + 10px) !important;
-}
-
-/* Keranjang tetap terlihat tepat di bawah header */
+/* Keranjang juga FIXED — bukan sticky */
 .member-cart-bar{
-  position:sticky !important;
+  position:fixed !important;
   top:var(--fixzy-header-h) !important;
-  z-index:90 !important;
-  margin-top:0 !important;
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:min(1180px,calc(100% - 20px)) !important;
+  z-index:999 !important;
+  margin:0 !important;
+  background:#fffbeb !important;
+  box-shadow:0 5px 18px #17203322 !important;
 }
 
-/* Pastikan area konten di bawah keranjang tetap menjadi area scroll */
+/* Konten dimulai setelah header + keranjang,
+   sehingga tidak tertutup keduanya. */
+.container{
+  padding-top:calc(var(--fixzy-header-h) + var(--fixzy-cart-h) + 24px) !important;
+}
+
 @media(max-width:600px){
+  .member-cart-bar{
+    width:calc(100% - 20px) !important;
+    border-radius:12px !important;
+    padding:10px !important;
+  }
+
   .container{
-    padding-top:calc(var(--fixzy-header-h) + 10px) !important;
+    padding-top:calc(var(--fixzy-header-h) + var(--fixzy-cart-h) + 20px) !important;
   }
 }
 </style>
 <script>
-/* Mengikuti tinggi header secara otomatis agar posisi keranjang
-   selalu tepat di bawah header, termasuk saat ukuran layar berubah. */
+/* Hitung tinggi header + keranjang secara otomatis.
+   Ini penting karena tinggi keranjang berubah saat HP kecil/besar. */
 (function(){
-  function syncFixzyHeaderHeight(){
-    const h=document.querySelector(".header");
-    if(!h)return;
-    const px=Math.ceil(h.getBoundingClientRect().height);
-    document.documentElement.style.setProperty("--fixzy-header-h",px+"px");
-  }
+  function syncFixzyFixedBars(){
+    const header=document.querySelector('.header');
+    const cart=document.querySelector('.member-cart-bar');
+    const root=document.documentElement;
 
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",syncFixzyHeaderHeight,{once:true});
-  }else{
-    syncFixzyHeaderHeight();
-  }
+    if(header){
+      const hh=Math.ceil(header.getBoundingClientRect().height);
+      root.style.setProperty('--fixzy-header-h',hh+'px');
+    }
 
-  window.addEventListener("resize",syncFixzyHeaderHeight,{passive:true});
-
-  if(window.ResizeObserver){
-    const start=()=>{
-      const h=document.querySelector(".header");
-      if(h){
-        new ResizeObserver(syncFixzyHeaderHeight).observe(h);
-        syncFixzyHeaderHeight();
-      }
-    };
-    if(document.readyState==="loading"){
-      document.addEventListener("DOMContentLoaded",start,{once:true});
-    }else{
-      start();
+    if(cart){
+      const ch=Math.ceil(cart.getBoundingClientRect().height);
+      root.style.setProperty('--fixzy-cart-h',ch+'px');
     }
   }
+
+  function start(){
+    syncFixzyFixedBars();
+    const header=document.querySelector('.header');
+    const cart=document.querySelector('.member-cart-bar');
+    if(window.ResizeObserver){
+      const ro=new ResizeObserver(syncFixzyFixedBars);
+      if(header)ro.observe(header);
+      if(cart)ro.observe(cart);
+    }
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',start,{once:true});
+  }else{
+    start();
+  }
+  window.addEventListener('resize',syncFixzyFixedBars,{passive:true});
 })();
 </script>
 
