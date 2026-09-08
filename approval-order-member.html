@@ -401,8 +401,12 @@ $("list").addEventListener("change",e=>{
 });
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 (async()=>{try{
-  // Pakai sesi Firebase yang sudah dibuat di index/login. Halaman ini tidak punya login sendiri.
-  await setPersistence(auth,browserLocalPersistence);
+  // Gunakan sesi Firebase yang sudah dibuat oleh index/login.
+  // JANGAN mengubah persistence di halaman ini karena perubahan persistence
+  // dapat memutus/mereset sesi yang sedang aktif pada sebagian alur login.
+  if(auth.currentUser){
+    console.log("Sesi Firebase aktif:",auth.currentUser.uid);
+  }
 }catch(e){console.warn("Persistence auth:",e)}
 onAuthStateChanged(auth,async u=>{
   if(!u){
