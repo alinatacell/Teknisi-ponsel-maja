@@ -221,9 +221,25 @@ function renderRekap(){
  const rows=data.map(r=>{
   const items=itemList(r);
 
-  // HARGA AWAL / NILAI BARANG
+  // NILAI BARANG = HARGA DASAR BARANG SAJA
+  // Tidak termasuk UP Pengelola, Tabungan Member, maupun Kas Bulanan.
   const q=items.reduce((a,x)=>a+x.qty,0);
-  const value=items.reduce((a,x)=>a+x.total,0);
+  const value=items.reduce((a,x)=>{
+    const hargaDasar=Math.max(
+      0,
+      Number(
+        x.hargaDasar??
+        x.hargaBeli??
+        x.hargaModal??
+        x.harga??
+        x.hargaJual??
+        x.hargaSatuan??
+        x.price??
+        0
+      )||0
+    );
+    return a+(hargaDasar*x.qty);
+  },0);
 
   const cash=isCashOrder(r);
   const p=r._paymentSource||{};
