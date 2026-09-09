@@ -284,6 +284,9 @@ function renderRekap(){
   const totalTagihanAwal=value+upRow+tabRow+kasRow;
   const paid=calc.paid;
   const sisa=cash?0:Math.max(0,totalTagihanAwal-paid);
+  // Total Sisa Tagihan harus merupakan penjumlahan seluruh baris yang tampil.
+  sisaTotal+=sisa;
+  qty+=q; nilai+=value; up+=upRow; tabungan+=tabRow; kas+=kasRow;
 
   const m=r.member||r.pelanggan||{};
   const due=dueDate(r);
