@@ -12,11 +12,17 @@ body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
 header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}
 .head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
 .logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
-.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
-.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
-.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+.hi{min-width:0;flex:1}
+.hi h1{margin:0;font-size:18px;font-weight:900}
+.email{font-size:11px;color:#9ca3af;font-weight:700}
+.acts{display:flex;gap:8px}
+.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
+.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}
+.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
 main{max-width:1100px;margin:auto;padding:88px 12px 24px}
-.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}
+.ok{color:#15803d}
+.err{color:#dc2626}
 .card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
 .title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
 .filters{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px}
@@ -24,7 +30,8 @@ label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5
 input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
 .order{border:2px solid #111827;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff;box-shadow:4px 4px 0 #111827}
 .order-head{padding:12px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.order-title{font-weight:900;font-size:15px}.order-sub{font-size:11px;color:#64748b;margin-top:4px}
+.order-title{font-weight:900;font-size:15px}
+.order-sub{font-size:11px;color:#64748b;margin-top:4px}
 .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
 .badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
 .badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
@@ -33,39 +40,69 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .due-overdue{border-color:#dc2626;background:#fee2e2;color:#991b1b}
 .due-ok{border-color:#22c55e;background:#f0fdf4;color:#166534}
 .order-body{padding:12px}
-.meta{font-size:12px;line-height:1.75}.meta b{color:#111827}
+.meta{font-size:12px;line-height:1.75}
+.meta b{color:#111827}
 .items{margin-top:10px;border:2px solid #111827;border-radius:9px;overflow:hidden}
 .item{padding:9px 10px;border-bottom:1px solid #e5e7eb;display:grid;grid-template-columns:1fr auto;gap:10px}
-.item:last-child{border-bottom:0}.item-name{font-weight:900}.item-meta{font-size:11px;color:#64748b;margin-top:3px}
+.item:last-child{border-bottom:0}
+.item-name{font-weight:900}
+.item-meta{font-size:11px;color:#64748b;margin-top:3px}
 .money{margin-top:10px;border:2px solid #111827;border-radius:9px;padding:10px;background:#fffbeb;font-size:12px;line-height:1.9}
-.money-row{display:flex;justify-content:space-between;gap:10px}.money-row.total{border-top:2px solid #111827;margin-top:5px;padding-top:6px;font-size:14px;font-weight:900}
-.money-row.sisa{font-weight:900;color:#b45309}.money-row.lunas{color:#15803d}
+.money-row{display:flex;justify-content:space-between;gap:10px}
+.money-row.total{border-top:2px solid #111827;margin-top:5px;padding-top:6px;font-size:14px;font-weight:900}
+.money-row.sisa{font-weight:900;color:#b45309}
+.money-row.lunas{color:#15803d}
 .paybox{margin-top:10px;padding:10px;border:2px dashed #64748b;border-radius:9px;background:#f8fafc}
 .paygrid{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
-.primary{background:#111827;color:#fff}.green{background:#16a34a;color:#fff}.wa{background:#22c55e;color:#fff}.secondary{background:#e5e7eb;color:#111827}
+.primary{background:#111827;color:#fff}
+.green{background:#16a34a;color:#fff}
+.wa{background:#22c55e;color:#fff}
+.secondary{background:#e5e7eb;color:#111827}
 .empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
 .modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:10000;padding:12px}
-.modal.show{display:flex}.modal-box{width:min(480px,100%);background:#fff;border:3px solid #111827;border-radius:14px;box-shadow:7px 7px 0 #111827;padding:15px}
-.modal-box h3{margin:0 0 8px}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.modal.show{display:flex}
+.modal-box{width:min(480px,100%);background:#fff;border:3px solid #111827;border-radius:14px;box-shadow:7px 7px 0 #111827;padding:15px}
+.modal-box h3{margin:0 0 8px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 body.dark{background:#0b1220;color:#e5e7eb}
-body.dark .card,body.dark .order,body.dark .modal-box{background:#111827;color:#e5e7eb;border-color:#475569}
+body.dark .card,
+body.dark .order,
+body.dark .modal-box{background:#111827;color:#e5e7eb;border-color:#475569}
 body.dark .order-head{background:#0f172a;border-color:#475569}
 body.dark .title{border-color:#475569}
 body.dark label{color:#9ca3af}
-body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
-body.dark .items,body.dark .money,body.dark .paybox{border-color:#475569}
+body.dark input,
+body.dark select{background:#0f172a;color:#fff;border-color:#475569}
+body.dark .items,
+body.dark .money,
+body.dark .paybox{border-color:#475569}
 body.dark .money{background:#1c1917}
 body.dark .meta b{color:#fff}
-@media(max-width:800px){.filters{grid-template-columns:1fr}.paygrid{grid-template-columns:1fr}.order-head{flex-direction:column}}
-@media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding-top:80px}.refresh{padding:8px}.actions .btn{flex:1;min-width:120px}}
+@media(max-width:800px){
+ .filters{grid-template-columns:1fr}
+ .paygrid{grid-template-columns:1fr}
+ .order-head{flex-direction:column}
+}
+@media(max-width:650px){
+ header{height:68px}
+ .hi h1{font-size:16px}
+ main{padding-top:80px}
+ .refresh{padding:8px}
+ .actions .btn{flex:1;min-width:120px}
+}
 </style>
 </head>
+
 <body>
+
 <header>
  <div class="head">
   <img class="logo" src="logo.png" alt="FIXZY">
-  <div class="hi"><h1>Data Order Member</h1><span id="email" class="email">-</span></div>
+  <div class="hi">
+   <h1>Data Order Member</h1>
+   <span id="email" class="email">-</span>
+  </div>
   <div class="acts">
    <button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button>
    <button id="dark" class="btn dark" type="button">🌙</button>
@@ -74,15 +111,19 @@ body.dark .meta b{color:#fff}
 </header>
 
 <main>
+
  <div id="notice" class="notice">Menunggu akun...</div>
 
  <div class="card">
   <div class="title">Data Order Member yang Telah Approval</div>
+
   <div class="filters">
+
    <div>
     <label>CARI NOTA / MEMBER / KODE MEMBER</label>
     <input id="search" placeholder="Ketik pencarian...">
    </div>
+
    <div>
     <label>STATUS</label>
     <select id="filter">
@@ -91,6 +132,7 @@ body.dark .meta b{color:#fff}
      <option value="lunas">Lunas</option>
     </select>
    </div>
+
    <div>
     <label>KETERANGAN</label>
     <div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">
@@ -98,31 +140,59 @@ body.dark .meta b{color:#fff}
      <b>Prioritas:</b> tagihan terdekat otomatis berada paling atas. Peringatan muncul mulai H-5.
     </div>
    </div>
+
   </div>
  </div>
 
  <div id="list"></div>
+
 </main>
 
 <div class="modal" id="payModal">
+
  <div class="modal-box">
+
   <h3>💰 Pembayaran Tagihan Member</h3>
+
   <div id="payInfo" style="font-size:12px;color:#64748b;line-height:1.6"></div>
+
   <div style="margin-top:10px">
    <label>JUMLAH PEMBAYARAN</label>
    <input id="payAmount" inputmode="numeric" placeholder="Masukkan nominal pembayaran">
   </div>
+
   <div class="modal-actions">
    <button class="btn secondary" type="button" onclick="closePay()">Batal</button>
    <button class="btn green" type="button" onclick="savePayment()">💾 Simpan Pembayaran</button>
   </div>
+
  </div>
+
 </div>
 
 <script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+import{
+ initializeApp
+}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+import{
+ getAuth,
+ onAuthStateChanged
+}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+import{
+ getFirestore,
+ collection,
+ query,
+ where,
+ getDocs,
+ getDoc,
+ doc,
+ runTransaction,
+ serverTimestamp
+}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
 
 const cfg={
  apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
@@ -130,439 +200,1767 @@ const cfg={
  projectId:"fixzy-update",
  storageBucket:"fixzy-update.firebasestorage.app",
  messagingSenderId:"995892519622",
- appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+ appId:"1:995892519622:web:fa410479d8e5b35d6dc7"
 };
 
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-let uid="",ownerUid="",profile={},rows=[],payOrderId=null;
+const app=initializeApp(cfg);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+let uid="";
+let ownerUid="";
+let profile={};
+let rows=[];
+let payOrderId=null;
 
 const $=id=>document.getElementById(id);
-const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
-const num=v=>Number(String(v??"").replace(/[^\d]/g,""))||0;
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
 
-function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+
+const num=v=>
+ Number(String(v??"").replace(/[^\d]/g,""))||0;
+
+const esc=s=>
+ String(s??"").replace(/[&<>"]/g,c=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;"
+ }[c]));
+
+const waNum=v=>{
+ let s=String(v||"").replace(/\D/g,"");
+
+ if(s.startsWith("0"))
+  s="62"+s.slice(1);
+ else if(s.startsWith("8"))
+  s="62"+s;
+ else if(!s.startsWith("62"))
+  s="62"+s;
+
+ return s;
+};
+
+
+function notice(t,c=""){
+ $("notice").textContent=t;
+ $("notice").className="notice "+c;
+}
+
+
 function ownerOf(data){
+
  const role=String(data.role||"").toLowerCase();
- if(role==="owner"||role==="superadmin")return uid;
- return String(data.ownerUid||data.ownerId||"").trim()||uid;
+
+ if(role==="owner"||role==="superadmin")
+  return uid;
+
+ return String(
+  data.ownerUid||
+  data.ownerId||
+  ""
+ ).trim()||uid;
 }
-function memberOf(r){return r.member||r.pelanggan||{}}
+
+
+function memberOf(r){
+ return r.member||r.pelanggan||{};
+}
+
+
 function itemsOf(r){
- const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
+
+ const a=
+  Array.isArray(r.items)
+   ? r.items
+   : Array.isArray(r.produkList)
+    ? r.produkList
+    : [];
+
  return a.map(x=>({
+
   produkId:x.produkId||x.id||"",
-  nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
-  kode:String(x.kode||x.kodeProduk||""),
-  qty:Number(x.qty||x.jumlah||0)||0,
-  harga:Number(x.harga||x.hargaJual||0)||0,
-  diskon:Number(x.diskon||0)||0,
-  total:Number(x.total??((Number(x.harga||x.hargaJual||0)*Number(x.qty||x.jumlah||0))-Number(x.diskon||0)))||0
+
+  nama:String(
+   x.nama||
+   x.namaProduk||
+   x.kode||
+   x.kodeProduk||
+   "-"
+  ),
+
+  kode:String(
+   x.kode||
+   x.kodeProduk||
+   ""
+  ),
+
+  qty:Number(
+   x.qty||
+   x.jumlah||
+   0
+  )||0,
+
+  harga:Number(
+   x.harga||
+   x.hargaJual||
+   0
+  )||0,
+
+  diskon:Number(
+   x.diskon||
+   0
+  )||0,
+
+  total:Number(
+   x.total ??
+   (
+    Number(x.harga||x.hargaJual||0)*
+    Number(x.qty||x.jumlah||0)
+   )-
+   Number(x.diskon||0)
+  )||0
+
  }));
+
 }
+
+
+/*
+ STATUS PEMBAYARAN
+
+ TAGIHAN:
+ masih mempunyai sisa pembayaran.
+
+ LUNAS:
+ sisa pembayaran = 0.
+
+ CASH:
+ otomatis LUNAS.
+*/
+
 function orderStatus(r){
- // Status pembayaran mengikuti kondisi pembayaran aktual.
- const jenis=String(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||"").toLowerCase();
- const total=Number(r.totalBayar??r.total??0)||0;
- const dp=Number(r.dp??r.uangMuka??0)||0;
- const paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
- const sf=Number(r.sisaBayar??r.sisa);
- const sisa=Number.isFinite(sf)?Math.max(0,sf):Math.max(0,total-paid);
- // CASH/TUNAI selalu lunas.
- if(jenis==="cash" || jenis==="member_cash" || jenis==="member_cash_tunai") return "lunas";
- // Tempo menjadi lunas jika sisa tagihan sudah 0.
- if(total>0 && sisa<=0) return "lunas";
- if(String(r.status||"").toLowerCase()==="lunas") return "lunas";
+
+ const jenis=String(
+  r.jenisHarga||
+  r.tipeOrder||
+  r.tipeTransaksi||
+  ""
+ ).toLowerCase();
+
+ const total=Number(
+  r.totalBayar??
+  r.total??
+  0
+ )||0;
+
+ const dp=Number(
+  r.dp??
+  r.uangMuka??
+  0
+ )||0;
+
+ const paid=Number(
+  r.totalDibayar??
+  r.pembayaran??
+  dp
+ )||0;
+
+ const sf=Number(
+  r.sisaBayar??
+  r.sisa
+ );
+
+ const sisa=
+  Number.isFinite(sf)
+   ? Math.max(0,sf)
+   : Math.max(0,total-paid);
+
+ if(
+  jenis==="cash"||
+  jenis==="member_cash"||
+  jenis==="member_cash_tunai"
+ ){
+  return "lunas";
+ }
+
+ if(total>0&&sisa<=0)
+  return "lunas";
+
+ if(
+  String(r.status||"").toLowerCase()==="lunas"
+ ){
+  return "lunas";
+ }
+
  return "tagihan";
 }
 
+
 /*
-  PRIORITAS TAGIHAN:
-  - Tagihan terdekat selalu di atas.
-  - H-5 sampai H-1 diberi tanda PERINGATAN.
-  - H-0 diberi tanda JATUH TEMPO HARI INI.
-  - Tanggal lewat diberi tanda TERLAMBAT.
+ TANGGAL JATUH TEMPO
 */
+
 function dueDateValue(r){
- const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
+
+ const raw=
+  r.jatuhTempo||
+  r.tanggalJatuhTempo||
+  r.dueDate||
+  "";
+
  if(!raw)return null;
 
- if(typeof raw==="object" && raw?.seconds){
-  return new Date(raw.seconds*1000);
+ if(
+  typeof raw==="object"&&
+  raw?.seconds
+ ){
+  return new Date(
+   raw.seconds*1000
+  );
  }
 
  const s=String(raw).trim();
+
  if(!s)return null;
 
- // YYYY-MM-DD
- if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+ if(
+  /^\d{4}-\d{2}-\d{2}$/.test(s)
+ ){
   const [y,m,d]=s.split("-").map(Number);
   return new Date(y,m-1,d);
  }
 
- // DD/MM/YYYY
- if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+ if(
+  /^\d{2}\/\d{2}\/\d{4}$/.test(s)
+ ){
   const [d,m,y]=s.split("/").map(Number);
   return new Date(y,m-1,d);
  }
 
  const d=new Date(s);
- return isNaN(d.getTime())?null:d;
+
+ return isNaN(d.getTime())
+  ? null
+  : d;
 }
+
 
 function todayStart(){
+
  const d=new Date();
- return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+
+ return new Date(
+  d.getFullYear(),
+  d.getMonth(),
+  d.getDate()
+ );
 }
+
 
 function dueInfo(r){
+
  const due=dueDateValue(r);
- if(!due)return {days:null,label:"Jatuh tempo: -",cls:"due-ok"};
+
+ if(!due){
+  return{
+   days:null,
+   label:"Jatuh tempo: -",
+   cls:"due-ok"
+  };
+ }
 
  const today=todayStart();
- const target=new Date(due.getFullYear(),due.getMonth(),due.getDate());
- const days=Math.round((target-today)/86400000);
+
+ const target=new Date(
+  due.getFullYear(),
+  due.getMonth(),
+  due.getDate()
+ );
+
+ const days=Math.round(
+  (target-today)/86400000
+ );
 
  if(days<0){
-  return {days,label:`⚠️ TERLAMBAT ${Math.abs(days)} HARI • Jatuh tempo ${target.toLocaleDateString("id-ID")}`,cls:"due-overdue"};
+  return{
+   days,
+   label:
+    `⚠️ TERLAMBAT ${Math.abs(days)} HARI • Jatuh tempo ${target.toLocaleDateString("id-ID")}`,
+   cls:"due-overdue"
+  };
  }
+
  if(days===0){
-  return {days,label:`🔴 JATUH TEMPO HARI INI • ${target.toLocaleDateString("id-ID")}`,cls:"due-urgent"};
+  return{
+   days,
+   label:
+    `🔴 JATUH TEMPO HARI INI • ${target.toLocaleDateString("id-ID")}`,
+   cls:"due-urgent"
+  };
  }
+
  if(days<=5){
-  return {days,label:`⚠️ AKAN DITAGIH • H-${days} • Jatuh tempo ${target.toLocaleDateString("id-ID")}`,cls:"due-warning"};
+  return{
+   days,
+   label:
+    `⚠️ AKAN DITAGIH • H-${days} • Jatuh tempo ${target.toLocaleDateString("id-ID")}`,
+   cls:"due-warning"
+  };
  }
- return {days,label:`📅 Jatuh tempo ${target.toLocaleDateString("id-ID")} • H-${days}`,cls:"due-ok"};
+
+ return{
+  days,
+  label:
+   `📅 Jatuh tempo ${target.toLocaleDateString("id-ID")} • H-${days}`,
+  cls:"due-ok"
+ };
 }
+
 
 function dueSortValue(r){
+
  const d=dueDateValue(r);
- // Tagihan tanpa tanggal diletakkan paling bawah.
- return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
+
+ return d
+  ? d.getTime()
+  : Number.MAX_SAFE_INTEGER;
 }
+
+
+/*
+ LOAD DATA FIREBASE
+*/
 
 async function load(){
+
  const map=new Map();
+
  const qs=[
-  query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+
+  query(
+   collection(db,"order_member"),
+   where("ownerUid","==",ownerUid)
+  ),
+
+  query(
+   collection(db,"order_member"),
+   where("ownerId","==",ownerUid)
+  )
+
  ];
+
  for(const q of qs){
+
   const snap=await getDocs(q);
+
   snap.forEach(d=>{
-   const x={id:d.id,...d.data()};
-   if(!map.has(d.id))map.set(d.id,x);
+
+   const x={
+    id:d.id,
+    ...d.data()
+   };
+
+   if(!map.has(d.id))
+    map.set(d.id,x);
+
   });
+
  }
+
  rows=[...map.values()].sort((a,b)=>{
-  const sa=orderStatus(a), sb=orderStatus(b);
 
-  // Semua TAGIHAN selalu lebih atas daripada LUNAS.
-  if(sa!==sb)return sa==="tagihan"?-1:1;
+  const sa=orderStatus(a);
+  const sb=orderStatus(b);
 
-  // Dalam TAGIHAN: jatuh tempo terdekat selalu paling atas.
-  const da=dueSortValue(a), db=dueSortValue(b);
-  if(da!==db)return da-db;
+  if(sa!==sb)
+   return sa==="tagihan"?-1:1;
 
-  // Jika tanggal sama/tidak ada, yang terbaru di approval lebih atas.
-  const aa=Number(a.approvedAt?.seconds||a.createdAt?.seconds||0);
-  const ab=Number(b.approvedAt?.seconds||b.createdAt?.seconds||0);
+  const da=dueSortValue(a);
+  const db=dueSortValue(b);
+
+  if(da!==db)
+   return da-db;
+
+  const aa=Number(
+   a.approvedAt?.seconds||
+   a.createdAt?.seconds||
+   0
+  );
+
+  const ab=Number(
+   b.approvedAt?.seconds||
+   b.createdAt?.seconds||
+   0
+  );
+
   return ab-aa;
-});
-render();
+
+ });
+
+ render();
 }
+
+
+/*
+ RENDER
+*/
 
 function render(){
- const key=$("search").value.trim().toLowerCase(),fs=$("filter").value;
+
+ const key=
+  $("search").value
+   .trim()
+   .toLowerCase();
+
+ const fs=$("filter").value;
+
  const list=rows.filter(r=>{
-  const m=memberOf(r),st=orderStatus(r);
-  const text=[r.nomorNota,r.nota,m.nama,m.wa,m.kode,r.kodeMember].join(" ").toLowerCase();
-  return (!fs||st===fs)&&text.includes(key);
+
+  const m=memberOf(r);
+  const st=orderStatus(r);
+
+  const text=[
+   r.nomorNota,
+   r.nota,
+   m.nama,
+   m.wa,
+   m.kode,
+   r.kodeMember
+  ]
+  .join(" ")
+  .toLowerCase();
+
+  return(
+   (!fs||st===fs)&&
+   text.includes(key)
+  );
+
  });
- $("list").innerHTML=list.length?list.map(renderOrder).join(""):'<div class="card empty">Belum ada Data Order Member yang sesuai.</div>';
+
+ $("list").innerHTML=
+
+  list.length
+   ? list.map(renderOrder).join("")
+   : '<div class="card empty">Belum ada Data Order Member yang sesuai.</div>';
+
 }
 
+
+/*
+ RENDER ORDER
+*/
+
 function renderOrder(r){
- const m=memberOf(r),items=itemsOf(r),st=orderStatus(r);
- const total=Number(r.totalBayar??r.total??0)||0;
- const dp=Number(r.dp??r.uangMuka??0)||0;
- const paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
- const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
- const tempo=Number(r.tempoHari||0)||0;
- const jatuh=r.jatuhTempo||r.tanggalJatuhTempo||"-";
+
+ const m=memberOf(r);
+ const items=itemsOf(r);
+ const st=orderStatus(r);
+
+ const total=Number(
+  r.totalBayar??
+  r.total??
+  0
+ )||0;
+
+ const dp=Number(
+  r.dp??
+  r.uangMuka??
+  0
+ )||0;
+
+ const paid=Number(
+  r.totalDibayar??
+  r.pembayaran??
+  dp
+ )||0;
+
+ const sisa=Math.max(
+  0,
+  Number(
+   r.sisaBayar??
+   r.sisa??
+   (total-paid)
+  )||0
+ );
+
+ const tempo=Number(
+  r.tempoHari||
+  0
+ )||0;
+
+ const jatuh=
+  r.jatuhTempo||
+  r.tanggalJatuhTempo||
+  "-";
+
 
  return `<div class="order" data-id="${r.id}">
+
   <div class="order-head">
+
    <div>
-    <div class="order-title">${esc(r.nomorNota||r.id)}</div>
-    <div class="order-sub">${esc(r.tanggal||"-")} • ${esc(m.nama||"-")} • Kode Member: <b>${esc(m.kode||r.kodeMember||"-")}</b></div>
+
+    <div class="order-title">
+     ${esc(r.nomorNota||r.id)}
+    </div>
+
+    <div class="order-sub">
+     ${esc(r.tanggal||"-")} •
+     ${esc(m.nama||"-")} •
+     Kode Member:
+     <b>${esc(m.kode||r.kodeMember||"-")}</b>
+    </div>
+
    </div>
-   <span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span>
+
+   <span class="badge ${st}">
+    ${st==="lunas"?"LUNAS":"TAGIHAN"}
+   </span>
+
   </div>
+
 
   <div class="order-body">
+
    <div class="meta">
+
     <b>WA:</b> ${esc(m.wa||"-")}<br>
+
     <b>Alamat:</b> ${esc(m.alamat||"-")}<br>
-    <b>Tempo:</b> ${tempo} hari • <b>Jatuh tempo:</b> ${esc(jatuh)}
+
+    <b>Tempo:</b> ${tempo} hari •
+    <b>Jatuh tempo:</b> ${esc(jatuh)}
+
    </div>
 
-   ${st==="tagihan" ? (()=>{const di=dueInfo(r);return di.days!==null
-      ? `<div class="due-warning ${di.cls}">${esc(di.label)}</div>`
-      : `<div class="due-warning due-ok">📅 Tanggal jatuh tempo belum diisi</div>`;
-    })() : ""}
+
+   ${
+    st==="tagihan"
+     ? (()=>{
+
+        const di=dueInfo(r);
+
+        return di.days!==null
+
+         ? `<div class="due-warning ${di.cls}">
+             ${esc(di.label)}
+            </div>`
+
+         : `<div class="due-warning due-ok">
+             📅 Tanggal jatuh tempo belum diisi
+            </div>`;
+
+       })()
+
+     : ""
+   }
+
 
    <div class="items">
-    ${items.map(x=>`<div class="item">
-      <div>
-       <div class="item-name">${esc(x.nama)}</div>
-       <div class="item-meta">Kode: ${esc(x.kode||"-")} • Qty: ${x.qty} pcs</div>
+
+    ${
+     items.map(x=>`
+
+      <div class="item">
+
+       <div>
+
+        <div class="item-name">
+         ${esc(x.nama)}
+        </div>
+
+        <div class="item-meta">
+         Kode: ${esc(x.kode||"-")} •
+         Qty: ${x.qty} pcs
+        </div>
+
+       </div>
+
+       <b>${rp(x.total)}</b>
+
       </div>
-      <b>${rp(x.total)}</b>
-    </div>`).join("")}
+
+     `).join("")
+    }
+
    </div>
+
 
    <div class="money">
-    <div class="money-row"><span>Total Order</span><b>${rp(total)}</b></div>
-    <div class="money-row"><span>DP</span><b>${rp(dp)}</b></div>
-    <div class="money-row"><span>Total Dibayar</span><b>${rp(paid)}</b></div>
-    <div class="money-row sisa ${st==="lunas"?"lunas":""}">
-     <span>${st==="lunas"?"Status Pembayaran":"Sisa Tagihan"}</span>
-     <b>${st==="lunas"?"LUNAS":rp(sisa)}</b>
+
+    <div class="money-row">
+     <span>Total Order</span>
+     <b>${rp(total)}</b>
     </div>
+
+    <div class="money-row">
+     <span>DP</span>
+     <b>${rp(dp)}</b>
+    </div>
+
+    <div class="money-row">
+     <span>Total Dibayar</span>
+     <b>${rp(paid)}</b>
+    </div>
+
+    <div class="money-row sisa ${st==="lunas"?"lunas":""}">
+
+     <span>
+      ${st==="lunas"
+       ?"Status Pembayaran"
+       :"Sisa Tagihan"}
+     </span>
+
+     <b>
+      ${st==="lunas"
+       ?"LUNAS"
+       :rp(sisa)}
+     </b>
+
+    </div>
+
    </div>
 
-   ${st==="tagihan"?`<div class="paybox">
-    <div style="font-size:11px;font-weight:900;margin-bottom:7px">PELUNASAN TAGIHAN</div>
-    <div class="paygrid">
-     <div>
-      <input id="pay_${r.id}" inputmode="numeric" placeholder="${esc(rp(sisa))}">
-     </div>
-     <button class="btn green" type="button" onclick="openPay('${r.id}')">💰 Bayar</button>
-    </div>
-   </div>`:""}
+
+   ${
+    st==="tagihan"
+
+     ? `<div class="paybox">
+
+         <div style="font-size:11px;font-weight:900;margin-bottom:7px">
+          PELUNASAN TAGIHAN
+         </div>
+
+         <div class="paygrid">
+
+          <div>
+           <input
+            id="pay_${r.id}"
+            inputmode="numeric"
+            placeholder="${esc(rp(sisa))}">
+          </div>
+
+          <button
+           class="btn green"
+           type="button"
+           onclick="openPay('${r.id}')">
+           💰 Bayar
+          </button>
+
+         </div>
+
+        </div>`
+
+     : ""
+   }
+
 
    <div class="actions">
-    <button class="btn wa" type="button" onclick="sendWA('${r.id}')">📲 Kirim WA</button>
-    ${st==="tagihan"?`<button class="btn primary" type="button" onclick="markFull('${r.id}')">✅ Tandai Lunas</button>`:""}
+
+    <button
+     class="btn wa"
+     type="button"
+     onclick="sendWA('${r.id}')">
+     📲 Kirim WA
+    </button>
+
+
+    ${
+     st==="tagihan"
+
+      ? `<button
+          class="btn primary"
+          type="button"
+          onclick="markFull('${r.id}')">
+          ✅ Tandai Lunas
+         </button>`
+
+      : `<button
+          class="btn secondary"
+          type="button"
+          onclick="restoreTagihan('${r.id}')">
+          ↩️ Kembalikan Tagihan
+         </button>`
+    }
+
    </div>
+
   </div>
+
  </div>`;
 }
 
+
+/*
+ BUKA MODAL PEMBAYARAN
+*/
+
 window.openPay=id=>{
- const r=rows.find(x=>x.id===id);if(!r)return;
+
+ const r=rows.find(x=>x.id===id);
+
+ if(!r)return;
+
  payOrderId=id;
- const m=memberOf(r),total=Number(r.totalBayar??r.total??0)||0,paid=Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,sisa=Math.max(0,total-paid);
- $("payInfo").innerHTML=`<b>${esc(r.nomorNota||id)}</b><br>Member: ${esc(m.nama||"-")}<br>Sisa tagihan: <b>${rp(sisa)}</b>`;
+
+ const m=memberOf(r);
+
+ const total=Number(
+  r.totalBayar??
+  r.total??
+  0
+ )||0;
+
+ const paid=Number(
+  r.totalDibayar??
+  r.pembayaran??
+  r.dp??
+  0
+ )||0;
+
+ const sisa=Math.max(
+  0,
+  total-paid
+ );
+
+ $("payInfo").innerHTML=`
+
+  <b>${esc(r.nomorNota||id)}</b><br>
+
+  Member:
+  ${esc(m.nama||"-")}<br>
+
+  Sisa tagihan:
+  <b>${rp(sisa)}</b>
+
+ `;
+
  $("payAmount").value="";
  $("payAmount").placeholder=rp(sisa);
+
  $("payModal").classList.add("show");
 };
 
-window.closePay=()=>{$("payModal").classList.remove("show");payOrderId=null};
+
+window.closePay=()=>{
+
+ $("payModal").classList.remove("show");
+
+ payOrderId=null;
+
+};
+
+
+/*
+ PEMBAYARAN BIASA
+*/
 
 async function payment(id,amount){
- const r=rows.find(x=>x.id===id);if(!r)throw Error("Order tidak ditemukan.");
- const ref=doc(db,"order_member",id);
- return runTransaction(db,async tx=>{
-  const snap=await tx.get(ref);if(!snap.exists())throw Error("Order tidak ditemukan di Firebase.");
-  const d=snap.data()||{};
-  const own=String(d.ownerUid||d.ownerId||"");
-  if(own!==ownerUid)throw Error("Order bukan milik akun ini.");
-  const total=Number(d.totalBayar??d.total??0)||0;
-  const current=Number(d.totalDibayar??d.pembayaran??d.dp??0)||0;
-  const sisa=Math.max(0,total-current);
-  if(sisa<=0){
-   tx.update(ref,{status:"lunas",totalDibayar:total,sisaBayar:0,sisa:0,updatedAt:serverTimestamp()});
-   return "lunas";
+
+ const r=rows.find(x=>x.id===id);
+
+ if(!r)
+  throw Error("Order tidak ditemukan.");
+
+ const ref=doc(
+  db,
+  "order_member",
+  id
+ );
+
+ return runTransaction(
+  db,
+  async tx=>{
+
+   const snap=await tx.get(ref);
+
+   if(!snap.exists())
+    throw Error(
+     "Order tidak ditemukan di Firebase."
+    );
+
+   const d=snap.data()||{};
+
+   const own=String(
+    d.ownerUid||
+    d.ownerId||
+    ""
+   );
+
+   if(own!==ownerUid)
+    throw Error(
+     "Order bukan milik akun ini."
+    );
+
+   const total=Number(
+    d.totalBayar??
+    d.total??
+    0
+   )||0;
+
+   const current=Number(
+    d.totalDibayar??
+    d.pembayaran??
+    d.dp??
+    0
+   )||0;
+
+   const sisa=Math.max(
+    0,
+    total-current
+   );
+
+   if(sisa<=0){
+
+    tx.update(ref,{
+
+     status:"lunas",
+
+     totalDibayar:total,
+
+     sisaBayar:0,
+
+     sisa:0,
+
+     updatedAt:serverTimestamp()
+
+    });
+
+    return "lunas";
+   }
+
+
+   const bayar=Math.max(
+    0,
+    Number(amount)||0
+   );
+
+   if(bayar<=0)
+    throw Error(
+     "Nominal pembayaran harus lebih dari 0."
+    );
+
+   if(bayar>sisa)
+    throw Error(
+     `Pembayaran melebihi sisa tagihan ${rp(sisa)}.`
+    );
+
+   const baru=current+bayar;
+
+   const baruSisa=Math.max(
+    0,
+    total-baru
+   );
+
+   const st=
+    baruSisa===0
+     ?"lunas"
+     :"tagihan";
+
+
+   /*
+    Jika pembayaran membuat order LUNAS
+    melalui tombol Bayar, simpan kondisi
+    sebelum pembayaran terakhir.
+   */
+
+   const updateData={
+
+    status:st,
+
+    totalDibayar:baru,
+
+    sisaBayar:baruSisa,
+
+    sisa:baruSisa,
+
+    pembayaranTerakhir:bayar,
+
+    pembayaranTerakhirAt:serverTimestamp(),
+
+    updatedAt:serverTimestamp()
+
+   };
+
+
+   /*
+    Hanya simpan snapshot jika berubah
+    menjadi LUNAS.
+   */
+
+   if(st==="lunas"){
+
+    updateData.sebelumLunas={
+
+     status:String(
+      d.status||"tagihan"
+     ),
+
+     totalDibayar:current,
+
+     sisaBayar:sisa,
+
+     sisa:sisa
+
+    };
+
+   }
+
+
+   tx.update(
+    ref,
+    updateData
+   );
+
+   return st;
+
   }
-  const bayar=Math.max(0,Number(amount)||0);
-  if(bayar<=0)throw Error("Nominal pembayaran harus lebih dari 0.");
-  if(bayar>sisa)throw Error(`Pembayaran melebihi sisa tagihan ${rp(sisa)}.`);
-  const baru=current+bayar;
-  const baruSisa=Math.max(0,total-baru);
-  const st=baruSisa===0?"lunas":"tagihan";
-  tx.update(ref,{
-   status:st,
-   totalDibayar:baru,
-   sisaBayar:baruSisa,
-   sisa:baruSisa,
-   pembayaranTerakhir:bayar,
-   pembayaranTerakhirAt:serverTimestamp(),
-   updatedAt:serverTimestamp()
-  });
-  return st;
- });
+ );
+
 }
 
+
+/*
+ SIMPAN PEMBAYARAN
+*/
+
 window.savePayment=async()=>{
+
  if(!payOrderId)return;
+
  const id=payOrderId;
- const amount=num($("payAmount").value);
+
+ const amount=num(
+  $("payAmount").value
+ );
+
  try{
-  notice("Menyimpan pembayaran...");
-  const st=await payment(id,amount);
+
+  notice(
+   "Menyimpan pembayaran..."
+  );
+
+  const st=
+   await payment(id,amount);
+
   closePay();
+
   await load();
-  notice(st==="lunas"?"Pembayaran lunas. Status order menjadi LUNAS.":"Pembayaran tersimpan. Status masih TAGIHAN.","ok");
- }catch(e){console.error(e);notice("Gagal menyimpan pembayaran: "+e.message,"err")}
+
+  notice(
+   st==="lunas"
+    ? "Pembayaran lunas. Status order menjadi LUNAS."
+    : "Pembayaran tersimpan. Status masih TAGIHAN.",
+   "ok"
+  );
+
+ }catch(e){
+
+  console.error(e);
+
+  notice(
+   "Gagal menyimpan pembayaran: "+
+   e.message,
+   "err"
+  );
+
+ }
+
 };
+
+
+/*
+ TANDAI LUNAS
+ DENGAN SNAPSHOT KONDISI SEBELUM LUNAS
+*/
 
 window.markFull=async id=>{
- const r=rows.find(x=>x.id===id);if(!r)return;
- const total=Number(r.totalBayar??r.total??0)||0;
- const paid=Number(r.totalDibayar??r.pembayaran??r.dp??0)||0;
- const sisa=Math.max(0,total-paid);
+
+ const r=rows.find(x=>x.id===id);
+
+ if(!r)return;
+
+ const total=Number(
+  r.totalBayar??
+  r.total??
+  0
+ )||0;
+
+ const paid=Number(
+  r.totalDibayar??
+  r.pembayaran??
+  r.dp??
+  0
+ )||0;
+
+ const sisa=Math.max(
+  0,
+  total-paid
+ );
+
+
  if(sisa<=0){
-  await payment(id,0);await load();return;
+
+  try{
+
+   await payment(id,0);
+
+   await load();
+
+  }catch(e){
+
+   console.error(e);
+
+   notice(
+    "Gagal memperbarui status: "+
+    e.message,
+    "err"
+   );
+
+  }
+
+  return;
  }
- if(!confirm(`Tandai pelunasan sebesar ${rp(sisa)} untuk ${r.nomorNota||id}?`))return;
+
+
+ if(!confirm(
+  `Tandai pelunasan sebesar ${rp(sisa)} untuk ${r.nomorNota||id}?`
+ ))return;
+
+
  try{
-  notice("Menyimpan pelunasan...");
-  await payment(id,sisa);
+
+  notice(
+   "Menyimpan pelunasan..."
+  );
+
+
+  const ref=doc(
+   db,
+   "order_member",
+   id
+  );
+
+
+  await runTransaction(
+   db,
+   async tx=>{
+
+    const snap=await tx.get(ref);
+
+    if(!snap.exists())
+     throw Error(
+      "Order tidak ditemukan di Firebase."
+     );
+
+
+    const d=snap.data()||{};
+
+    const own=String(
+     d.ownerUid||
+     d.ownerId||
+     ""
+    );
+
+
+    if(own!==ownerUid)
+     throw Error(
+      "Order bukan milik akun ini."
+     );
+
+
+    const totalNow=Number(
+     d.totalBayar??
+     d.total??
+     0
+    )||0;
+
+
+    const currentPaid=Number(
+     d.totalDibayar??
+     d.pembayaran??
+     d.dp??
+     0
+    )||0;
+
+
+    const currentSisa=Math.max(
+     0,
+     totalNow-currentPaid
+    );
+
+
+    /*
+     SIMPAN KONDISI SEBELUM LUNAS
+    */
+
+    tx.update(ref,{
+
+     status:"lunas",
+
+     sebelumLunas:{
+
+      status:String(
+       d.status||"tagihan"
+      ),
+
+      totalDibayar:currentPaid,
+
+      sisaBayar:currentSisa,
+
+      sisa:currentSisa
+
+     },
+
+     totalDibayar:totalNow,
+
+     sisaBayar:0,
+
+     sisa:0,
+
+     pembayaranTerakhir:currentSisa,
+
+     pembayaranTerakhirAt:serverTimestamp(),
+
+     updatedAt:serverTimestamp()
+
+    });
+
+   }
+  );
+
+
   await load();
-  notice("Order berhasil ditandai LUNAS.","ok");
- }catch(e){console.error(e);notice("Gagal melunasi: "+e.message,"err")}
+
+  notice(
+   "Order berhasil ditandai LUNAS.",
+   "ok"
+  );
+
+
+ }catch(e){
+
+  console.error(e);
+
+  notice(
+   "Gagal melunasi: "+
+   (e?.message||e),
+   "err"
+  );
+
+ }
+
 };
 
+
+/*
+ ==================================================
+ KEMBALIKAN LUNAS MENJADI TAGIHAN
+ ==================================================
+*/
+
+window.restoreTagihan=async id=>{
+
+ const r=rows.find(x=>x.id===id);
+
+ if(!r)return;
+
+
+ if(!confirm(
+  `Kembalikan order ${r.nomorNota||id} dari LUNAS menjadi TAGIHAN?`
+ ))return;
+
+
+ try{
+
+  notice(
+   "Mengembalikan status tagihan..."
+  );
+
+
+  const ref=doc(
+   db,
+   "order_member",
+   id
+  );
+
+
+  await runTransaction(
+   db,
+   async tx=>{
+
+    const snap=await tx.get(ref);
+
+
+    if(!snap.exists())
+     throw Error(
+      "Order tidak ditemukan di Firebase."
+     );
+
+
+    const d=snap.data()||{};
+
+
+    const own=String(
+     d.ownerUid||
+     d.ownerId||
+     ""
+    );
+
+
+    if(own!==ownerUid)
+     throw Error(
+      "Order bukan milik akun ini."
+     );
+
+
+    const before=d.sebelumLunas||null;
+
+
+    /*
+     DATA SNAPSHOT TERSEDIA
+    */
+
+    if(before){
+
+     const paidBefore=
+      Number(
+       before.totalDibayar||0
+      )||0;
+
+
+     const sisaBefore=
+      Number(
+       before.sisaBayar??
+       before.sisa??
+       0
+      )||0;
+
+
+     tx.update(ref,{
+
+      status:"tagihan",
+
+      totalDibayar:paidBefore,
+
+      sisaBayar:sisaBefore,
+
+      sisa:sisaBefore,
+
+      sebelumLunas:null,
+
+      updatedAt:serverTimestamp()
+
+     });
+
+
+     return;
+    }
+
+
+    /*
+     ORDER SUDAH LUNAS SEBELUM FITUR
+     SNAPSHOT INI DIPASANG.
+
+     Jangan menebak nominal pembayaran.
+    */
+
+    throw Error(
+     "Order ini sudah LUNAS sebelum fitur pemulihan dipasang. Data pembayaran sebelumnya tidak tersimpan, sehingga nominal pembayaran harus dikoreksi manual."
+    );
+
+   }
+  );
+
+
+  await load();
+
+  notice(
+   "Order berhasil dikembalikan menjadi TAGIHAN.",
+   "ok"
+  );
+
+
+ }catch(e){
+
+  console.error(e);
+
+  notice(
+   "Gagal mengembalikan tagihan: "+
+   (e?.message||e),
+   "err"
+  );
+
+ }
+
+};
+
+
+/*
+ WHATSAPP
+*/
+
 function buildWA(r){
- const m=memberOf(r),items=itemsOf(r),total=Number(r.totalBayar??r.total??0)||0;
- const dp=Number(r.dp??r.uangMuka??0)||0,paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
- const sisa=Math.max(0,total-paid),st=orderStatus(r);
- let t=`Halo Kak ${m.nama||""} 👋\n\n`;
- t+=`Update pesanan member *${r.nomorNota||r.id}* di *${profile.namaKonter||profile.namaToko||"FIXZY"}*.\n\n`;
- t+=`Detail pesanan:\n`;
- items.forEach(x=>t+=`• ${x.nama} x${x.qty} — ${rp(x.total)}\n`);
- t+=`\nTotal: ${rp(total)}\n`;
- t+=`DP: ${rp(dp)}\n`;
- t+=`Total dibayar: ${rp(paid)}\n`;
- t+=st==="lunas"?`\n✅ Status: *LUNAS*\n`:`\n📌 Status: *TAGIHAN*\nSisa tagihan: ${rp(sisa)}\n📅 Jatuh tempo: ${r.jatuhTempo||r.tanggalJatuhTempo||"-"}\n`;
- t+=`\nTerima kasih 🙏\n*${profile.namaKonter||profile.namaToko||"FIXZY"}*`;
+
+ const m=memberOf(r);
+ const items=itemsOf(r);
+
+ const total=Number(
+  r.totalBayar??
+  r.total??
+  0
+ )||0;
+
+ const dp=Number(
+  r.dp??
+  r.uangMuka??
+  0
+ )||0;
+
+ const paid=Number(
+  r.totalDibayar??
+  r.pembayaran??
+  dp
+ )||0;
+
+ const sisa=Math.max(
+  0,
+  total-paid
+ );
+
+ const st=orderStatus(r);
+
+ let t=
+  `Halo Kak ${m.nama||""} 👋\n\n`;
+
+ t+=
+  `Update pesanan member *${r.nomorNota||r.id}* di *${profile.namaKonter||profile.namaToko||"FIXZY"}*.\n\n`;
+
+ t+=
+  `Detail pesanan:\n`;
+
+ items.forEach(x=>{
+  t+=
+   `• ${x.nama} x${x.qty} — ${rp(x.total)}\n`;
+ });
+
+ t+=
+  `\nTotal: ${rp(total)}\n`;
+
+ t+=
+  `DP: ${rp(dp)}\n`;
+
+ t+=
+  `Total dibayar: ${rp(paid)}\n`;
+
+
+ if(st==="lunas"){
+
+  t+=
+   `\n✅ Status: *LUNAS*\n`;
+
+ }else{
+
+  t+=
+   `\n📌 Status: *TAGIHAN*\n`;
+
+  t+=
+   `Sisa tagihan: ${rp(sisa)}\n`;
+
+  t+=
+   `📅 Jatuh tempo: ${r.jatuhTempo||r.tanggalJatuhTempo||"-"}\n`;
+
+ }
+
+
+ t+=
+  `\nTerima kasih 🙏\n*${profile.namaKonter||profile.namaToko||"FIXZY"}*`;
+
  return t;
 }
 
+
 window.sendWA=id=>{
- const r=rows.find(x=>x.id===id);if(!r)return;
- const m=memberOf(r),n=waNum(m.wa);
- if(!n||n.length<10){notice("Nomor WA member tidak valid.","err");return}
- window.open(`https://wa.me/${n}?text=${encodeURIComponent(buildWA(r))}`,"_blank");
+
+ const r=rows.find(x=>x.id===id);
+
+ if(!r)return;
+
+ const m=memberOf(r);
+
+ const n=waNum(m.wa);
+
+ if(!n||n.length<10){
+
+  notice(
+   "Nomor WA member tidak valid.",
+   "err"
+  );
+
+  return;
+ }
+
+
+ window.open(
+  `https://wa.me/${n}?text=${encodeURIComponent(buildWA(r))}`,
+  "_blank"
+ );
+
 };
 
-$("search").oninput=render;
-$("filter").onchange=render;
-$("dark").onclick=()=>{
- document.body.classList.toggle("dark");
- $("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
-};
-
-let authInitialized=false, loadingAccount=false;
 
 /*
-  SESSION FIXZY STANDAR:
-  Index FIXZY menyimpan fixzy_uid, fixzy_role, fixzy_user_profile.
-  Halaman ini membaca session tersebut sebagai identitas awal, tetapi
-  data Firestore tetap dibaca dengan Firebase Auth yang sama.
+ DARK MODE
 */
+
+$("search").oninput=render;
+
+$("filter").onchange=render;
+
+
+$("dark").onclick=()=>{
+
+ document.body.classList.toggle("dark");
+
+ $("dark").textContent=
+  document.body.classList.contains("dark")
+   ?"☀️"
+   :"🌙";
+
+};
+
+
+let authInitialized=false;
+let loadingAccount=false;
+
+
+/*
+ SESSION FIXZY STANDAR
+*/
+
 function readFixzySession(){
+
  try{
-  const raw=localStorage.getItem("fixzy_user_profile");
+
+  const raw=
+   localStorage.getItem(
+    "fixzy_user_profile"
+   );
+
   if(!raw)return null;
+
   const p=JSON.parse(raw);
-  const id=localStorage.getItem("fixzy_uid")||p?.uid||"";
+
+  const id=
+   localStorage.getItem("fixzy_uid")||
+   p?.uid||
+   "";
+
   if(!id)return null;
-  return {uid:id,role:String(localStorage.getItem("fixzy_role")||p?.role||"").toLowerCase(),profile:p||{}};
- }catch(e){return null}
+
+  return{
+
+   uid:id,
+
+   role:String(
+    localStorage.getItem("fixzy_role")||
+    p?.role||
+    ""
+   ).toLowerCase(),
+
+   profile:p||{}
+
+  };
+
+ }catch(e){
+
+  return null;
+
+ }
+
 }
+
 
 function ownerFromSession(sess){
+
  if(!sess)return "";
- const r=String(sess.role||sess.profile?.role||"").toLowerCase();
- if(r==="owner")return sess.uid;
- if(r==="superadmin")return sess.profile?.ownerUid||sess.uid;
- return String(sess.profile?.ownerUid||"").trim();
+
+ const r=String(
+  sess.role||
+  sess.profile?.role||
+  ""
+ ).toLowerCase();
+
+
+ if(r==="owner")
+  return sess.uid;
+
+
+ if(r==="superadmin")
+  return sess.profile?.ownerUid||
+         sess.uid;
+
+
+ return String(
+  sess.profile?.ownerUid||
+  ""
+ ).trim();
+
 }
+
 
 async function initAccount(u){
- if(!u || loadingAccount) return;
- loadingAccount=true;
- try{
-  uid=u.uid;
-  $("email").textContent=u.email||localStorage.getItem("fixzy_email")||"-";
-  notice("Memuat akun...");
 
-  const s=await getDoc(doc(db,"users",uid));
-  if(!s.exists())throw Error("Profil akun tidak ditemukan di Firebase.");
+ if(!u||loadingAccount)return;
+
+ loadingAccount=true;
+
+ try{
+
+  uid=u.uid;
+
+  $("email").textContent=
+   u.email||
+   localStorage.getItem("fixzy_email")||
+   "-";
+
+
+  notice(
+   "Memuat akun..."
+  );
+
+
+  const s=await getDoc(
+   doc(db,"users",uid)
+  );
+
+
+  if(!s.exists())
+   throw Error(
+    "Profil akun tidak ditemukan di Firebase."
+   );
+
+
   profile=s.data()||{};
 
-  // Owner = uid sendiri. Employee/reseller = ownerUid dari profil.
-  ownerUid=ownerOf(profile);
-  if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
 
-  // Identitas sesi FIXZY diseragamkan agar halaman owner dan karyawan
-  // memakai fungsi yang sama.
-  window.fixzySession={uid,role:String(profile.role||"").toLowerCase(),ownerUid,profile};
-  localStorage.setItem("fixzy_uid",uid);
-  localStorage.setItem("fixzy_role",String(profile.role||"").toLowerCase());
-  localStorage.setItem("fixzy_user_profile",JSON.stringify({...profile,uid}));
-  if(u.email)localStorage.setItem("fixzy_email",u.email);
+  ownerUid=ownerOf(profile);
+
+
+  if(!ownerUid)
+   throw Error(
+    "Owner akun tidak ditemukan."
+   );
+
+
+  window.fixzySession={
+
+   uid,
+
+   role:String(
+    profile.role||""
+   ).toLowerCase(),
+
+   ownerUid,
+
+   profile
+
+  };
+
+
+  localStorage.setItem(
+   "fixzy_uid",
+   uid
+  );
+
+
+  localStorage.setItem(
+   "fixzy_role",
+   String(
+    profile.role||""
+   ).toLowerCase()
+  );
+
+
+  localStorage.setItem(
+   "fixzy_user_profile",
+   JSON.stringify({
+    ...profile,
+    uid
+   })
+  );
+
+
+  if(u.email)
+   localStorage.setItem(
+    "fixzy_email",
+    u.email
+   );
+
 
   await load();
+
   authInitialized=true;
-  notice(`Akun aktif • ${String(profile.role||"").toLowerCase()==="owner"?"Owner":"Karyawan"} • Data Order Member milik Owner ini.` ,"ok");
+
+
+  notice(
+   `Akun aktif • ${
+    String(profile.role||"").toLowerCase()==="owner"
+     ?"Owner"
+     :"Karyawan"
+   } • Data Order Member milik Owner ini.`,
+   "ok"
+  );
+
+
  }catch(e){
-  console.error("FIXZY Data Order Member:",e);
-  notice("Gagal memuat Data Order Member: "+(e?.message||e),"err");
+
+  console.error(
+   "FIXZY Data Order Member:",
+   e
+  );
+
+
+  notice(
+   "Gagal memuat Data Order Member: "+
+   (e?.message||e),
+   "err"
+  );
+
+
  }finally{
+
   loadingAccount=false;
+
  }
+
 }
+
 
 async function initFromSessionFallback(){
- if(authInitialized||loadingAccount)return;
+
+ if(
+  authInitialized||
+  loadingAccount
+ )return;
+
+
  const sess=readFixzySession();
+
  if(!sess)return;
+
+
  const owner=ownerFromSession(sess);
+
  if(!owner)return;
+
+
  uid=sess.uid;
+
  ownerUid=owner;
+
  profile=sess.profile||{};
- $("email").textContent=profile.email||localStorage.getItem("fixzy_email")||"-";
+
+
+ $("email").textContent=
+  profile.email||
+  localStorage.getItem("fixzy_email")||
+  "-";
+
+
  try{
-  notice("Memuat sesi FIXZY...");
-  // Jika Firebase Auth sudah tersedia, validasi profil resmi dahulu.
+
+  notice(
+   "Memuat sesi FIXZY..."
+  );
+
+
   if(auth.currentUser){
-   await initAccount(auth.currentUser);
+
+   await initAccount(
+    auth.currentUser
+   );
+
    return;
+
   }
-  // Jangan menampilkan data hanya dari cache; tunggu Auth yang benar.
-  notice("Menunggu sesi login FIXZY...","");
+
+
+  notice(
+   "Menunggu sesi login FIXZY...",
+   ""
+  );
+
+
  }catch(e){
+
   console.error(e);
+
  }
+
 }
 
-onAuthStateChanged(auth,u=>{
- if(u){
-  initAccount(u);
- }else if(!authInitialized){
-  // Jangan langsung menghapus sesi. Firebase pada Android kadang
-  // memulihkan persistence setelah halaman selesai dimuat.
-  initFromSessionFallback();
+
+onAuthStateChanged(
+ auth,
+ u=>{
+
+  if(u){
+
+   initAccount(u);
+
+  }else if(!authInitialized){
+
+   initFromSessionFallback();
+
+  }
+
  }
-});
+);
 
-// Fallback beberapa tahap agar tidak terjebak permanen di "Menunggu akun".
-[500,1500,3000,5000].forEach(ms=>setTimeout(()=>{
- if(auth.currentUser) initAccount(auth.currentUser);
- else initFromSessionFallback();
-},ms));
 
-// Halaman index dapat mengirim sesi ke halaman yang sudah terbuka.
-window.addEventListener("storage",e=>{
- if(e.key==="fixzy_user_profile"||e.key==="fixzy_uid")initFromSessionFallback();
-});
+/*
+ FALLBACK AUTH
+*/
+
+[500,1500,3000,5000].forEach(ms=>
+
+ setTimeout(()=>{
+
+  if(auth.currentUser)
+   initAccount(
+    auth.currentUser
+   );
+  else
+   initFromSessionFallback();
+
+ },ms)
+
+);
+
+
+/*
+ SESSION DARI INDEX
+*/
+
+window.addEventListener(
+ "storage",
+ e=>{
+
+  if(
+   e.key==="fixzy_user_profile"||
+   e.key==="fixzy_uid"
+  ){
+
+   initFromSessionFallback();
+
+  }
+
+ }
+);
+
 </script>
+
 </body>
 </html>
