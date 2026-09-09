@@ -80,17 +80,20 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const num=v=>Number(v)||0;
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
 let uid="",ownerUid="",profile={},orders=[],ready=false;
+
 function ownerOf(d){
  const role=String(d.role||"").toLowerCase();
  if(role==="owner")return uid;
  if(role==="superadmin"||role==="super_admin")return "";
  return String(d.ownerUid||d.ownerId||"").trim()||uid;
 }
+
 function isCashOrder(r){
  const vals=[r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,r.metodePembayaran,r.jenisPembayaran,r.caraBayar]
    .map(v=>String(v??"").trim().toLowerCase());
  return vals.some(v=>["member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"].includes(v));
 }
+
 function orderStatus(r){
  if(isCashOrder(r))return "lunas";
  const p=r._paymentSource||{};
@@ -102,6 +105,7 @@ function orderStatus(r){
  const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
  return (sisa<=0 || (total>0 && paid>=total))?"lunas":"tagihan";
 }
+
 function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
  return a.map(x=>{
@@ -113,6 +117,7 @@ function itemList(r){
   return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,harga,total,upPengelolaPerPcs:up,tabunganPerPcs:tabungan};
  });
 }
+
 function dueDate(r){
  if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
@@ -123,6 +128,7 @@ function dueDate(r){
  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,y]=s.split("/").map(Number);return new Date(y,m-1,d);}
  const d=new Date(s);return isNaN(d.getTime())?null:d;
 }
+
 function inPeriod(r){
  const p=$("periode").value;if(p==="all")return true;
  const raw=r.approvedAt||r.createdAt||r.tanggal||"";let d=null;
@@ -135,16 +141,28 @@ function inPeriod(r){
  if(p==="year")return d.getFullYear()===now.getFullYear();
  return true;
 }
+
 async function loadOrders(){
  const map=new Map();
- const qs=[query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),query(collection(db,"order_member"),where("ownerId","==",ownerUid))];
- for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x);});}catch(e){console.warn("Query order_member:",e.message);}}
+ const qs=[
+   query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of qs){
+  try{
+   const s=await getDocs(q);
+   s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x);});
+  }catch(e){console.warn("Query order_member:",e.message);}
+ }
  const arr=[...map.values()];
  await Promise.all(arr.map(async x=>{
-  const sid=String(x.sourcePenjualanId||"").trim();if(!sid)return;
+  const sid=String(x.sourcePenjualanId||"").trim();
+  if(!sid)return;
   try{
-   const ps=await getDoc(doc(db,"penjualan",sid));if(!ps.exists())return;
-   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();if(own&&own!==ownerUid)return;
+   const ps=await getDoc(doc(db,"penjualan",sid));
+   if(!ps.exists())return;
+   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();
+   if(own&&own!==ownerUid)return;
    x._paymentSource=p;
    const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
    const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
@@ -152,7 +170,11 @@ async function loadOrders(){
     const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));
     x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{
      const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};
-     return{...si,...oi,upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0};
+     return{
+      ...si,...oi,
+      upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,
+      tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0
+     };
     });
    }
    for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){
@@ -162,52 +184,246 @@ async function loadOrders(){
  }));
  orders=arr;
 }
+
 function kasMemberMonthKey(r){
  const m=r.member||r.pelanggan||{};
  const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
  const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";let d=null;
- if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x;}
+ if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
+ else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x;}
  const ym=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`:"tanpa-bulan";
  return memberId+"|"+ym;
 }
+
 function renderRekap(){
  const search=$("search").value.trim().toLowerCase();
- const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return!search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
+ const data=orders.filter(inPeriod).filter(r=>{
+  const m=r.member||r.pelanggan||{};
+  return!search||
+    String(r.nomorNota||r.id||"").toLowerCase().includes(search)||
+    String(m.nama||"").toLowerCase().includes(search);
+ });
+
  let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
+
+ // Kas bulanan tetap hanya dihitung satu kali untuk setiap member + bulan.
  const kasBulananMap=new Map();
- data.forEach(r=>{const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0,key=kasMemberMonthKey(r),prev=kasBulananMap.get(key)||0;if(raw>prev)kasBulananMap.set(key,raw);});
+
+ data.forEach(r=>{
+  const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
+  const key=kasMemberMonthKey(r);
+  const prev=kasBulananMap.get(key)||0;
+  if(raw>prev)kasBulananMap.set(key,raw);
+ });
+
  const kasSudahDitampilkan=new Set();
+
  const rows=data.map(r=>{
-  const items=itemList(r),q=items.reduce((a,x)=>a+x.qty,0),value=items.reduce((a,x)=>a+x.total,0),cash=isCashOrder(r);
-  const total=Math.max(0,Number(r.totalBayar??r.total??value)||0),p=r._paymentSource||{};
-  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
-  const explicitPaid=[r.statusPembayaran,r.paymentStatus,p.statusPembayaran,p.paymentStatus].map(v=>String(v??"").trim().toLowerCase());
-  const sourceTotal=Math.max(0,Number(p.totalBayar??p.total??0)||0);
-  const paidFull=explicitPaid.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v))||(sourceTotal>0&&paid>=sourceTotal);
-  const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0),st=orderStatus(r),jenis=cash?"CASH":"TEMPO";
-  const upDefault=Math.max(0,Number(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??0)||0),tabDefault=Math.max(0,Number(r.tabunganPerPcs??r.tabungan??r.menabungMemberPerPcs??r.menabungMember??0)||0);
-  const upRowCalc=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs)||upDefault),0);
-  const tabRowCalc=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs)||tabDefault),0);
-  const upRow=upRowCalc>0?upRowCalc:Math.max(0,Number(r.totalUpPengelola??r.totalUPPengelola??r.upPengelolaTotal??r.totalUp??0)||0);
-  const tabRow=tabRowCalc>0?tabRowCalc:Math.max(0,Number(r.totalTabunganMember??r.totalTabungan??r.tabunganTotal??0)||0);
-  const kasKey=kasMemberMonthKey(r),kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||0:0;kasSudahDitampilkan.add(kasKey);
-  qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
-  const m=r.member||r.pelanggan||{},due=dueDate(r);
-  return `<tr><td><b>${esc(r.nomorNota||r.id)}</b></td><td>${esc(m.nama||"-")}</td><td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td><td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td><td>${due?due.toLocaleDateString("id-ID"):"-"}</td><td class="num">${q.toLocaleString("id-ID")}</td><td class="num">${rp(value)}</td><td class="num">${rp(upRow)}</td><td class="num">${rp(tabRow)}</td><td class="num">${rp(kasRow)}</td><td class="num">${rp(sisa)}</td></tr>`;
+  const items=itemList(r);
+
+  // HARGA AWAL / NILAI BARANG
+  const q=items.reduce((a,x)=>a+x.qty,0);
+  const value=items.reduce((a,x)=>a+x.total,0);
+
+  const cash=isCashOrder(r);
+  const p=r._paymentSource||{};
+
+  // TOTAL PEMBAYARAN / DP
+  const paid=Math.max(
+    0,
+    Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,
+    Number(p.totalDibayar??p.pembayaran??p.dp??0)||0
+  );
+
+  const explicitPaid=[
+    r.statusPembayaran,
+    r.paymentStatus,
+    p.statusPembayaran,
+    p.paymentStatus
+  ].map(v=>String(v??"").trim().toLowerCase());
+
+  const sourceTotal=Math.max(
+    0,
+    Number(p.totalBayar??p.total??0)||0
+  );
+
+  const paidFull=
+    explicitPaid.some(v=>[
+      "lunas","paid","dibayar","selesai","terbayar"
+    ].includes(v))
+    ||
+    (sourceTotal>0&&paid>=sourceTotal);
+
+  // UP PENGELOLA
+  const upDefault=Math.max(
+    0,
+    Number(
+      r.upPengelolaPerPcs??
+      r.upPengelola??
+      r.upPerPcs??
+      0
+    )||0
+  );
+
+  const upRowCalc=items.reduce(
+    (a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs)||upDefault),
+    0
+  );
+
+  const upRow=
+    upRowCalc>0
+      ?upRowCalc
+      :Math.max(
+        0,
+        Number(
+          r.totalUpPengelola??
+          r.totalUPPengelola??
+          r.upPengelolaTotal??
+          r.totalUp??
+          0
+        )||0
+      );
+
+  // TABUNGAN MEMBER
+  const tabDefault=Math.max(
+    0,
+    Number(
+      r.tabunganPerPcs??
+      r.tabungan??
+      r.menabungMemberPerPcs??
+      r.menabungMember??
+      0
+    )||0
+  );
+
+  const tabRowCalc=items.reduce(
+    (a,x)=>a+x.qty*(Number(x.tabunganPerPcs)||tabDefault),
+    0
+  );
+
+  const tabRow=
+    tabRowCalc>0
+      ?tabRowCalc
+      :Math.max(
+        0,
+        Number(
+          r.totalTabunganMember??
+          r.totalTabungan??
+          r.tabunganTotal??
+          0
+        )||0
+      );
+
+  // KAS BULANAN
+  const kasKey=kasMemberMonthKey(r);
+  const kasRow=
+    !kasSudahDitampilkan.has(kasKey)
+      ?kasBulananMap.get(kasKey)||0
+      :0;
+  kasSudahDitampilkan.add(kasKey);
+
+  // ==================================================
+  // RUMUS BARU:
+  // HARGA AWAL + UP PENGELOLA + TABUNGAN + KAS
+  // ==================================================
+  const totalTagihanAwal=
+    value+
+    upRow+
+    tabRow+
+    kasRow;
+
+  // ==================================================
+  // SISA TAGIHAN:
+  // TOTAL TAGIHAN AWAL - PEMBAYARAN/DP
+  // ==================================================
+  const sisa=
+    cash||paidFull
+      ?0
+      :Math.max(0,totalTagihanAwal-paid);
+
+  const st=sisa<=0?"lunas":"tagihan";
+  const jenis=cash?"CASH":"TEMPO";
+
+  qty+=q;
+  nilai+=value;
+  up+=upRow;
+  tabungan+=tabRow;
+  kas+=kasRow;
+  sisaTotal+=sisa;
+
+  const m=r.member||r.pelanggan||{};
+  const due=dueDate(r);
+
+  return `<tr>
+    <td><b>${esc(r.nomorNota||r.id)}</b></td>
+    <td>${esc(m.nama||"-")}</td>
+    <td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td>
+    <td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td>
+    <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
+    <td class="num">${q.toLocaleString("id-ID")}</td>
+    <td class="num">${rp(value)}</td>
+    <td class="num">${rp(upRow)}</td>
+    <td class="num">${rp(tabRow)}</td>
+    <td class="num">${rp(kasRow)}</td>
+    <td class="num">${rp(sisa)}</td>
+  </tr>`;
  }).join("");
- $("orderCount")?.remove();$("qtyTotal")?.remove();$("nilaiTotal")?.remove();$("upTotal")?.remove();$("tabunganTotal")?.remove();$("kasTotal")?.remove();
- $("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+
+ $("sisaTotal").textContent=rp(sisaTotal);
+
+ $("orderTable").innerHTML=
+   rows||
+   '<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
 }
-function renderAll(){if(!ready)return;renderRekap();}
-$("periode").onchange=renderAll;$("search").oninput=renderAll;
-$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+
+function renderAll(){
+ if(!ready)return;
+ renderRekap();
+}
+
+$("periode").onchange=renderAll;
+$("search").oninput=renderAll;
+
+$("dark").onclick=()=>{
+ document.body.classList.toggle("dark");
+ $("dark").textContent=
+   document.body.classList.contains("dark")?"☀️":"🌙";
+};
+
 onAuthStateChanged(auth,async u=>{
- if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}
+ if(!u){
+  notice("Belum login. Silakan login melalui FIXZY.","err");
+  return;
+ }
+
  try{
-  uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-  profile=s.data()||{};ownerUid=ownerOf(profile);if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
-  $("email").textContent=u.email||"-";await loadOrders();ready=true;renderAll();
-  notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");
- }catch(e){console.error(e);notice("Gagal memuat Rekap Order Member: "+e.message,"err");}
+  uid=u.uid;
+
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+
+  profile=s.data()||{};
+  ownerUid=ownerOf(profile);
+
+  if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
+
+  $("email").textContent=u.email||"-";
+
+  await loadOrders();
+
+  ready=true;
+  renderAll();
+
+  notice(
+    `Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,
+    "ok"
+  );
+ }catch(e){
+  console.error(e);
+  notice(
+    "Gagal memuat Rekap Order Member: "+e.message,
+    "err"
+  );
+ }
 });
 </script></body></html>
