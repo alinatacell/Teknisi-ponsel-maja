@@ -27,9 +27,9 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric,bod
 </div>
 <div class="summary-grid">
 <div class="metric orange"><div class="label">Total Qty</div><div class="value" id="totalQty">0 pcs</div><div class="sub">Qty order yang masuk tabungan</div></div>
-
-
-<div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Setelah pengambilan tabungan</div></div><div class="metric green"><div class="label">Saldo UP Pengelola</div><div class="value" id="saldoUpPengelola">Rp 0</div><div class="sub">UP masuk − pengeluaran UP</div></div><div class="metric orange"><div class="label">Saldo Uang Kas</div><div class="value" id="saldoUangKas">Rp 0</div><div class="sub">Kas masuk − pengeluaran Kas</div></div>
+<div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Setelah pengambilan tabungan</div></div>
+<div class="metric green"><div class="label">Saldo UP Pengelola</div><div class="value" id="saldoUpPengelola">Rp 0</div><div class="sub">UP masuk − pengeluaran UP</div></div>
+<div class="metric orange"><div class="label">Saldo Uang Kas</div><div class="value" id="saldoUangKas">Rp 0</div><div class="sub">Kas masuk − pengeluaran Kas</div></div>
 </div>
 <div class="card"><div class="title">SALDO TABUNGAN MEMBER</div>
 <div id="memberPanels" class="member-panels"><div class="empty">Memuat Firebase...</div></div>
@@ -115,7 +115,6 @@ async function loadAllExpenses(){
 function expenseTotals(){
  let kas=0,up=0; expenses.forEach(e=>{const n=Math.max(0,num(e.nominal));const source=norm(e.sumberDana||e.sumber||"");const jenis=norm(e.jenisLabel||e.jenis||""); if(source.includes("pengelola")||jenis.includes("pengelola"))up+=n; else if(source.includes("kas")||source===""||jenis.includes("transport")||jenis.includes("acara")||jenis.includes("lain"))kas+=n;}); return {kas,up};
 }
-
 function fallbackMembersFromOrders(){
  const map=new Map();
  orders.forEach(r=>{
@@ -188,8 +187,6 @@ function aggregate(){
    const qtyStored=Math.max(0,num(r.totalQty??r.approvedQty??r.qty??r.jumlah??0));
    const q=qtyFromItems>0?qtyFromItems:qtyStored;
 
-   // AKURAT: bila order menyimpan total tabungan, gunakan total tersebut.
-   // Jangan menjumlahkan ulang qty x default 4000 jika nilai order sudah tersimpan.
    const explicitTab=r.totalTabunganOrder??r.totalTabunganMember??r.totalTabungan??
      r.tabunganTotal??r.totalMenabungMember;
    const hasExplicitTab=explicitTab!==undefined&&explicitTab!==null&&explicitTab!=="";
@@ -203,11 +200,29 @@ function aggregate(){
      }else orderTab=q*fallbackTab;
    }
 
-   // UP PENGELOLA AKURAT:
-   // selalu dihitung dari QTY approved x tarif UP per pcs.
-   // Field total UP order tidak dipakai sebagai tarif per pcs.
+   /*
+    * PERBAIKAN UP PENGELOLA
+    * Prioritas:
+    * 1. Total UP yang memang disimpan pada order -> gunakan apa adanya.
+    * 2. Jika tidak ada total, hitung dari item: qty × UP per pcs.
+    * 3. Jika item tidak menyimpan UP per pcs, gunakan UP per pcs dari order/member.
+    *
+    * Ini mencegah total UP salah karena fallback Rp1.000/pcs
+    * dipakai pada order yang sebenarnya punya tarif UP berbeda.
+    */
+   const explicitUp=
+     r.totalUPPengelola??
+     r.totalUpPengelola??
+     r.upPengelolaTotal??
+     r.totalUp??
+     r.totalPengelola;
+
+   const hasExplicitUp=explicitUp!==undefined&&explicitUp!==null&&explicitUp!=="";
    let orderUp=0;
-   if(items.length){
+
+   if(hasExplicitUp){
+     orderUp=Math.max(0,num(explicitUp));
+   }else if(items.length){
      orderUp=items.reduce((sum,x)=>{
        const upPcs=(x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="")
          ?num(x.upStored)
@@ -221,12 +236,16 @@ function aggregate(){
    rec.qty+=q;
    rec.total+=orderTab;
    rec.up+=orderUp;
+
    if(q>0){
-     const firstItem=items.find(x=>x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="");
-     rec.upPcs=firstItem?num(firstItem.upStored):fallbackUp;
+     if(hasExplicitUp&&q>0){
+       rec.upPcs=orderUp/q;
+     }else{
+       const firstItem=items.find(x=>x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="");
+       rec.upPcs=firstItem?num(firstItem.upStored):fallbackUp;
+     }
    }
 
-   // Kas: hanya sekali per member per bulan kalender.
    const kas=num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??
      rec.member.kasBulanan??rec.member.uangKasBulanan??0);
    if(kas>0){
@@ -249,10 +268,13 @@ function render(){
  let total=0,qty=0,up=0,kas=0,withdraw=0;
  data.forEach(r=>{total+=r.total;qty+=r.qty;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});
  setText("totalQty",qty.toLocaleString("id-ID")+" pcs");
- setText("totalUp",rp(up));
- setText("totalKas",rp(kas));
  setText("saldoTabungan",rp(Math.max(0,total-withdraw)));
-  const global=aggregate(); let upGlobal=0,kasGlobal=0; global.forEach(r=>{upGlobal+=r.up;kasGlobal+=r.kas}); const ex=expenseTotals(); setText("saldoUpPengelola",rp(Math.max(0,upGlobal-ex.up))); setText("saldoUangKas",rp(Math.max(0,kasGlobal-ex.kas)));
+
+ // Saldo UP dan Kas mengikuti data hasil filter yang sedang tampil.
+ const ex=expenseTotals();
+ setText("saldoUpPengelola",rp(Math.max(0,up-ex.up)));
+ setText("saldoUangKas",rp(Math.max(0,kas-ex.kas)));
+
  const body=$("memberPanels");if(!body)return;
  body.innerHTML=data.length?data.map((r,i)=>{
    const a=r.member,saldo=Math.max(0,r.total-r.withdraw);
@@ -326,4 +348,5 @@ onAuthStateChanged(auth,async u=>{
  }catch(e){console.error(e);notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err")}
 });
 </script>
-</body></html>
+</body>
+</html>
