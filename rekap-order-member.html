@@ -16,7 +16,16 @@ main{max-width:1100px;margin:auto;padding:88px 12px 30px}
 .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
 label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
 input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
+
+/* RINCIAN TOTAL */
+.money-total{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
+.rekap-rincian{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.rekap-item{border:2px solid #111827;border-radius:8px;padding:9px 7px;background:#fff;min-width:0}
+.rekap-item .label{display:block;font-size:10px;font-weight:900;color:#4b5563;margin-bottom:5px}
+.rekap-item .value{display:block;font-size:13px;font-weight:900;color:#111827;word-break:break-word}
+.rekap-item.tagihan{background:#fef3c7}
+.rekap-item.tagihan .value{color:#b45309}
+
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
@@ -24,6 +33,9 @@ table{width:100%;border-collapse:collapse;min-width:0}
   table{min-width:680px}
   th,td{padding:8px 7px;font-size:10px}
   th{font-size:9px}
+  .rekap-rincian{grid-template-columns:1fr 1fr}
+  .rekap-item:last-child{grid-column:1/-1}
+  .rekap-item .value{font-size:12px}
 }
 th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
 th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
@@ -43,6 +55,10 @@ body.dark .title{border-color:#475569}
 body.dark label{color:#9ca3af}
 body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
 body.dark .money-total{background:#1c1917}
+body.dark .rekap-item{background:#0f172a;border-color:#475569}
+body.dark .rekap-item .label{color:#9ca3af}
+body.dark .rekap-item .value{color:#fff}
+body.dark .rekap-item.tagihan{background:#292211}
 body.dark th{background:#020617}
 body.dark td{border-color:#334155}
 @media(max-width:850px){.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
@@ -60,7 +76,32 @@ body.dark td{border-color:#334155}
 
 <div class="card"><div class="title">REKAPAN ORDERAN</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
 
-<div class="card"><div class="title">DAFTAR ORDER SEMUA MEMBER</div><div class="money-total">Total Sisa Tagihan: <b id="sisaTotal">Rp 0</b></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+<div class="card"><div class="title">DAFTAR ORDER SEMUA MEMBER</div>
+<div class="money-total">
+  <div class="rekap-rincian">
+    <div class="rekap-item">
+      <span class="label">NILAI BARANG</span>
+      <span class="value" id="totalNilaiBarang">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">PENGELOLA</span>
+      <span class="value" id="totalPengelola">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">TABUNGAN</span>
+      <span class="value" id="totalTabungan">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">KAS</span>
+      <span class="value" id="totalKas">Rp 0</span>
+    </div>
+    <div class="rekap-item tagihan">
+      <span class="label">TAGIHAN</span>
+      <span class="value" id="sisaTotal">Rp 0</span>
+    </div>
+  </div>
+</div>
+<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -308,6 +349,10 @@ function renderRekap(){
   </tr>`;
  }).join("");
 
+ $("totalNilaiBarang").textContent=rp(nilai);
+ $("totalPengelola").textContent=rp(up);
+ $("totalTabungan").textContent=rp(tabungan);
+ $("totalKas").textContent=rp(kas);
  $("sisaTotal").textContent=rp(sisaTotal);
 
  $("orderTable").innerHTML=
