@@ -10,7 +10,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:v
 main{max-width:1100px;margin:auto;padding:88px 12px 30px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
 .card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:none}.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
 .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:none}.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}.metric .value{font-size:20px;font-weight:900;margin-top:5px}.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}.metric.blue{background:#eff6ff}.metric.green{background:#f0fdf4}.metric.orange{background:#fffbeb}.metric.red{background:#fef2f2}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:none}.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}.metric .value{font-size:20px;font-weight:900;margin-top:5px}.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}.metric.green{background:#f0fdf4}.metric.orange{background:#fffbeb}.metric.red{background:#fef2f2}
 .empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
 .member-panels{display:grid;grid-template-columns:1fr;gap:14px}.member-panel{border:2px solid #111827;border-radius:14px;background:#fff;box-shadow:none;overflow:hidden}.member-panel-head{padding:14px;background:#111827;color:#fff;border-bottom:3px solid var(--y)}.member-owner{font-size:18px;font-weight:900;line-height:1.25}.member-owner-label{font-size:10px;font-weight:900;color:#ffc107;letter-spacing:.7px;margin-bottom:4px}.member-id{font-size:10px;color:#cbd5e1;margin-top:5px}.member-status{float:right;margin-left:8px}.member-main{padding:14px}.saving-box{border:2px solid #111827;border-radius:11px;background:#f0fdf4;padding:14px;margin-bottom:12px;box-shadow:none}.saving-label{font-size:11px;font-weight:900;color:#166534;text-transform:uppercase}.saving-total{font-size:27px;font-weight:900;margin-top:4px}.saving-sub{font-size:10px;color:#64748b;margin-top:4px}.saving-balance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}.saving-balance-box{border:2px solid #111827;border-radius:11px;padding:13px;box-shadow:none;background:#f8fafc}.saving-balance-box .k{font-size:10px;font-weight:900;text-transform:uppercase;color:#64748b}.saving-balance-box .v{font-size:20px;font-weight:900;margin-top:5px}.saving-balance-box.awal{background:#eff6ff}.saving-balance-box.ambil{background:#fff7ed}.saving-balance-box.sisa{background:#f0fdf4}.saving-formula{font-size:10px;font-weight:800;color:#475569;margin:-4px 0 12px;padding:8px 10px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc}.member-contact{font-size:11px;color:#475569;line-height:1.6;margin-bottom:10px}.member-contact b{color:#111827}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;border:1px solid #f59e0b;background:#fef3c7;color:#92400e}.badge.active{border-color:#22c55e;background:#dcfce7;color:#166534}.badge.off{border-color:#94a3b8;background:#f1f5f9;color:#475569}
 body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric,body.dark .member-panel{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark label{color:#9ca3af}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .saving-box,body.dark .saving-balance-box{border-color:#475569}body.dark .saving-formula{background:#0f172a;border-color:#64748b;color:#cbd5e1}
@@ -39,6 +39,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric,bod
 import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
@@ -46,6 +47,7 @@ const setText=(id,v)=>{const e=$(id);if(e)e.textContent=v};
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),num=v=>Number(v)||0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 let uid="",ownerUid="",profile={},members=[],orders=[],withdrawals=[],expenses=[],ready=false,loading=false;
+
 function norm(v){return String(v??"").trim().toLowerCase()}
 function notice(t,c=""){setText("notice",t);const e=$("notice");if(e)e.className="notice "+c}
 function ownerOf(d){const r=norm(d.role||d.profileRole);if(r==="owner"||r==="admin")return String(d.ownerUid||d.ownerId||uid).trim()||uid;if(r==="superadmin"||r==="super_admin")return "";return String(d.ownerUid||d.ownerId||"").trim()}
@@ -53,29 +55,45 @@ function nama(a){return String(a?.nama||a?.namaMember||a?.namaKaryawan||a?.name|
 function email(a){return String(a?.email||"")}
 function wa(a){return String(a?.noWA||a?.wa||a?.noWa||a?.noHp||a?.noWhatsapp||a?.nomorWA||a?.phone||"")}
 function kode(a){return String(a?.kodeMember||a?.kode||"")}
-function tabunganDefault(a){const v=a?.tabunganPerPcs??a?.tabunganMember??a?.tabunganMemberPerPcs;return Number(v??4000)||4000}
 function toDate(v){if(v?.toDate)return v.toDate();if(v instanceof Date)return v;const d=new Date(v);return isNaN(d)?null:d}
 function orderDate(r){return toDate(r.createdAt)||toDate(r.approvedAt)||toDate(r.updatedAt)||toDate(r.tanggal)||toDate(r.date)||new Date()}
 function monthKey(r){const d=orderDate(r);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
+
 function itemList(r){
  const a=Array.isArray(r.approvedItems)?r.approvedItems:(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
  return a.map(x=>({
    qty:Math.max(0,num(x.approvedQty??x.qty??x.jumlah??x.quantity)),
    tabStored:x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs??x.menabungMember,
-   upStored:x.upPengelolaPerPcs??x.upPengelola??x.upPerPcs
+   upStored:x.upPengelolaPerPcs??x.upPengelolaPerPcs??x.upPerPcs
  }));
 }
-function orderMemberKey(r){const m=r.member||r.pelanggan||{};return{uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||""),email:String(r.memberEmail||m.email||""),kode:String(m.kode||m.kodeMember||r.kodeMember||""),nama:String(m.nama||m.namaMember||r.memberNama||"")}}
+
+function orderMemberKey(r){
+ const m=r.member||r.pelanggan||{};
+ return{
+   uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||""),
+   email:String(r.memberEmail||m.email||""),
+   kode:String(m.kode||m.kodeMember||r.kodeMember||""),
+   nama:String(m.nama||m.namaMember||r.memberNama||"")
+ };
+}
+
 async function safeQuery(q){try{return await getDocs(q)}catch(e){console.warn("FIXZY query dilewati:",e?.message||e);return null}}
+
 async function loadMembers(){
  const map=new Map();
  for(const field of ["ownerUid","ownerId"]){
    const s=await safeQuery(query(collection(db,"users"),where(field,"==",ownerUid)));
    if(!s)continue;
-   s.forEach(d=>{const x={id:d.id,...(d.data()||{})};const r=norm(x.role||x.profileRole);if(["employee","karyawan","reseller","member"].includes(r)&&!map.has(d.id))map.set(d.id,x)});
+   s.forEach(d=>{
+     const x={id:d.id,...(d.data()||{})};
+     const r=norm(x.role||x.profileRole);
+     if(["employee","karyawan","reseller","member"].includes(r)&&!map.has(d.id))map.set(d.id,x)
+   });
  }
  members=[...map.values()];
 }
+
 function isiDropdownMember(){
  const el=$("search");if(!el)return;
  const nilai=el.value;
@@ -83,6 +101,7 @@ function isiDropdownMember(){
  el.innerHTML='<option value="">Semua Member</option>'+list.map(m=>`<option value="${esc(m.id)}">${esc(nama(m))}</option>`).join("");
  if(list.some(m=>String(m.id)===nilai))el.value=nilai;
 }
+
 async function loadOrders(){
  const map=new Map();
  for(const field of ["ownerUid","ownerId"]){
@@ -90,8 +109,13 @@ async function loadOrders(){
    if(!s)continue;
    s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...(d.data()||{})})});
  }
- orders=[...map.values()].filter(r=>{const ap=norm(r.approvalStatus||"");const st=norm(r.status||"");return ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st)});
+ orders=[...map.values()].filter(r=>{
+   const ap=norm(r.approvalStatus||"");
+   const st=norm(r.status||"");
+   return ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st)
+ });
 }
+
 async function loadWithdrawals(){
  const map=new Map();
  for(const field of ["ownerUid","ownerId","uid"]){
@@ -102,19 +126,32 @@ async function loadWithdrawals(){
  }
  withdrawals=[...map.values()].filter(r=>norm(r.modul)==="member"&&norm(r.jenis)==="pengambilan tabungan member");
 }
+
 async function loadAllExpenses(){
  const map=new Map();
  for(const collectionName of ["pengeluaran","pengeluaranMember"]){
   for(const field of ["ownerUid","ownerId","uid"]){
    const value=field==="uid"?uid:ownerUid;if(!value)continue;
    const s=await safeQuery(query(collection(db,collectionName),where(field,"==",value)));
-   if(!s)continue; s.forEach(d=>map.set(collectionName+":"+d.id,{id:d.id,...(d.data()||{})}));
+   if(!s)continue;
+   s.forEach(d=>map.set(collectionName+":"+d.id,{id:d.id,...(d.data()||{})}));
   }
- } expenses=[...map.values()];
+ }
+ expenses=[...map.values()];
 }
+
 function expenseTotals(){
- let kas=0,up=0; expenses.forEach(e=>{const n=Math.max(0,num(e.nominal));const source=norm(e.sumberDana||e.sumber||"");const jenis=norm(e.jenisLabel||e.jenis||""); if(source.includes("pengelola")||jenis.includes("pengelola"))up+=n; else if(source.includes("kas")||source===""||jenis.includes("transport")||jenis.includes("acara")||jenis.includes("lain"))kas+=n;}); return {kas,up};
+ let kas=0,up=0;
+ expenses.forEach(e=>{
+   const n=Math.max(0,num(e.nominal));
+   const source=norm(e.sumberDana||e.sumber||"");
+   const jenis=norm(e.jenisLabel||e.jenis||"");
+   if(source.includes("pengelola")||jenis.includes("pengelola"))up+=n;
+   else if(source.includes("kas")||source===""||jenis.includes("transport")||jenis.includes("acara")||jenis.includes("lain"))kas+=n;
+ });
+ return{kas,up};
 }
+
 function fallbackMembersFromOrders(){
  const map=new Map();
  orders.forEach(r=>{
@@ -128,7 +165,12 @@ function fallbackMembersFromOrders(){
  });
  return [...map.values()];
 }
-function findRec(by,r){const k=orderMemberKey(r);return by.id.get(k.uid)||by.email.get(norm(k.email))||by.code.get(norm(k.kode))||by.name.get(norm(k.nama))||null}
+
+function findRec(by,r){
+ const k=orderMemberKey(r);
+ return by.id.get(k.uid)||by.email.get(norm(k.email))||by.code.get(norm(k.kode))||by.name.get(norm(k.nama))||null
+}
+
 function withdrawalFor(r){
  const ids=[String(r.member?.id||"").trim(),String(r.member?.uid||"").trim(),norm(email(r.member)),norm(nama(r.member))].filter(Boolean);
  let total=0;
@@ -138,8 +180,60 @@ function withdrawalFor(r){
  });
  return total;
 }
+
+/*
+ * UP PENGELOLA — SUMBER YANG DISAMAKAN DENGAN REKAP ORDER MEMBER
+ *
+ * Pada Rekap Order Member, nilai seperti:
+ * Rp12.500, Rp9.000, Rp6.500, Rp5.000
+ * adalah nilai UP per ORDER/baris.
+ *
+ * Karena itu field r.upPengelola tidak boleh dianggap sebagai tarif
+ * per pcs dan tidak boleh dikalikan lagi dengan qty.
+ *
+ * Prioritas sumber:
+ * 1. totalUPPengelola
+ * 2. totalUpPengelola
+ * 3. upPengelolaTotal
+ * 4. totalUp
+ * 5. totalPengelola
+ * 6. upPengelola  <-- field yang dipakai Rekap Order Member
+ *
+ * Hanya jika semua total order tidak ada, baru hitung dari item.
+ */
+function getOrderUp(r,items,q,member){
+ const explicitTotal=
+   r.totalUPPengelola??
+   r.totalUpPengelola??
+   r.upPengelolaTotal??
+   r.totalUp??
+   r.totalPengelola??
+   r.upPengelola;
+
+ const hasTotal=explicitTotal!==undefined&&explicitTotal!==null&&explicitTotal!=="";
+
+ if(hasTotal)return Math.max(0,num(explicitTotal));
+
+ const fallbackUp=
+   r.upPengelolaPerPcs??
+   r.upPerPcs??
+   member?.upPengelolaPerPcs??
+   member?.upPengelolaPerPcsMember??
+   member?.upPerPcs;
+
+ if(items.length){
+   return items.reduce((sum,x)=>{
+     const p=x.upStored!==undefined&&x.upStored!==null&&x.upStored!==""?num(x.upStored):num(fallbackUp);
+     return sum+x.qty*p;
+   },0);
+ }
+
+ return q*Math.max(0,num(fallbackUp));
+}
+
 function aggregate(){
  const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
+
  members.forEach(m=>{
    const rec={member:m,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};
    byId.set(m.id,rec);
@@ -147,13 +241,22 @@ function aggregate(){
    if(kode(m))byCode.set(norm(kode(m)),rec);
    if(nama(m))byName.set(norm(nama(m)),rec);
  });
+
  orders.forEach(r=>{
    let rec=findRec({id:byId,email:byEmail,code:byCode,name:byName},r);
+
    if(!rec){
      const m=r.member||r.pelanggan||{};
-     const temp={id:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||"").trim(),
-       ...m,email:r.memberEmail||m.email||"",kodeMember:m.kodeMember||m.kode||r.kodeMember||"",
-       nama:m.nama||m.namaMember||r.memberNama||"-",role:"member",status:m.status||"aktif"};
+     const temp={
+       id:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||"").trim(),
+       ...m,
+       email:r.memberEmail||m.email||"",
+       kodeMember:m.kodeMember||m.kode||r.kodeMember||"",
+       nama:m.nama||m.namaMember||r.memberNama||"-",
+       role:"member",
+       status:m.status||"aktif"
+     };
+
      if(temp.id){
        rec={member:temp,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};
        byId.set(temp.id,rec);
@@ -162,123 +265,128 @@ function aggregate(){
        byName.set(norm(nama(temp)),rec);
      }
    }
+
    if(!rec)return;
 
    const orderTotal=Math.max(0,num(r.approvedTotal??r.totalBayar??r.total??0));
    const paidRecorded=Math.max(0,num(r.totalDibayar??r.pembayaran??r.approvedDp??r.dp??r.uangMuka??0));
    const paymentType=norm(r.tipeOrder||r.tipeTransaksi||r.jenisTransaksi||r.metodePembayaran||r.paymentMethod||r.pembayaranJenis||"");
    const cashOrder=/cash|tunai/.test(paymentType)||paymentType==="member_cash";
+
    rec.paid+=Math.min(orderTotal,Math.max(0,cashOrder?orderTotal:paidRecorded));
 
    const memberObj=r.member||r.pelanggan||{};
-   const fallbackTab=num(r.tabunganPerPcs??r.tabunganMember??r.menabungMemberPerPcs??
-     memberObj.tabunganPerPcs??memberObj.tabunganMember??
-     rec.member.tabunganPerPcs??rec.member.tabunganMember??4000)||4000;
-   const fallbackUp=num(
-     r.upPengelolaPerPcs??
-     r.upPerPcs??
-     rec.member.upPengelolaPerPcs??
-     rec.member.upPengelola??
-     1000
-   );
+   const fallbackTab=num(
+     r.tabunganPerPcs??
+     r.tabunganMember??
+     r.menabungMemberPerPcs??
+     memberObj.tabunganPerPcs??
+     memberObj.tabunganMember??
+     rec.member.tabunganPerPcs??
+     rec.member.tabunganMember??
+     4000
+   )||4000;
 
    const items=itemList(r);
    const qtyFromItems=items.reduce((a,x)=>a+x.qty,0);
    const qtyStored=Math.max(0,num(r.totalQty??r.approvedQty??r.qty??r.jumlah??0));
    const q=qtyFromItems>0?qtyFromItems:qtyStored;
 
-   const explicitTab=r.totalTabunganOrder??r.totalTabunganMember??r.totalTabungan??
-     r.tabunganTotal??r.totalMenabungMember;
+   /* TABUNGAN tetap seperti sebelumnya */
+   const explicitTab=
+     r.totalTabunganOrder??
+     r.totalTabunganMember??
+     r.totalTabungan??
+     r.tabunganTotal??
+     r.totalMenabungMember;
+
    const hasExplicitTab=explicitTab!==undefined&&explicitTab!==null&&explicitTab!=="";
    let orderTab=hasExplicitTab?Math.max(0,num(explicitTab)):0;
+
    if(!hasExplicitTab){
      if(items.length){
        orderTab=items.reduce((sum,x)=>{
          const tab=x.tabStored!==undefined&&x.tabStored!==null&&x.tabStored!==""?num(x.tabStored):fallbackTab;
          return sum+x.qty*tab;
        },0);
-     }else orderTab=q*fallbackTab;
+     }else{
+       orderTab=q*fallbackTab;
+     }
    }
 
-   /*
-    * PERBAIKAN UP PENGELOLA
-    * Prioritas:
-    * 1. Total UP yang memang disimpan pada order -> gunakan apa adanya.
-    * 2. Jika tidak ada total, hitung dari item: qty × UP per pcs.
-    * 3. Jika item tidak menyimpan UP per pcs, gunakan UP per pcs dari order/member.
-    *
-    * Ini mencegah total UP salah karena fallback Rp1.000/pcs
-    * dipakai pada order yang sebenarnya punya tarif UP berbeda.
-    */
-   const explicitUp=
-     r.totalUPPengelola??
-     r.totalUpPengelola??
-     r.upPengelolaTotal??
-     r.totalUp??
-     r.totalPengelola;
-
-   const hasExplicitUp=explicitUp!==undefined&&explicitUp!==null&&explicitUp!=="";
-   let orderUp=0;
-
-   if(hasExplicitUp){
-     orderUp=Math.max(0,num(explicitUp));
-   }else if(items.length){
-     orderUp=items.reduce((sum,x)=>{
-       const upPcs=(x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="")
-         ?num(x.upStored)
-         :fallbackUp;
-       return sum+(x.qty*upPcs);
-     },0);
-   }else{
-     orderUp=q*fallbackUp;
-   }
+   /* UP sekarang benar-benar mengambil TOTAL UP order */
+   const orderUp=getOrderUp(r,items,q,rec.member);
 
    rec.qty+=q;
    rec.total+=orderTab;
    rec.up+=orderUp;
 
-   if(q>0){
-     if(hasExplicitUp&&q>0){
-       rec.upPcs=orderUp/q;
-     }else{
-       const firstItem=items.find(x=>x.upStored!==undefined&&x.upStored!==null&&x.upStored!=="");
-       rec.upPcs=firstItem?num(firstItem.upStored):fallbackUp;
-     }
-   }
+   if(q>0)rec.upPcs=orderUp/q;
 
-   const kas=num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??
-     rec.member.kasBulanan??rec.member.uangKasBulanan??0);
+   /* Kas hanya sekali per member per bulan */
+   const kas=num(
+     r.kasBulanan??
+     r.uangKasBulanan??
+     r.kasBulananMember??
+     r.uangKas??
+     rec.member.kasBulanan??
+     rec.member.uangKasBulanan??
+     0
+   );
+
    if(kas>0){
      const mk=monthKey(r);
-     if(!rec.kasMonths.has(mk)){rec.kasMonths.add(mk);rec.kas+=kas;}
+     if(!rec.kasMonths.has(mk)){
+       rec.kasMonths.add(mk);
+       rec.kas+=kas;
+     }
    }
  });
+
  for(const rec of byId.values())rec.withdraw=withdrawalFor(rec);
  return [...byId.values()];
 }
 
 function render(){
  if(!ready)return;
+
  const search=String($("search")?.value||"").trim();
  const sf=norm($("statusFilter")?.value);
+
  const data=aggregate().filter(r=>{
    const a=r.member;
    return(!search||String(a.id||"")===search)&&(!sf||norm(a.status||"aktif")===sf);
  });
+
  let total=0,qty=0,up=0,kas=0,withdraw=0;
- data.forEach(r=>{total+=r.total;qty+=r.qty;up+=r.up;kas+=r.kas;withdraw+=r.withdraw});
+ data.forEach(r=>{
+   total+=r.total;
+   qty+=r.qty;
+   up+=r.up;
+   kas+=r.kas;
+   withdraw+=r.withdraw;
+ });
+
  setText("totalQty",qty.toLocaleString("id-ID")+" pcs");
  setText("saldoTabungan",rp(Math.max(0,total-withdraw)));
 
- // Saldo UP dan Kas mengikuti data hasil filter yang sedang tampil.
  const ex=expenseTotals();
+
+ /*
+  * Saldo UP:
+  * UP masuk dari order approved
+  * dikurangi pengeluaran UP.
+  */
  setText("saldoUpPengelola",rp(Math.max(0,up-ex.up)));
  setText("saldoUangKas",rp(Math.max(0,kas-ex.kas)));
 
- const body=$("memberPanels");if(!body)return;
+ const body=$("memberPanels");
+ if(!body)return;
+
  body.innerHTML=data.length?data.map((r,i)=>{
    const a=r.member,saldo=Math.max(0,r.total-r.withdraw);
    const status=norm(a.status)==="nonaktif"?"off":"active";
+
    return `<div class="member-panel">
      <div class="member-panel-head">
        <span class="member-status"><span class="badge ${status}">${esc(a.status||"aktif")}</span></span>
@@ -288,33 +396,50 @@ function render(){
      </div>
      <div class="member-main">
        <div class="member-contact"><b>Email:</b> ${esc(email(a)||"-")} &nbsp; • &nbsp; <b>WA:</b> ${esc(wa(a)||"-")}</div>
+
        <div class="saving-box">
          <div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div>
          <div class="saving-total">${rp(r.total)}</div>
          <div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved.</div>
        </div>
+
        <div class="saving-balance-grid">
          <div class="saving-balance-box awal"><div class="k">TABUNGAN AWAL</div><div class="v">${rp(r.total)}</div></div>
          <div class="saving-balance-box ambil"><div class="k">PENGAMBILAN</div><div class="v">${rp(r.withdraw)}</div></div>
          <div class="saving-balance-box sisa"><div class="k">SISA TABUNGAN</div><div class="v">${rp(saldo)}</div></div>
        </div>
+
        <div class="saving-formula">Sisa Tabungan <b>${esc(nama(a))}</b> = Tabungan Awal ${rp(r.total)} − Pengambilan ${rp(r.withdraw)} = <b>${rp(saldo)}</b></div>
      </div>
    </div>`;
  }).join(""):`<div class="empty">Belum ada data member/order yang sesuai.</div>`;
 }
+
 async function load(){
  if(!ownerUid||loading)return;
- loading=true;ready=false;notice("Menghubungkan Firebase FIXZY...","ok");
+
+ loading=true;
+ ready=false;
+ notice("Menghubungkan Firebase FIXZY...","ok");
+
  try{
    await Promise.all([loadMembers(),loadOrders(),loadWithdrawals(),loadAllExpenses()]);
+
    if(!members.length)members=fallbackMembersFromOrders();
+
    isiDropdownMember();
-   ready=true;render();
+   ready=true;
+   render();
+
    notice(`Firebase FIXZY terhubung • ${members.length} member • ${orders.length} order approved.`,"ok");
- }catch(e){console.error(e);notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err")}
- finally{loading=false}
+ }catch(e){
+   console.error(e);
+   notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err");
+ }finally{
+   loading=false;
+ }
 }
+
 window.muatUlang=async()=>{
  if(auth.currentUser){
    try{
@@ -322,30 +447,58 @@ window.muatUlang=async()=>{
      if(s.exists()){
        profile=s.data()||{};
        const role=norm(profile.role||profile.profileRole);
-       ownerUid=(role==="owner"||profile.isOwner===true)?auth.currentUser.uid:String(profile.ownerUid||profile.ownerId||"").trim()
+       ownerUid=(role==="owner"||profile.isOwner===true)
+         ?auth.currentUser.uid
+         :String(profile.ownerUid||profile.ownerId||"").trim();
      }
    }catch(e){}
  }
  if(ownerUid)await load();
 };
-window.resetFilter=()=>{if($("search"))$("search").value="";if($("statusFilter"))$("statusFilter").value="";render()};
+
+window.resetFilter=()=>{
+ if($("search"))$("search").value="";
+ if($("statusFilter"))$("statusFilter").value="";
+ render();
+};
+
 $("search")?.addEventListener("change",render);
 $("statusFilter")?.addEventListener("change",render);
-$("dark")?.addEventListener("click",()=>{document.body.classList.toggle("dark");setText("dark",document.body.classList.contains("dark")?"☀️":"🌙")});
+
+$("dark")?.addEventListener("click",()=>{
+ document.body.classList.toggle("dark");
+ setText("dark",document.body.classList.contains("dark")?"☀️":"🌙");
+});
+
 onAuthStateChanged(auth,async u=>{
- if(!u){notice("Menunggu sesi login FIXZY...");return}
+ if(!u){
+   notice("Menunggu sesi login FIXZY...");
+   return;
+ }
+
  try{
    uid=u.uid;
+
    const s=await getDoc(doc(db,"users",uid));
    if(!s.exists())throw Error("Profil akun tidak ditemukan di users/"+uid);
+
    profile=s.data()||{};
    const role=norm(profile.role||profile.profileRole);
-   if(role==="superadmin"||role==="super_admin"||norm(u.email)==="servicehpmaja@gmail.com")throw Error("SUPERADMIN tidak memiliki akses data bisnis Owner.");
+
+   if(role==="superadmin"||role==="super_admin"||norm(u.email)==="servicehpmaja@gmail.com")
+     throw Error("SUPERADMIN tidak memiliki akses data bisnis Owner.");
+
    ownerUid=(role==="owner"||profile.isOwner===true)?uid:ownerOf(profile);
+
    if(!ownerUid)throw Error("ownerUid/ownerId pemilik akun tidak ditemukan.");
+
    setText("email",u.email||profile.email||"-");
+
    await load();
- }catch(e){console.error(e);notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err")}
+ }catch(e){
+   console.error(e);
+   notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err");
+ }
 });
 </script>
 </body>
