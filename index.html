@@ -458,7 +458,9 @@ async function loadMemberSavingsHeader(user, profile){
     // Mendukung struktur data lama maupun baru.
     // ============================================================
     if(uid){
-      for(const field of ["memberUid","memberId","createdByMemberUid","uidMember"]){
+      // Identitas member bisa tersimpan di level atas atau di dalam map "member".
+      for(const field of ["memberUid","memberId","createdByMemberUid","uidMember",
+                          "member.memberUid","member.uid","member.userId"]){
         try{
           const s=await getDocs(
             query(collection(db,"order_member"),where(field,"==",uid))
@@ -471,25 +473,60 @@ async function loadMemberSavingsHeader(user, profile){
     }
 
     if(em){
-      try{
-        const s=await getDocs(
-          query(collection(db,"order_member"),where("memberEmail","==",em))
-        );
-        s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
-      }catch(e){
-        console.warn("Query memberEmail dilewati:",e?.message||e);
+      for(const field of ["memberEmail","member.email"]){
+        try{
+          const s=await getDocs(
+            query(collection(db,"order_member"),where(field,"==",em))
+          );
+          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
+        }catch(e){
+          console.warn("Query "+field+" dilewati:",e?.message||e);
+        }
+      }
+    }
+
+    // Data order lama juga dapat hanya menyimpan kode/nama di map member.
+    if(kode){
+      for(const field of ["kodeMember","member.kodeMember","member.kode"]){
+        try{
+          const s=await getDocs(
+            query(collection(db,"order_member"),where(field,"==",kode))
+          );
+          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
+        }catch(e){
+          console.warn("Query "+field+" dilewati:",e?.message||e);
+        }
+      }
+    }
+
+    if(nama){
+      for(const field of ["memberNama","member.namaMember","member.nama"]){
+        try{
+          const s=await getDocs(
+            query(collection(db,"order_member"),where(field,"==",nama))
+          );
+          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
+        }catch(e){
+          console.warn("Query "+field+" dilewati:",e?.message||e);
+        }
       }
     }
 
     let total=0;
 
     ordersMap.forEach(r=>{
-      const ap=normHeader(r.approvalStatus||"");
-      const st=normHeader(r.status||"");
+      const ap=normHeader(
+        r.approvalStatus||
+        r.statusApproval||
+        r.persetujuan||
+        r.member?.approvalStatus||
+        ""
+      );
+      const st=normHeader(r.status||r.orderStatus||"");
 
       const approved=
-        ap==="approved"||
-        ["order_member","approved","tagihan","lunas"].includes(st);
+        ["approved","disetujui","setuju","acc"].includes(ap)||
+        ["order_member","approved","disetujui","setuju","acc","tagihan","lunas"].includes(st);
 
       if(!approved)return;
 
