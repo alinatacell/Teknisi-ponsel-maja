@@ -444,138 +444,99 @@ async function loadMemberSavingsHeader(user, profile){
   const uid=String(user?.uid||"").trim();
   const em=String(user?.email||profile?.email||"").trim().toLowerCase();
   const kode=String(profile?.kodeMember||profile?.kode||profile?.memberCode||"").trim().toLowerCase();
-  const nama=String(profile?.nama||profile?.namaMember||profile?.name||profile?.displayName||"").trim().toLowerCase();
+  const nama=String(profile?.nama||profile?.namaMember||profile?.name||profile?.displayName||profile?.namaKonter||"").trim().toLowerCase();
   const role=normHeader(profile?.role||profile?.profileRole);
 
-  // SUPERADMIN/ADMIN bukan akun bisnis/member.
   if(role==="superadmin"||role==="admin")return;
 
   try{
     const ordersMap=new Map();
 
-    // ============================================================
-    // AMBIL ORDER BERDASARKAN IDENTITAS MEMBER LOGIN.
-    // Mendukung struktur data lama maupun baru.
-    // ============================================================
-    if(uid){
-      // Identitas member bisa tersimpan di level atas atau di dalam map "member".
-      for(const field of ["memberUid","memberId","createdByMemberUid","uidMember",
-                          "member.memberUid","member.uid","member.userId"]){
-        try{
-          const s=await getDocs(
-            query(collection(db,"order_member"),where(field,"==",uid))
-          );
-          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
-        }catch(e){
-          console.warn("Query "+field+" dilewati:",e?.message||e);
-        }
-      }
+    // 1. Cari berdasarkan field identitas yang umum dipakai.
+    const uidFields=["memberUid","memberId","createdByMemberUid","uidMember"];
+    for(const field of uidFields){
+      if(!uid)break;
+      try{
+        const q1=await getDocs(query(collection(db,"order_member"),where(field,"==",uid)));
+        q1.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
+      }catch(e){ console.warn("Query "+field+" dilewati:",e?.message||e); }
     }
 
-    if(em){
-      for(const field of ["memberEmail","member.email"]){
-        try{
-          const s=await getDocs(
-            query(collection(db,"order_member"),where(field,"==",em))
-          );
-          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
-        }catch(e){
-          console.warn("Query "+field+" dilewati:",e?.message||e);
-        }
-      }
+    const emailFields=["memberEmail"];
+    for(const field of emailFields){
+      if(!em)break;
+      try{
+        const q2=await getDocs(query(collection(db,"order_member"),where(field,"==",em)));
+        q2.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
+      }catch(e){ console.warn("Query "+field+" dilewati:",e?.message||e); }
     }
 
-    // Data order lama juga dapat hanya menyimpan kode/nama di map member.
-    if(kode){
-      for(const field of ["kodeMember","member.kodeMember","member.kode"]){
-        try{
-          const s=await getDocs(
-            query(collection(db,"order_member"),where(field,"==",kode))
-          );
-          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
-        }catch(e){
-          console.warn("Query "+field+" dilewati:",e?.message||e);
-        }
-      }
-    }
-
-    if(nama){
-      for(const field of ["memberNama","member.namaMember","member.nama"]){
-        try{
-          const s=await getDocs(
-            query(collection(db,"order_member"),where(field,"==",nama))
-          );
-          s.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
-        }catch(e){
-          console.warn("Query "+field+" dilewati:",e?.message||e);
-        }
+    // 2. PENTING: data pada screenshot memakai map "member".
+    // Firestore tidak selalu dapat di-query dengan nested field pada rules/index
+    // yang dipakai aplikasi, jadi lakukan fallback baca dokumen order_member
+    // lalu cocokkan identitas di sisi aplikasi.
+    if(ordersMap.size===0){
+      try{
+        const all=await getDocs(collection(db,"order_member"));
+        all.forEach(d=>ordersMap.set(d.id,{id:d.id,...(d.data()||{})}));
+      }catch(e){
+        console.warn("Fallback baca semua order_member gagal:",e?.message||e);
       }
     }
 
     let total=0;
+    let matchedOrders=0;
 
     ordersMap.forEach(r=>{
-      const ap=normHeader(
-        r.approvalStatus||
-        r.statusApproval||
-        r.persetujuan||
-        r.member?.approvalStatus||
-        ""
+      const m=(r.member&&typeof r.member==="object")?r.member:
+              ((r.pelanggan&&typeof r.pelanggan==="object")?r.pelanggan:{});
+
+      const norm=x=>String(x??"").trim().toLowerCase();
+
+      const orderUid=norm(
+        r.memberUid??r.memberId??r.createdByMemberUid??r.uidMember??
+        m.memberUid??m.uid??m.userId??m.uidMember
       );
-      const st=normHeader(r.status||r.orderStatus||"");
+      const orderEmail=norm(r.memberEmail??m.email);
+      const orderKode=norm(r.kodeMember??m.kodeMember??m.kode??m.memberCode);
+      const orderNama=norm(r.memberNama??r.namaMember??m.namaMember??m.nama??m.name??r.nama);
 
-      const approved=
-        ["approved","disetujui","setuju","acc"].includes(ap)||
-        ["order_member","approved","disetujui","setuju","acc","tagihan","lunas"].includes(st);
-
-      if(!approved)return;
-
-      const m=r.member||r.pelanggan||{};
-
-      const orderUid=String(
-        r.memberUid||
-        r.memberId||
-        r.createdByMemberUid||
-        r.uidMember||
-        m.uid||
-        m.userId||
-        ""
-      ).trim();
-
-      const orderEmail=String(
-        r.memberEmail||m.email||""
-      ).trim().toLowerCase();
-
-      const orderKode=String(
-        r.kodeMember||
-        m.kodeMember||
-        m.kode||
-        ""
-      ).trim().toLowerCase();
-
-      const orderNama=String(
-        r.memberNama||
-        m.namaMember||
-        m.nama||
-        ""
-      ).trim().toLowerCase();
-
-      // Pastikan order memang milik akun yang sedang login.
       const cocok=
-        (uid && orderUid===uid)||
-        (em && orderEmail===em)||
-        (kode && orderKode===kode)||
-        (nama && orderNama===nama);
+        (uid&&orderUid===norm(uid))||
+        (em&&orderEmail===em)||
+        (kode&&orderKode===kode)||
+        (nama&&orderNama===nama);
 
       if(!cocok)return;
 
-      // Jika order sudah menyimpan total tabungan, gunakan nilai tersebut.
+      // Jangan membuang order hanya karena nama field status berbeda.
+      // Jika ada status approval, hormati status tersebut.
+      const ap=norm(r.approvalStatus??r.statusApproval??r.persetujuan??m.approvalStatus);
+      const st=norm(r.status??r.orderStatus??m.status);
+
+      const statusDitolak=["rejected","ditolak","cancelled","canceled","batal"].includes(ap)||
+                           ["rejected","ditolak","cancelled","canceled","batal"].includes(st);
+      if(statusDitolak)return;
+
+      const statusDikenal=ap||st;
+      if(statusDikenal){
+        const approved=
+          ["approved","disetujui","setuju","acc","order_member","tagihan","lunas","selesai","diambil"].includes(ap)||
+          ["approved","disetujui","setuju","acc","order_member","tagihan","lunas","selesai","diambil"].includes(st);
+        if(!approved)return;
+      }
+
+      matchedOrders++;
+
+      // Prioritas utama: total tabungan yang memang tersimpan di dokumen.
+      // "tabungan" terlihat sebagai field int64 pada dokumen Firebase.
       const explicit=
-        r.totalTabunganOrder??
         r.totalTabunganMember??
+        r.totalTabunganOrder??
         r.totalTabungan??
         r.tabunganTotal??
-        r.totalMenabungMember;
+        r.totalMenabungMember??
+        r.tabungan;
 
       if(explicit!==undefined&&explicit!==null&&explicit!==""){
         total+=Math.max(0,numHeader(explicit));
@@ -594,130 +555,93 @@ async function loadMemberSavingsHeader(user, profile){
           4000
         )||4000;
 
-      const items=
-        Array.isArray(r.approvedItems)
-          ?r.approvedItems
-          :Array.isArray(r.items)
-            ?r.items
-            :Array.isArray(r.produkList)
-              ?r.produkList
-              :[];
+      const items=Array.isArray(r.approvedItems)?r.approvedItems:
+                  Array.isArray(r.items)?r.items:
+                  Array.isArray(r.produkList)?r.produkList:[];
 
       if(items.length){
         items.forEach(x=>{
-          const q=Math.max(
-            0,
-            numHeader(
-              x.approvedQty??
-              x.qty??
-              x.jumlah??
-              x.quantity
-            )
-          );
-
-          const tab=
-            numHeader(
-              x.tabunganPerPcs??
-              x.tabunganMember??
-              x.menabungMemberPerPcs??
-              fallback
-            )||fallback;
-
+          const q=Math.max(0,numHeader(
+            x.approvedQty??x.qty??x.jumlah??x.quantity??0
+          ));
+          const tab=numHeader(
+            x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs??fallback
+          )||fallback;
           total+=q*tab;
         });
       }else{
-        let q=Math.max(
-          0,
-          numHeader(
-            r.totalQty??
-            r.approvedQty??
-            r.qty??
-            r.jumlah??
-            0
-          )
-        );
-
-        if(!q&&explicit){
-          q=Math.round(numHeader(explicit)/fallback);
-        }
-
+        const q=Math.max(0,numHeader(
+          r.totalQty??r.approvedQty??r.qty??r.jumlah??0
+        ));
         total+=q*fallback;
       }
     });
 
-    // ============================================================
-    // PENGAMBILAN TABUNGAN MEMBER
-    // ============================================================
+    // Pengambilan tabungan.
     const withdrawalsMap=new Map();
 
     if(uid){
       for(const field of ["memberUid","memberId"]){
         try{
-          const s=await getDocs(
-            query(collection(db,"pengeluaran"),where(field,"==",uid))
-          );
+          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",uid)));
           s.forEach(d=>withdrawalsMap.set(d.id,{id:d.id,...(d.data()||{})}));
-        }catch(e){
-          console.warn("Query pengambilan "+field+" dilewati:",e?.message||e);
-        }
+        }catch(e){ console.warn("Query pengambilan "+field+" dilewati:",e?.message||e); }
       }
     }
 
     if(em){
       try{
-        const s=await getDocs(
-          query(collection(db,"pengeluaran"),where("memberEmail","==",em))
-        );
+        const s=await getDocs(query(collection(db,"pengeluaran"),where("memberEmail","==",em)));
         s.forEach(d=>withdrawalsMap.set(d.id,{id:d.id,...(d.data()||{})}));
-      }catch(e){
-        console.warn("Query pengambilan email dilewati:",e?.message||e);
-      }
+      }catch(e){ console.warn("Query pengambilan email dilewati:",e?.message||e); }
+    }
+
+    // Fallback pengambilan juga bila identitas tersimpan di nama/kode.
+    if(withdrawalsMap.size===0){
+      try{
+        const allW=await getDocs(collection(db,"pengeluaran"));
+        allW.forEach(d=>withdrawalsMap.set(d.id,{id:d.id,...(d.data()||{})}));
+      }catch(e){ console.warn("Fallback baca pengeluaran gagal:",e?.message||e); }
     }
 
     let taken=0;
-
     withdrawalsMap.forEach(r=>{
-      if(
-        normHeader(r.modul)!=="member"||
-        normHeader(r.jenis)!=="pengambilan tabungan member"
-      )return;
+      if(normHeader(r.modul)!=="member" ||
+         normHeader(r.jenis)!=="pengambilan tabungan member")return;
 
       const wUid=String(r.memberUid||r.memberId||"").trim();
-      const wEmail=String(r.memberEmail||"").trim().toLowerCase();
-      const wNama=String(r.memberNama||"").trim().toLowerCase();
+      const wEmail=normHeader(r.memberEmail);
+      const wKode=normHeader(r.kodeMember||r.memberKode);
+      const wNama=normHeader(r.memberNama||r.namaMember||r.nama);
 
       const cocok=
         (uid&&wUid===uid)||
         (em&&wEmail===em)||
+        (kode&&wKode===kode)||
         (nama&&wNama===nama);
 
-      if(cocok){
-        taken+=Math.max(0,numHeader(r.nominal));
-      }
+      if(cocok) taken+=Math.max(0,numHeader(r.nominal));
     });
 
     const saldo=Math.max(0,total-taken);
-
     val.textContent=rpHeader(saldo);
     box.classList.add("show");
 
-    console.log("FIXZY TABUNGAN HEADER",{
-      uid,
-      email:em,
-      kode,
-      nama,
+    console.log("FIXZY TABUNGAN HEADER V2",{
+      uid,email:em,kode,nama,role,
       totalTabungan:total,
       pengambilan:taken,
       saldo,
-      jumlahOrder:ordersMap.size
+      jumlahOrder:ordersMap.size,
+      orderCocok:matchedOrders
     });
-
   }catch(e){
     console.error("Tabungan member di header gagal dimuat:",e);
     val.textContent="Rp 0";
     box.classList.add("show");
   }
 }
+
 async function validasiDanTampilkan(user){
   if(!user){
     authReady=false;
