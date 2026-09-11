@@ -29,7 +29,7 @@ function memberObj(r){return r.member||r.pelanggan||{};}
 function time(v){try{if(v?.toMillis)return v.toMillis();if(v?.seconds)return Number(v.seconds)*1000;const t=new Date(v||0).getTime();return Number.isFinite(t)?t:0;}catch{return 0;}}
 function tanggal(v){const t=time(v);return t?new Date(t).toLocaleString("id-ID"):"-";}
 function isOwner(){return role==="owner";}
-function memberIds(){return [...new Set([uid,profile.memberUid,profile.memberId,profile.idMember,profile.uidMember,profile.id].map(x=>String(x??"").trim()).filter(Boolean))];}
+function memberIds(){return [...new Set([uid,profile.uid,profile.userId,profile.memberUid,profile.memberId,profile.idMember,profile.uidMember,profile.karyawanUid,profile.idKaryawan,profile.employeeUid,profile.uidEmployee,profile.id].map(x=>String(x??"").trim()).filter(Boolean))];}
 function memberEmail(){return String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();}
 function matchesMember(r){const m=memberObj(r),ids=new Set(memberIds()),em=memberEmail();const rid=[r.memberUid,r.memberId,r.uidMember,r.createdByMemberUid,m.uid,m.userId,m.memberUid,m.id,m.memberId].map(x=>String(x??"").trim()).filter(Boolean);const re=[r.memberEmail,m.email].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);return rid.some(x=>ids.has(x))||re.some(x=>x===em&&em);}
 function orderMemberUid(r){const m=memberObj(r);return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||"").trim();}
@@ -43,31 +43,27 @@ function targetOwner(r){return String(r.ownerUid||r.ownerId||r.uid||"").trim();}
 
 async function loadOrders(){
  const map=new Map();
- if(isOwner()){
-   for(const field of ["ownerUid","ownerId"]){try{const s=await getDocs(query(collection(db,"order_member"),where(field,"==",ownerUid)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("Owner order query",field,e?.message||e);}}
- }else{
-   const ids=memberIds(),em=memberEmail();
-   for(const v of ids){
-     for(const field of ["memberUid","memberId"]){try{const s=await getDocs(query(collection(db,"order_member"),where(field,"==",v)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn(field,e?.message||e);}}
-     try{const s=await getDocs(query(collection(db,"order_member"),where("member.uid","==",v)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("member.uid",e?.message||e);}
-   }
-   if(em){for(const field of ["memberEmail","member.email"]){try{const s=await getDocs(query(collection(db,"order_member"),where(field,"==",em)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn(field,e?.message||e);}}}
+ for(const field of ["ownerUid","ownerId"]){
+  try{const q=await getDocs(query(collection(db,"order_member"),where(field,"==",ownerUid)));q.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}
+  catch(e){console.warn("Query order_member "+field+" dilewati:",e?.message||e);}
  }
- orders=[...map.values()].filter(r=>approvedOrder(r)&&!cashOrder(r)&&sisaOrder(r)>0&&(isOwner()?(!targetOwner(r)||targetOwner(r)===ownerUid):matchesMember(r))).sort((a,b)=>time(b.approvedAt||b.createdAt||b.tanggal)-time(a.approvedAt||a.createdAt||a.tanggal));
+ orders=[...map.values()].filter(r=>approvedOrder(r)&&!cashOrder(r)&&sisaOrder(r)>0&&((!targetOwner(r))||targetOwner(r)===ownerUid)).sort((a,b)=>time(b.approvedAt||b.createdAt||b.tanggal)-time(a.approvedAt||a.createdAt||a.tanggal));
 }
 async function loadRequests(){
  const map=new Map(),ids=memberIds(),em=memberEmail();
  if(isOwner()){
    for(const field of ["ownerUid","ownerId"]){try{const s=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",ownerUid)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("Owner request query",field,e?.message||e);}}
  }else{
-   for(const v of ids)for(const field of ["memberUid","memberId"]){try{const s=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",v)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("request",field,e?.message||e);}}
+   for(const v of ids){
+     try{const s=await getDocs(query(collection(db,"tabungan_member"),where("memberUid","==",v)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("request memberUid",e?.message||e);}
+   }
    if(em)try{const s=await getDocs(query(collection(db,"tabungan_member"),where("memberEmail","==",em)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("request email",e?.message||e);}
  }
- requests=[...map.values()].filter(r=>norm(r.jenis||r.tipe)==="cicilan_tagihan"&&String(r.ownerUid||r.ownerId||"").trim()===ownerUid&&(isOwner()||matchesMember(r))).sort((a,b)=>time(b.requestedAt||b.createdAt)-time(a.requestedAt||a.createdAt));
+ requests=[...map.values()].filter(r=>norm(r.jenis||r.tipe)==="cicilan_tagihan"&&String(r.ownerUid||r.ownerId||"").trim()===ownerUid).sort((a,b)=>time(b.requestedAt||b.createdAt)-time(a.requestedAt||a.createdAt));
 }
 function renderInvoices(){
  const box=$("invoiceList");
- $("tagihanSub").textContent=isOwner()?"Mode Owner: seluruh tagihan member milik Owner ditampilkan.":"Mode Karyawan: hanya tagihan member yang terhubung ke akun login ditampilkan.";
+ $("tagihanSub").textContent=isOwner()?"Mode Owner: seluruh tagihan member milik Owner ditampilkan.":"Mode Karyawan: seluruh tagihan member milik Owner ditampilkan.";
  if(!orders.length){box.innerHTML='<div class="empty">🎉 Tidak ada tagihan yang harus dicicil.</div>';$('payCard').style.display="none";return;}
  box.innerHTML=orders.map(r=>{const m=memberObj(r),s=sisaOrder(r);return `<div class="invoice ${selected?.id===r.id?"selected":""}" onclick="pilihOrder('${esc(r.id)}')"><div class="invoice-head"><div><div class="invoice-title">${esc(r.nomorNota||r.id)}</div><div class="muted">${esc(m.nama||r.memberNama||"Member")}${isOwner()?` • Member UID: ${esc(orderMemberUid(r)||"-")}`:""} • Jatuh tempo: ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"-")}</div></div><span class="badge">TAGIHAN</span></div><div class="grid"><div class="box"><span>TOTAL ORDER</span><b>${rp(totalOrder(r))}</b></div><div class="box"><span>SUDAH DIBAYAR</span><b>${rp(totalDibayar(r))}</b></div><div class="box"><span>SISA TAGIHAN</span><b>${rp(s)}</b></div></div></div>`;}).join("");
 }
