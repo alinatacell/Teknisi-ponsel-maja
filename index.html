@@ -102,7 +102,7 @@ body{overflow:hidden}
   <div class="header-account">
     <div class="account-name" id="accountName">Memuat...</div>
     <div class="account-exp">Exp: <span id="accountExp">-</span></div>
-    <div class="account-saving" id="accountSaving">💰 Tabungan: <b id="accountSavingValue">Rp 0</b></div>
+    <div class="account-saving" id="accountSaving">💰 Tabungan Anda: <b id="accountSavingValue">Rp 0</b></div>
   </div>
 </header>
 
@@ -424,12 +424,42 @@ function orderDateHeader(r){return toDateHeader(r.createdAt)||toDateHeader(r.app
 function memberUidFromOrderHeader(r){const m=r.member||r.pelanggan||{};return String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||"").trim()}
 function memberEmailFromOrderHeader(r){const m=r.member||r.pelanggan||{};return String(r.memberEmail||m.email||"").trim().toLowerCase()}
 function memberTabunganOrderHeader(r){
-  const explicit=r.totalTabunganOrder??r.totalTabunganMember??r.totalTabungan??r.tabunganTotal??r.totalMenabungMember;
-  if(explicit!==undefined&&explicit!==null&&explicit!=="")return Math.max(0,numHeader(explicit));
+  // Sumber dan prioritas dibuat SAMA dengan Data Tabungan Member.
+  // Nilai total order dipakai lebih dulu; jika tidak ada, hitung dari item.
+  const explicit=
+    r.totalTabunganMember??
+    r.totalTabunganOrder??
+    r.totalTabungan??
+    r.tabunganTotal??
+    r.totalMenabungMember??
+    r.tabungan;
+
+  if(explicit!==undefined&&explicit!==null&&explicit!==""){
+    return Math.max(0,numHeader(explicit));
+  }
+
   const m=r.member||r.pelanggan||{};
-  const fallback=numHeader(r.tabunganPerPcs??r.tabunganMember??r.menabungMemberPerPcs??m.tabunganPerPcs??m.tabunganMember??4000)||4000;
-  const items=Array.isArray(r.approvedItems)?r.approvedItems:(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
-  if(items.length)return items.reduce((s,x)=>s+Math.max(0,numHeader(x.approvedQty??x.qty??x.jumlah??x.quantity))*numHeader(x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs??fallback),0);
+  const fallback=numHeader(
+    r.tabunganPerPcs??
+    r.tabunganMember??
+    r.menabungMemberPerPcs??
+    m.tabunganPerPcs??
+    m.tabunganMember??
+    4000
+  )||4000;
+
+  const items=Array.isArray(r.approvedItems)
+    ?r.approvedItems
+    :(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
+
+  if(items.length){
+    return items.reduce((s,x)=>{
+      const q=Math.max(0,numHeader(x.approvedQty??x.qty??x.jumlah??x.quantity));
+      const tab=x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs;
+      return s+q*numHeader(tab!==undefined&&tab!==null&&tab!==""?tab:fallback);
+    },0);
+  }
+
   const q=Math.max(0,numHeader(r.totalQty??r.approvedQty??r.qty??r.jumlah??0));
   return q*fallback;
 }
@@ -504,7 +534,7 @@ async function loadMemberSavingsHeader(user, profile){
       String(profile?.memberId||"").trim()
     ].filter(Boolean);
 
-    // 1. Cari berdasarkan UID member.
+    // 1. Cari berdasarkan UID member
     for(const field of ["memberUid","memberId","uid"]){
       if(!uid) continue;
       try{
@@ -519,7 +549,7 @@ async function loadMemberSavingsHeader(user, profile){
       }
     }
 
-    // 2. Cari berdasarkan email member.
+    // 2. Cari berdasarkan email member
     if(em){
       try{
         const s=await getDocs(
@@ -533,8 +563,8 @@ async function loadMemberSavingsHeader(user, profile){
       }
     }
 
-    // 3. Data lama: ambil pengeluaran milik Owner lalu cocokkan
-    //    menggunakan UID, email, kode, atau nama member.
+    // 3. Ambil transaksi milik Owner untuk menangkap data lama
+    //    yang identitas member-nya tersimpan sebagai kode/nama.
     const ownerForWithdrawal=String(
       profile?.ownerUid||
       profile?.ownerId||
@@ -562,7 +592,7 @@ async function loadMemberSavingsHeader(user, profile){
       }
     }
 
-    // 4. Hitung hanya pengambilan tabungan member yang benar.
+    // 4. Hitung hanya pengambilan tabungan member milik akun ini.
     let taken=0;
     withdrawalsMap.forEach(r=>{
       if(
@@ -576,19 +606,23 @@ async function loadMemberSavingsHeader(user, profile){
         String(r.uid||"").trim()
       ].filter(Boolean);
 
-      const withdrawalEmail=String(r.memberEmail||"").trim().toLowerCase();
-      const withdrawalCode=String(
-        r.kodeMember||r.memberKode||r.kode||""
-      ).trim().toLowerCase();
-      const withdrawalName=String(
-        r.memberNama||r.namaMember||r.nama||""
-      ).trim().toLowerCase();
+      const withdrawalEmails=[
+        String(r.memberEmail||"").trim().toLowerCase()
+      ].filter(Boolean);
+
+      const withdrawalCodes=[
+        String(r.kodeMember||r.memberKode||r.kode||"").trim().toLowerCase()
+      ].filter(Boolean);
+
+      const withdrawalNames=[
+        String(r.memberNama||r.namaMember||r.nama||"").trim().toLowerCase()
+      ].filter(Boolean);
 
       const cocok=
         memberIds.some(x=>withdrawalIds.includes(x)) ||
-        (em && withdrawalEmail===em) ||
-        (memberKode && withdrawalCode===memberKode) ||
-        (memberNama && withdrawalName===memberNama);
+        (em&&withdrawalEmails.includes(em)) ||
+        (memberKode&&withdrawalCodes.includes(memberKode)) ||
+        (memberNama&&withdrawalNames.includes(memberNama));
 
       if(cocok){
         taken+=Math.max(0,numHeader(r.nominal));
