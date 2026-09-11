@@ -38,7 +38,7 @@ input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:13px;font-s
 .qr.show{display:block}.qr img{width:min(340px,100%);max-height:55vh;object-fit:contain;border:1px solid #ddd;border-radius:12px}
 .amount{font-size:22px;font-weight:900;margin:10px 0;color:#047857}
 .note{background:#fff8dc;border:1px solid #f1d36a;border-radius:10px;padding:10px;font-size:12px;line-height:1.5;text-align:left}
-.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}.actions .btn{flex:1;min-width:150px}
 .status{display:inline-block;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900}
 .pending{background:#fff7d6;color:#92400e}.approved{background:#dcfce7;color:#166534}.rejected{background:#fee2e2;color:#991b1b}
 .item{border-top:1px solid #eef2f6;padding:12px 0;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
@@ -69,14 +69,21 @@ input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:13px;font-s
     <div class="title">Ajukan Cicilan</div>
     <div id="selectedInfo" class="sub"></div>
     <div class="form">
-      <label>Nominal cicilan</label>
+      <label>Pilihan pembayaran</label>
+      <div class="actions" style="justify-content:stretch;margin-top:0">
+        <button id="btnCicil" class="btn secondary" type="button" onclick="pilihMode('cicil')">💰 Bayar Cicil</button>
+        <button id="btnLunas" class="btn secondary" type="button" onclick="pilihMode('lunas')">✅ Bayar Lunas</button>
+      </div>
+
+      <label id="nominalLabel">Nominal cicilan</label>
       <input id="nominal" type="number" min="1000" step="1000" placeholder="Contoh: 50000">
-      <button class="btn primary" onclick="tampilkanQR()">💳 Lanjut ke Pembayaran QRIS</button>
+
+      <button class="btn primary" type="button" onclick="tampilkanQR()">💳 Lanjut ke Pembayaran QRIS</button>
     </div>
 
     <div id="qrBox" class="qr">
       <div class="title">Scan QRIS</div>
-      <div class="sub">Transfer sesuai nominal cicilan yang Anda masukkan.</div>
+      <div class="sub">Transfer sesuai nominal pembayaran yang ditampilkan di bawah.</div>
       <img src="qris.jpg" alt="QRIS FIXZY">
       <div id="qrAmount" class="amount">Rp 0</div>
       <div class="note">Setelah transfer berhasil, tekan <b>Saya Sudah Transfer</b>. Request masuk ke Owner. <b>Tagihan belum berkurang sebelum di-approve.</b></div>
@@ -112,7 +119,7 @@ const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const num=v=>Number(v)||0;
 const norm=v=>String(v??"").trim().toLowerCase();
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-let uid="",profile={},role="",ownerUid="",orders=[],requests=[],selected=null,requestAmount=0;
+let uid="",profile={},role="",ownerUid="",orders=[],requests=[],selected=null,requestAmount=0,paymentMode="cicil";
 
 function notice(t,c=""){const e=$("notice");e.textContent=t;e.className="notice "+c}
 function memberObj(r){return r.member||r.pelanggan||{}}
@@ -126,88 +133,34 @@ function time(v){
 function tanggal(v){const t=time(v);return t?new Date(t).toLocaleString("id-ID"):"-"}
 
 /* =========================================================
-   HITUNG TAGIHAN — SAMA DENGAN REKAP ORDER MEMBER
+   HITUNG TAGIHAN — MENGIKUTI DATA TAGIHAN / REKAP
    ========================================================= */
-function isCashOrder(r){
-  const vals=[
-    r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,
-    r.metodePembayaran,r.jenisPembayaran,r.caraBayar
-  ].map(v=>String(v??"").trim().toLowerCase());
-  return vals.some(v=>[
-    "member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"
-  ].includes(v));
+function totalOrder(r){
+  return num(r.totalBayar??r.total??r.subtotal??0);
 }
-function basePriceOfItem(x,r={}){
-  const cash=isCashOrder(r);
-  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
-  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
-  const direct=Number(x.hargaDasar);
-  if(Number.isFinite(direct)&&direct>0)return direct;
-  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
-  if(Number.isFinite(specific)&&specific>0)return specific;
-  const composed=Number(x.harga);
-  if(Number.isFinite(composed)&&composed>0)return Math.max(0,composed-up-tab);
+function totalDibayar(r){
+  if(r.totalDibayar!=null)return num(r.totalDibayar);
+  if(r.pembayaran!=null)return num(r.pembayaran);
+  if(r.dp!=null)return num(r.dp);
+  if(r.uangMuka!=null)return num(r.uangMuka);
   return 0;
 }
-function itemList(r){
-  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
-  return a.map(x=>{
-    const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
-    const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0);
-    const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
-    const hargaAwal=basePriceOfItem(x,r);
-    const diskon=Math.max(0,Number(x.diskon??x.discount??0)||0);
-    const nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-    return{
-      produkId:String(x.produkId||x.id||""),
-      nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
-      kode:String(x.kode||x.kodeProduk||""),
-      qty,hargaAwal,diskon,nilaiBarang,
-      upPengelolaPerPcs:up,
-      tabunganPerPcs:tabungan,
-      total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)
-    };
-  });
+function sisaOrder(r){
+  const stored=r.sisaBayar??r.sisa;
+  if(stored!=null && Number.isFinite(Number(stored)))return Math.max(0,num(stored));
+  return Math.max(0,totalOrder(r)-totalDibayar(r));
 }
-function kasOf(r){
-  return Math.max(0,Number(
-    r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0
-  )||0);
+function statusOrder(r){
+  const jenis=norm(r.jenisHarga||r.tipeOrder||r.tipeTransaksi);
+  if(jenis==="cash"||jenis==="member_cash"||jenis==="member_cash_tunai")return"lunas";
+  return sisaOrder(r)<=0?"lunas":"tagihan";
 }
-function paidOf(r){
-  return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0);
+function approvedOrder(r){
+  const ap=norm(r.approvalStatus||"");
+  const st=norm(r.status||"");
+  // order_member is the approved-result status used by FIXZY.
+  return ap==="approved" || st==="approved" || st==="order_member";
 }
-function calculateOrder(r){
-  const items=itemList(r);
-  const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
-  const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
-  const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
-  const kas=kasOf(r);
-  const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
-  const paid=paidOf(r);
-  const cash=isCashOrder(r);
-  const sisa=cash?0:Math.max(0,totalTagihan-paid);
-  return{items,nilaiBarang,up,tabungan,kas,totalTagihan,paid,sisa,cash};
-}
-function dueDate(r){
-  if(isCashOrder(r))return null;
-  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
-  if(!raw)return null;
-  if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
-  const s=String(raw);
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-    const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);
-  }
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
-    const[d,m,y]=s.split("/").map(Number);return new Date(y,m-1,d);
-  }
-  const d=new Date(s);
-  return isNaN(d.getTime())?null:d;
-}
-function totalOrder(r){return calculateOrder(r).totalTagihan}
-function totalDibayar(r){return calculateOrder(r).paid}
-function sisaOrder(r){return calculateOrder(r).sisa}
-function statusOrder(r){return calculateOrder(r).sisa<=0?"lunas":"tagihan"}
 
 /* =========================================================
    IDENTITAS MEMBER
@@ -261,8 +214,6 @@ async function loadOrders(){
   const ids=memberIds();
   const email=memberEmail();
 
-  /* A. Cari transaksi member di PENJUALAN.
-     Ini hanya dipakai sebagai pintu masuk ke orderMemberId. */
   for(const field of ["memberUid","memberId"]){
     for(const value of ids){
       try{
@@ -283,88 +234,46 @@ async function loadOrders(){
     }
   }
 
-  /* B. Untuk transaksi yang sudah punya orderMemberId,
-     ambil DOKUMEN order_member sebagai sumber utama.
-     Tidak memeriksa status 'approved' lagi karena order_member
-     memang merupakan hasil approval Member. */
-  const result=[];
-  for(const p of [...map.values()]){
+  /* =======================================================
+     Setelah approval, penjualan menyimpan orderMemberId.
+     Ambil snapshot order_member sebagai acuan bila terbaca.
+     ======================================================= */
+  const approvedPenjualan=[...map.values()].filter(approvedOrder);
+  for(const p of approvedPenjualan){
     const oid=String(p.orderMemberId||"").trim();
-
-    if(oid){
-      try{
-        const s=await getDoc(doc(db,"order_member",oid));
-        if(s.exists()){
-          const x={id:s.id,...(s.data()||{}),_source:"order_member",sourcePenjualanId:p.id};
-
-          /* Sama seperti Rekap: sinkronkan data pembayaran dan
-             komponen transaksi dari penjualan bila order_member
-             belum memilikinya. */
-          const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
-          const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
-
-          if(sourceItems.length){
-            const byKey=new Map(sourceItems.map(si=>[
-              String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si
-            ]));
-            x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{
-              const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||"");
-              const si=byKey.get(key)||{};
-              return{
-                ...si,...oi,
-                upPengelolaPerPcs:Number(
-                  oi.upPengelolaPerPcs??oi.upPengelola??
-                  si.upPengelolaPerPcs??si.upPengelola??0
-                )||0,
-                tabunganPerPcs:Number(
-                  oi.tabunganPerPcs??oi.tabungan??
-                  si.tabunganPerPcs??si.tabungan??0
-                )||0
-              };
-            });
-          }
-
-          for(const k of [
-            "upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan",
-            "totalUPPengelola","totalUpPengelola","totalTabunganMember",
-            "totalTabungan","kasBulanan","uangKasBulanan",
-            "totalDibayar","pembayaran","dp","jatuhTempo","tanggalJatuhTempo"
-          ]){
-            if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k];
-          }
-
-          result.push(x);
-          continue;
-        }
-      }catch(e){
-        console.warn("order_member "+oid+" tidak terbaca:",e?.message||e);
+    if(!oid)continue;
+    try{
+      const s=await getDoc(doc(db,"order_member",oid));
+      if(s.exists()){
+        const om={id:s.id,...(s.data()||{}),_source:"order_member"};
+        if(matchesMember(om))map.set(p.id,om);
       }
-    }
-
-    /* Fallback hanya jika tidak ada order_member dan penjualan
-       sendiri menyatakan approval secara eksplisit. */
-    const ap=norm(p.approvalStatus||"");
-    const st=norm(p.status||"");
-    if(!oid && (ap==="approved"||st==="approved")){
-      result.push(p);
+    }catch(e){
+      console.warn("order_member "+oid+" tidak terbaca, memakai penjualan:",e?.message||e);
     }
   }
 
-  /* C. Hilangkan duplikat, cocokkan member, lalu tampilkan
-     hanya yang benar-benar masih memiliki sisa tagihan. */
-  const seen=new Set();
-  orders=result
-    .filter(r=>matchesMember(r))
-    .filter(r=>statusOrder(r)==="tagihan")
-    .filter(r=>{
-      const key=String(r.id||r.nomorNota||"");
-      if(seen.has(key))return false;
-      seen.add(key);
-      return true;
-    })
+  /* Fallback: cari order_member langsung memakai beberapa bentuk
+     identitas member, termasuk top-level dan nested member. */
+  for(const field of ["memberUid","memberId","memberEmail"]){
+    const values=field==="memberEmail"?(email?[email]:[]):ids;
+    for(const value of values){
+      try{
+        const s=await getDocs(query(collection(db,"order_member"),where(field,"==",value)));
+        s.forEach(d=>{
+          const om={id:d.id,...(d.data()||{}),_source:"order_member"};
+          if(matchesMember(om))map.set(om.sourcePenjualanId||om.id,om);
+        });
+      }catch(e){
+        console.warn("Query order_member "+field+" dilewati:",e?.message||e);
+      }
+    }
+  }
+
+  orders=[...map.values()]
+    .filter(r=>matchesMember(r) && approvedOrder(r) && statusOrder(r)==="tagihan")
     .sort((a,b)=>time(b.createdAt||b.approvedAt||b.tanggal)-time(a.createdAt||a.approvedAt||a.tanggal));
 }
-
 
 /* =========================================================
    LOAD REQUEST CICILAN
@@ -413,18 +322,18 @@ function renderInvoices(){
   }
 
   box.innerHTML=orders.map(r=>{
-    const m=memberObj(r),calc=calculateOrder(r),sisa=calc.sisa;
+    const m=memberObj(r),sisa=sisaOrder(r);
     return `<div class="invoice ${selected?.id===r.id?"selected":""}" onclick="pilihOrder('${esc(r.id)}')">
       <div class="invoice-head">
         <div>
           <div class="invoice-title">${esc(r.nomorNota||r.id)}</div>
-          <div class="muted">${esc(m.nama||r.memberNama||"Member")} • ${dueDate(r)?dueDate(r).toLocaleDateString("id-ID"):"Tanpa jatuh tempo"}</div>
+          <div class="muted">${esc(m.nama||r.memberNama||"Member")} • ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"Tanpa jatuh tempo")}</div>
         </div>
         <span class="badge">TAGIHAN</span>
       </div>
       <div class="grid">
-        <div class="box"><span>TOTAL ORDER</span><b>${rp(calc.totalTagihan)}</b></div>
-        <div class="box"><span>SUDAH DIBAYAR</span><b>${rp(calc.paid)}</b></div>
+        <div class="box"><span>TOTAL ORDER</span><b>${rp(totalOrder(r))}</b></div>
+        <div class="box"><span>SUDAH DIBAYAR</span><b>${rp(totalDibayar(r))}</b></div>
         <div class="box"><span>SISA TAGIHAN</span><b>${rp(sisa)}</b></div>
       </div>
     </div>`;
@@ -442,7 +351,7 @@ function renderHistory(){
     return `<div class="item">
       <div>
         <div class="money">${rp(r.nominal)}</div>
-        <div class="muted">${esc(r.nomorNota||r.orderMemberId||"-")} • ${tanggal(r.requestedAt)}</div>
+        <div class="muted">${esc(r.modePembayaran==="lunas"||r.jenisPembayaran==="pelunasan"?"PELUNASAN":"CICILAN")} • ${esc(r.nomorNota||r.orderMemberId||"-")} • ${tanggal(r.requestedAt)}</div>
         ${r.tagihanSebelum!=null?`<div class="muted">Sebelum approval: <b>${rp(r.tagihanSebelum)}</b></div>`:""}
         ${r.tagihanSesudah!=null?`<div class="muted">Sisa setelah approval: <b>${rp(r.tagihanSesudah)}</b></div>`:""}
       </div>
@@ -459,17 +368,47 @@ window.pilihOrder=id=>{
   $("selectedInfo").innerHTML=`Order <b>${esc(selected.nomorNota||selected.id)}</b> • Sisa tagihan <b>${rp(sisa)}</b>`;
   $("nominal").value="";
   $("nominal").max=String(sisa);
+  $("nominal").readOnly=false;
+  paymentMode="cicil";
+  $("nominalLabel").textContent="Nominal cicilan";
+  $("btnCicil").className="btn primary";
+  $("btnLunas").className="btn secondary";
   $("qrBox").classList.remove("show");
   renderInvoices();
   window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+};
+
+window.pilihMode=mode=>{
+  if(!selected)return;
+  paymentMode=mode==="lunas"?"lunas":"cicil";
+  const sisa=sisaOrder(selected);
+  const inp=$("nominal"), lbl=$("nominalLabel");
+  const bc=$("btnCicil"), bl=$("btnLunas");
+
+  if(paymentMode==="lunas"){
+    inp.value=String(sisa);
+    inp.max=String(sisa);
+    inp.readOnly=true;
+    lbl.textContent="Nominal pelunasan";
+    bl.className="btn primary";
+    bc.className="btn secondary";
+  }else{
+    inp.value="";
+    inp.max=String(sisa);
+    inp.readOnly=false;
+    lbl.textContent="Nominal cicilan";
+    bc.className="btn primary";
+    bl.className="btn secondary";
+  }
 };
 
 window.tampilkanQR=()=>{
   if(!selected)return;
   const v=Math.floor(num($("nominal").value));
   const sisa=sisaOrder(selected);
-  if(v<1000)return notice("Minimal cicilan Rp1.000.","err");
-  if(v>sisa)return notice(`Cicilan tidak boleh melebihi sisa tagihan ${rp(sisa)}.`,"err");
+  if(v<1000)return notice("Minimal pembayaran Rp1.000.","err");
+  if(v>sisa)return notice(`Pembayaran tidak boleh melebihi sisa tagihan ${rp(sisa)}.`,"err");
+  if(paymentMode==="lunas" && v!==sisa)return notice("Nominal pelunasan harus sama dengan sisa tagihan.","err");
   requestAmount=v;
   $("qrAmount").textContent=rp(v);
   $("qrBox").classList.add("show");
@@ -520,16 +459,23 @@ window.kirimRequest=async()=>{
       sourcePenjualanId:selected.sourcePenjualanId||"",
       nomorNota:selected.nomorNota||selected.id,
       nominal:requestAmount,
+      modePembayaran:paymentMode,
+      jenisPembayaran:paymentMode==="lunas"?"pelunasan":"cicilan",
       tagihanSebelum:sisa,
+      tagihanSesudah:null,
       status:"pending",
       requestedAt:serverTimestamp(),
       approvedAt:null,
-      approvedBy:null,
-      tagihanSesudah:null
+      approvedBy:null
     });
 
     $("qrBox").classList.remove("show");
     $("nominal").value="";
+    $("nominal").readOnly=false;
+    paymentMode="cicil";
+    $("nominalLabel").textContent="Nominal cicilan";
+    $("btnCicil").className="btn primary";
+    $("btnLunas").className="btn secondary";
     requestAmount=0;
     notice("Request cicilan sudah dikirim. Tagihan belum berubah sampai Owner approve.","ok");
     await loadRequests();
