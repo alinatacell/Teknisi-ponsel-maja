@@ -14,10 +14,67 @@ const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsK",authDomain:"fixzy-up
 function notice(t,c=""){const e=$("notice");e.textContent=t;e.className="notice "+c}function memberObj(r){return r.member||r.pelanggan||{}}function time(v){try{if(v?.toMillis)return v.toMillis();if(v?.seconds)return Number(v.seconds)*1000;return new Date(v||0).getTime()||0}catch{return 0}}function tanggal(v){const t=time(v);return t?new Date(t).toLocaleString("id-ID"):"-"}
 function sisaOrder(r){const total=num(r.totalBayar??r.total??0);const stored=Number(r.sisaBayar??r.sisa);if(Number.isFinite(stored))return Math.max(0,stored);const paid=num(r.totalDibayar??r.pembayaran??r.dp??0);return Math.max(0,total-paid)}
 function statusOrder(r){const jenis=norm(r.jenisHarga||r.tipeOrder||r.tipeTransaksi);if(jenis==="cash"||jenis==="member_cash"||jenis==="member_cash_tunai")return"lunas";return sisaOrder(r)<=0?"lunas":"tagihan"}
-async function init(u){uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Akun tidak ditemukan.");profile=s.data()||{};role=norm(profile.role||profile.profileRole);ownerUid=role==="owner"?uid:String(profile.ownerUid||profile.ownerId||"").trim();if(!ownerUid)throw Error("Owner akun belum ditemukan.");$("email").textContent=profile.email||u.email||"-";await loadAll()}
+async function init(u){
+  uid=String(u?.uid||window.parent?.fixzySession?.uid||"").trim();
+  if(!uid)throw Error("Sesi akun belum terbaca. Silakan kembali ke Index lalu buka Cicilan Tagihan lagi.");
+  let p={};
+  try{
+    const s=await getDoc(doc(db,"users",uid));
+    if(s.exists())p=s.data()||{};
+  }catch(e){console.warn("Profil Firebase tidak terbaca, coba sesi Index",e?.message||e)}
+  const sess=window.parent?.fixzySession||window.fixzySession||{};
+  profile=Object.keys(p).length?p:(sess.profile||{});
+  role=norm(profile.role||profile.profileRole||sess.role);
+  ownerUid=role==="owner"?uid:String(profile.ownerUid||profile.ownerId||sess.ownerUid||"").trim();
+  if(!ownerUid && role!=="superadmin" && role!=="admin")throw Error("Owner akun belum ditemukan. Pastikan akun member terhubung ke Owner.");
+  $("email").textContent=profile.email||u?.email||sess.profile?.email||sess.email||"-";
+  await loadAll();
+}
 async function loadAll(){await loadOrders();await loadRequests();renderInvoices();renderHistory()}
-async function loadOrders(){const map=new Map(),email=String(profile.email||auth.currentUser?.email||"").trim().toLowerCase();for(const value of [uid,String(profile.memberId||"").trim()].filter(Boolean)){try{const s=await getDocs(query(collection(db,"order_member"),where("memberUid","==",value)));s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){}}if(email){try{const s=await getDocs(query(collection(db,"order_member"),where("memberEmail","==",email)));s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){}}orders=[...map.values()].filter(r=>statusOrder(r)==="tagihan").sort((a,b)=>time(b.createdAt||b.approvedAt)-time(a.createdAt||a.approvedAt))}
-async function loadRequests(){const map=new Map();for(const field of ["memberUid","memberId"]){for(const value of [uid,String(profile.memberId||"").trim()].filter(Boolean)){try{const s=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",value)));s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){}}}const email=String(profile.email||auth.currentUser?.email||"").trim().toLowerCase();if(email){try{const s=await getDocs(query(collection(db,"tabungan_member"),where("memberEmail","==",email)));s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){}}requests=[...map.values()].sort((a,b)=>time(b.requestedAt)-time(a.requestedAt))}
+async function loadOrders(){
+  const map=new Map();
+  const email=String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();
+  const memberIds=new Set([uid,String(profile.memberId||profile.idMember||profile.kodeMember||"").trim()].filter(Boolean));
+  const memberEmails=new Set([email,String(profile.memberEmail||"").trim().toLowerCase()].filter(Boolean));
+  const memberNames=new Set([String(profile.nama||profile.name||profile.namaPemilik||profile.namaKonter||"").trim().toLowerCase()].filter(Boolean));
+
+  // Penting: query harus menyertakan ownerUid agar sesuai Firestore Rules.
+  // Setelah data Owner terbaca, baru dicocokkan dengan identitas member.
+  const queries=[];
+  if(ownerUid){
+    queries.push(query(collection(db,"order_member"),where("ownerUid","==",ownerUid)));
+    queries.push(query(collection(db,"order_member"),where("ownerId","==",ownerUid)));
+  }
+  for(const q of queries){
+    try{
+      const s=await getDocs(q);
+      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
+    }catch(e){console.warn("Query order_member dilewati",e?.message||e)}
+  }
+
+  orders=[...map.values()].filter(r=>{
+    const m=memberObj(r);
+    const ids=[r.memberUid,r.memberId,r.createdByMemberUid,r.uidMember,m.uid,m.userId,m.memberUid,m.id,m.kode,m.kodeMember].map(x=>String(x??"").trim()).filter(Boolean);
+    const emails=[r.memberEmail,m.email].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+    const names=[m.nama,m.name,r.memberNama,r.namaMember].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+    const cocok=ids.some(x=>memberIds.has(x))||emails.some(x=>memberEmails.has(x))||names.some(x=>memberNames.has(x));
+    return cocok && statusOrder(r)==="tagihan";
+  }).sort((a,b)=>time(b.createdAt||b.approvedAt)-time(a.createdAt||a.approvedAt));
+}
+async function loadRequests(){
+  const map=new Map();
+  const email=String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();
+  // Query berdasarkan ownerUid agar member dapat membaca dokumen milik Owner sesuai rules.
+  if(ownerUid){
+    try{const s=await getDocs(query(collection(db,"tabungan_member"),where("ownerUid","==",ownerUid)));s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){console.warn("Query cicilan owner dilewati",e?.message||e)}
+  }
+  requests=[...map.values()].filter(r=>{
+    if(norm(r.jenis||r.tipe)!=="cicilan_tagihan")return false;
+    const ids=[r.memberUid,r.memberId,r.uidMember].map(x=>String(x??"").trim()).filter(Boolean);
+    const emails=[r.memberEmail].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+    return ids.includes(uid)||ids.includes(String(profile.memberId||"").trim())||emails.includes(email);
+  }).sort((a,b)=>time(b.requestedAt)-time(a.requestedAt));
+}
 function renderInvoices(){const box=$("invoiceList");if(!orders.length){box.innerHTML='<div class="empty">🎉 Tidak ada tagihan yang harus dicicil.</div>';$("payCard").style.display="none";return}box.innerHTML=orders.map(r=>{const m=memberObj(r),sisa=sisaOrder(r);return `<div class="invoice ${selected?.id===r.id?"selected":""}" onclick="pilihOrder('${esc(r.id)}')"><div class="invoice-head"><div><div class="invoice-title">${esc(r.nomorNota||r.id)}</div><div class="muted">${esc(m.nama||"Member")} • ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"Tanpa jatuh tempo")}</div></div><span class="badge">TAGIHAN</span></div><div class="grid"><div class="box"><span>TOTAL ORDER</span><b>${rp(r.totalBayar??r.total??0)}</b></div><div class="box"><span>SUDAH DIBAYAR</span><b>${rp(num(r.totalDibayar??r.pembayaran??r.dp??0))}</b></div><div class="box"><span>SISA TAGIHAN</span><b>${rp(sisa)}</b></div></div></div>`}).join("")}
 window.pilihOrder=id=>{selected=orders.find(x=>x.id===id)||null;if(!selected)return;const sisa=sisaOrder(selected);$("payCard").style.display="block";$("selectedInfo").innerHTML=`Order <b>${esc(selected.nomorNota||selected.id)}</b> • Sisa tagihan <b>${rp(sisa)}</b>`;$("nominal").value="";$("nominal").max=String(sisa);$("qrBox").classList.remove("show");renderInvoices();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})};
 window.tampilkanQR=()=>{if(!selected)return;const v=Math.floor(num($("nominal").value)),sisa=sisaOrder(selected);if(v<1000){notice("Minimal cicilan Rp1.000.","err");return}if(v>sisa){notice(`Cicilan tidak boleh melebihi sisa tagihan ${rp(sisa)}.`,`err`);return}requestAmount=v;$("qrAmount").textContent=rp(v);$("qrBox").classList.add("show");notice("Silakan transfer melalui QRIS. Setelah transfer tekan Saya Sudah Transfer.","ok")};
@@ -25,5 +82,12 @@ window.batalQR=()=>{$("qrBox").classList.remove("show");requestAmount=0};
 window.kirimRequest=async()=>{if(!selected||requestAmount<=0)return;const sisa=sisaOrder(selected);if(requestAmount>sisa){notice("Sisa tagihan sudah berubah. Refresh terlebih dahulu.","err");return}const m=memberObj(selected);try{await addDoc(collection(db,"tabungan_member"),{jenis:"cicilan_tagihan",tipe:"cicilan_tagihan",ownerUid,memberUid:uid,memberId:String(profile.memberId||m.memberId||m.kode||""),memberEmail:String(profile.email||auth.currentUser?.email||"").toLowerCase(),member:{uid,nama:String(m.nama||profile.nama||profile.name||"Member"),kode:String(m.kode||profile.kodeMember||"")},orderMemberId:selected.id,nomorNota:selected.nomorNota||selected.id,nominal:requestAmount,tagihanSebelum:sisa,status:"pending",requestedAt:serverTimestamp(),approvedAt:null,approvedBy:null});$("qrBox").classList.remove("show");$("nominal").value="";requestAmount=0;notice("Request cicilan sudah dikirim. Tagihan belum berubah sampai Owner approve.","ok");await loadAll()}catch(e){console.error(e);notice("Gagal mengirim request: "+(e?.message||e),"err")}};
 function renderHistory(){const box=$("history");if(!requests.length){box.innerHTML='<div class="empty">Belum ada riwayat cicilan.</div>';return}box.innerHTML=requests.map(r=>{const st=norm(r.status)||"pending";return `<div class="item"><div><div class="money">${rp(r.nominal)}</div><div class="muted">${esc(r.nomorNota||r.orderMemberId||"-")} • ${tanggal(r.requestedAt)}</div>${r.tagihanSesudah!=null?`<div class="muted">Sisa setelah approval: <b>${rp(r.tagihanSesudah)}</b></div>`:""}</div><span class="status ${st}">${st==="approved"?"DISETUJUI":st==="rejected"?"DITOLAK":"MENUNGGU APPROVAL"}</span></div>`}).join("")}
 window.muatUlang=()=>loadAll().then(()=>notice("Data diperbarui.","ok")).catch(e=>notice("Gagal memuat: "+(e?.message||e),"err"));
-onAuthStateChanged(auth,async u=>{if(!u){notice("Belum login.","err");return}try{await init(u);notice("Akun aktif • pilih tagihan yang ingin dicicil.","ok")}catch(e){console.error(e);notice(e.message||String(e),"err")}});
+onAuthStateChanged(auth,async u=>{
+  // Jika halaman dibuka dari Index melalui iframe, gunakan sesi Index sebagai fallback.
+  const sess=window.parent?.fixzySession||null;
+  const effective=u||sess;
+  if(!effective){notice("Sesi akun belum terbaca. Kembali ke Index lalu buka Cicilan Tagihan lagi.","err");$("email").textContent="Sesi belum terbaca";return}
+  try{await init(effective);notice("Akun aktif • pilih tagihan yang ingin dicicil.","ok")}
+  catch(e){console.error(e);notice(e.message||String(e),"err");$("email").textContent="Gagal memuat akun"}
+});
 </script></body></html>
