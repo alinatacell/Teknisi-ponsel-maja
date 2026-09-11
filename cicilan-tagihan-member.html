@@ -34,22 +34,69 @@ async function loadAll(){await loadOrders();await loadRequests();renderInvoices(
 async function loadOrders(){
   const map=new Map();
   const email=String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();
-  const memberIds=new Set([uid,String(profile.memberId||profile.idMember||profile.kodeMember||"").trim()].filter(Boolean));
-  const memberEmails=new Set([email,String(profile.memberEmail||"").trim().toLowerCase()].filter(Boolean));
-  const memberNames=new Set([String(profile.nama||profile.name||profile.namaPemilik||profile.namaKonter||"").trim().toLowerCase()].filter(Boolean));
+  const memberIds=[uid,String(profile.memberId||profile.idMember||profile.uidMember||"").trim()].filter(Boolean);
 
-  // Penting: query harus menyertakan ownerUid agar sesuai Firestore Rules.
-  // Setelah data Owner terbaca, baru dicocokkan dengan identitas member.
-  const queries=[];
-  if(ownerUid){
-    queries.push(query(collection(db,"order_member"),where("ownerUid","==",ownerUid)));
-    queries.push(query(collection(db,"order_member"),where("ownerId","==",ownerUid)));
+  // ============================================================
+  // SUMBER MEMBER
+  // Data order yang dibuat dari Input Order Member selalu menyimpan
+  // memberUid/memberEmail pada koleksi PENJUALAN. Ini adalah sumber
+  // yang boleh dibaca oleh member sesuai rules lama.
+  // ============================================================
+  const penjualanMap=new Map();
+  for(const field of ["memberUid","memberId"]){
+    for(const value of memberIds){
+      try{
+        const s=await getDocs(query(collection(db,"penjualan"),where(field,"==",value)));
+        s.forEach(d=>penjualanMap.set(d.id,{id:d.id,...(d.data()||{})}));
+      }catch(e){
+        console.warn("Query penjualan "+field+" dilewati:",e?.message||e);
+      }
+    }
   }
-  for(const q of queries){
+  if(email){
     try{
-      const s=await getDocs(q);
-      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
-    }catch(e){console.warn("Query order_member dilewati",e?.message||e)}
+      const s=await getDocs(query(collection(db,"penjualan"),where("memberEmail","==",email)));
+      s.forEach(d=>penjualanMap.set(d.id,{id:d.id,...(d.data()||{})}));
+    }catch(e){
+      console.warn("Query penjualan memberEmail dilewati:",e?.message||e);
+    }
+  }
+
+  // Hanya pesanan yang sudah disetujui dan masih mempunyai tagihan.
+  [...penjualanMap.values()].forEach(r=>{
+    const ap=norm(r.approvalStatus||r.status||"");
+    const approved=(ap==="approved" || norm(r.status)==="approved");
+    if(!approved)return;
+
+    // Data hasil approval menyimpan orderMemberId. Jika dokumen order
+    // bisa dibaca, gunakan snapshot Data Order Member karena itu acuan
+    // Data Tagihan. Jika tidak bisa dibaca, gunakan snapshot penjualan
+    // sebagai fallback tanpa membuat halaman kosong.
+    map.set(r.id,{...r,_source:"penjualan"});
+  });
+
+  // ============================================================
+  // ORDER_MEMBER YANG SUDAH MEMILIKI TOP-LEVEL memberUid
+  // (data baru / data yang sudah dinormalisasi)
+  // ============================================================
+  for(const field of ["memberUid","memberId"]){
+    for(const value of memberIds){
+      try{
+        const s=await getDocs(query(collection(db,"order_member"),where(field,"==",value)));
+        s.forEach(d=>map.set(d.data()?.sourcePenjualanId||d.id,{id:d.id,...(d.data()||{}),_source:"order_member"}));
+      }catch(e){
+        console.warn("Query order_member "+field+" dilewati:",e?.message||e);
+      }
+    }
+  }
+
+  if(email){
+    try{
+      const s=await getDocs(query(collection(db,"order_member"),where("memberEmail","==",email)));
+      s.forEach(d=>map.set(d.data()?.sourcePenjualanId||d.id,{id:d.id,...(d.data()||{}),_source:"order_member"}));
+    }catch(e){
+      console.warn("Query order_member memberEmail dilewati:",e?.message||e);
+    }
   }
 
   orders=[...map.values()].filter(r=>{
@@ -57,23 +104,19 @@ async function loadOrders(){
     const ids=[r.memberUid,r.memberId,r.createdByMemberUid,r.uidMember,m.uid,m.userId,m.memberUid,m.id,m.kode,m.kodeMember].map(x=>String(x??"").trim()).filter(Boolean);
     const emails=[r.memberEmail,m.email].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
     const names=[m.nama,m.name,r.memberNama,r.namaMember].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-    const cocok=ids.some(x=>memberIds.has(x))||emails.some(x=>memberEmails.has(x))||names.some(x=>memberNames.has(x));
+    const cocok=ids.some(x=>memberIds.includes(x))||emails.some(x=>memberEmailsSet().has(x))||names.some(x=>memberNamesSet().has(x));
     return cocok && statusOrder(r)==="tagihan";
-  }).sort((a,b)=>time(b.createdAt||b.approvedAt)-time(a.createdAt||a.approvedAt));
+  }).sort((a,b)=>time(b.createdAt||b.approvedAt||b.tanggal)-time(a.createdAt||a.approvedAt||a.tanggal));
 }
-async function loadRequests(){
-  const map=new Map();
-  const email=String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();
-  // Query berdasarkan ownerUid agar member dapat membaca dokumen milik Owner sesuai rules.
-  if(ownerUid){
-    try{const s=await getDocs(query(collection(db,"tabungan_member"),where("ownerUid","==",ownerUid)));s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){console.warn("Query cicilan owner dilewati",e?.message||e)}
-  }
-  requests=[...map.values()].filter(r=>{
-    if(norm(r.jenis||r.tipe)!=="cicilan_tagihan")return false;
-    const ids=[r.memberUid,r.memberId,r.uidMember].map(x=>String(x??"").trim()).filter(Boolean);
-    const emails=[r.memberEmail].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-    return ids.includes(uid)||ids.includes(String(profile.memberId||"").trim())||emails.includes(email);
-  }).sort((a,b)=>time(b.requestedAt)-time(a.requestedAt));
+function memberEmailsSet(){
+  return new Set([
+    String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase()
+  ].filter(Boolean));
+}
+function memberNamesSet(){
+  return new Set([
+    String(profile.nama||profile.name||profile.namaPemilik||profile.namaKonter||"").trim().toLowerCase()
+  ].filter(Boolean));
 }
 function renderInvoices(){const box=$("invoiceList");if(!orders.length){box.innerHTML='<div class="empty">🎉 Tidak ada tagihan yang harus dicicil.</div>';$("payCard").style.display="none";return}box.innerHTML=orders.map(r=>{const m=memberObj(r),sisa=sisaOrder(r);return `<div class="invoice ${selected?.id===r.id?"selected":""}" onclick="pilihOrder('${esc(r.id)}')"><div class="invoice-head"><div><div class="invoice-title">${esc(r.nomorNota||r.id)}</div><div class="muted">${esc(m.nama||"Member")} • ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"Tanpa jatuh tempo")}</div></div><span class="badge">TAGIHAN</span></div><div class="grid"><div class="box"><span>TOTAL ORDER</span><b>${rp(r.totalBayar??r.total??0)}</b></div><div class="box"><span>SUDAH DIBAYAR</span><b>${rp(num(r.totalDibayar??r.pembayaran??r.dp??0))}</b></div><div class="box"><span>SISA TAGIHAN</span><b>${rp(sisa)}</b></div></div></div>`}).join("")}
 window.pilihOrder=id=>{selected=orders.find(x=>x.id===id)||null;if(!selected)return;const sisa=sisaOrder(selected);$("payCard").style.display="block";$("selectedInfo").innerHTML=`Order <b>${esc(selected.nomorNota||selected.id)}</b> • Sisa tagihan <b>${rp(sisa)}</b>`;$("nominal").value="";$("nominal").max=String(sisa);$("qrBox").classList.remove("show");renderInvoices();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})};
