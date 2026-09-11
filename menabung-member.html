@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#FFC107">
+<title>FIXZY | Menabung</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111827}
+header{background:#111827;color:#fff;border-bottom:3px solid #FFC107;position:sticky;top:0;z-index:5}
+.head{min-height:62px;padding:9px 12px;display:flex;align-items:center;gap:10px}
+.logo{width:46px;height:46px;object-fit:contain;border-radius:9px;background:#fff}
+.hi{flex:1;min-width:0}.hi h1{font-size:17px;margin:0 0 3px}.email{font-size:11px;color:#cbd5e1;word-break:break-all}
+.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:900;cursor:pointer}
+.refresh{background:#FFC107;color:#111}.primary{background:#FFC107;color:#111}.secondary{background:#e5e7eb}.danger{background:#dc2626;color:#fff}
+.wrap{max-width:760px;margin:auto;padding:14px}
+.notice{padding:11px 13px;border-radius:11px;background:#fff7d6;border:1px solid #f1d36a;font-size:12px;margin-bottom:12px}
+.notice.ok{background:#ecfdf3;border-color:#a7f3d0;color:#065f46}.notice.err{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 14px #0000000a}
+.title{font-size:17px;font-weight:900;margin-bottom:6px}.sub{font-size:12px;color:#667085;line-height:1.6}
+.balance{font-size:28px;font-weight:900;color:#047857;margin-top:9px}
+.form{display:grid;gap:10px;margin-top:14px}.label{font-size:12px;font-weight:900}
+input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:13px;font-size:16px;outline:none}
+input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px #f59e0b22}
+.qr{display:none;margin-top:14px;text-align:center;border-top:1px solid #eef2f6;padding-top:14px}
+.qr.show{display:block}.qr img{width:min(340px,100%);max-height:55vh;object-fit:contain;border:1px solid #ddd;border-radius:12px}
+.amount{font-size:22px;font-weight:900;margin:10px 0;color:#047857}
+.note{background:#fff8dc;border:1px solid #f1d36a;border-radius:10px;padding:10px;font-size:12px;line-height:1.5;text-align:left}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.status{display:inline-block;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900}
+.pending{background:#fff7d6;color:#92400e}.approved{background:#dcfce7;color:#166534}.rejected{background:#fee2e2;color:#991b1b}
+.item{border-top:1px solid #eef2f6;padding:12px 0;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.item:first-child{border-top:0}.money{font-size:16px;font-weight:900}.muted{font-size:11px;color:#667085;margin-top:3px}
+.owner{display:none}.owner.show{display:block}
+.empty{text-align:center;padding:20px;color:#667085;font-size:12px}
+.lock{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:11px;padding:12px;font-size:12px;color:#475569}
+@media(max-width:560px){.actions .btn{width:100%}.item{display:block}.item .right{margin-top:8px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <img class="logo" src="logo.png" alt="FIXZY">
+    <div class="hi">
+      <h1>💰 Menabung Member</h1>
+      <div id="email" class="email">Memuat akun...</div>
+    </div>
+    <button class="btn refresh" onclick="muatUlang()">↻ Refresh</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="notice" class="notice">Menghubungkan Firebase...</div>
+
+  <!-- PANEL MEMBER -->
+  <section id="memberPanel" class="card">
+    <div class="title">Tabungan Anda</div>
+    <div class="sub">Request setoran tabungan melalui QRIS. Saldo hanya bertambah setelah Owner memeriksa transfer dan melakukan approval.</div>
+    <div id="balance" class="balance">Rp 0</div>
+    <div class="muted">Total setoran menabung yang sudah disetujui</div>
+
+    <div class="form">
+      <div class="label">Nominal yang ingin ditabung</div>
+      <input id="nominal" type="number" min="1000" step="1000" placeholder="Contoh: 50000">
+      <button class="btn primary" onclick="tampilkanQR()">💳 Request Menabung</button>
+    </div>
+
+    <div id="qrBox" class="qr">
+      <div class="title">Scan QRIS</div>
+      <div class="sub">Transfer sesuai nominal yang Anda masukkan.</div>
+      <img src="qris.jpg" alt="QRIS FIXZY">
+      <div id="qrAmount" class="amount">Rp 0</div>
+      <div class="note">
+        Setelah pembayaran berhasil, tekan <b>Saya Sudah Transfer</b>.
+        Request akan masuk ke Owner dengan status <b>MENUNGGU APPROVAL</b>.
+      </div>
+      <div class="actions">
+        <button class="btn secondary" onclick="batalQR()">Batal</button>
+        <button id="sendBtn" class="btn primary" onclick="kirimRequest()">✓ Saya Sudah Transfer</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL OWNER -->
+  <section id="ownerPanel" class="card owner">
+    <div class="title">🔐 Approval Tabungan Member</div>
+    <div class="sub">Periksa mutasi/transfer QRIS terlebih dahulu. Hanya request yang benar-benar diterima yang di-approve.</div>
+    <div id="pendingList" style="margin-top:10px"></div>
+  </section>
+
+  <!-- RIWAYAT -->
+  <section class="card">
+    <div class="title">Riwayat Menabung</div>
+    <div id="history" class="empty">Memuat...</div>
+  </section>
+</main>
+
+<script type="module">
+import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,collection,query,where,getDocs,addDoc,updateDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const cfg={
+ apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+ authDomain:"fixzy-update.firebaseapp.com",
+ projectId:"fixzy-update",
+ storageBucket:"fixzy-update.firebasestorage.app",
+ messagingSenderId:"995892519622",
+ appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+};
+const app=getApps().length?getApp():initializeApp(cfg);
+const auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+const num=v=>Number(v)||0;
+const norm=v=>String(v??"").trim().toLowerCase();
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+let uid="",profile={},role="",ownerUid="",requestAmount=0;
+let mine=[],ownerRequests=[];
+
+function notice(t,c=""){const e=$("notice");e.textContent=t;e.className="notice "+c}
+function memberName(){return String(profile.nama||profile.namaMember||profile.namaKaryawan||profile.name||profile.displayName||profile.email||"Member")}
+function memberCode(){return String(profile.kodeMember||profile.kode||"")}
+
+async function init(user){
+  uid=user.uid;
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Akun tidak ditemukan.");
+  profile=s.data()||{};
+  role=norm(profile.role||profile.profileRole);
+  ownerUid=role==="owner"?uid:String(profile.ownerUid||profile.ownerId||"").trim();
+
+  if(!ownerUid && role!=="superadmin" && role!=="admin")
+    throw Error("Owner akun belum ditemukan.");
+
+  $("email").textContent=profile.email||user.email||"-";
+
+  const isOwner=role==="owner";
+  $("memberPanel").style.display=isOwner?"none":"block";
+  $("ownerPanel").classList.toggle("show",isOwner);
+
+  await muatData();
+}
+
+async function muatData(){
+  if(role==="owner"){
+    await loadOwner();
+    renderOwner();
+    $("history").innerHTML='<div class="lock">Owner menggunakan panel approval di atas.</div>';
+  }else{
+    await loadMine();
+    renderMine();
+  }
+}
+
+async function loadMine(){
+  const map=new Map();
+  const email=String(profile.email||auth.currentUser?.email||"").trim().toLowerCase();
+  const ids=[
+    uid,
+    String(profile.memberId||"").trim(),
+    String(profile.uidMember||"").trim(),
+    String(profile.userId||"").trim()
+  ].filter(Boolean);
+
+  for(const field of ["memberUid","memberId"]){
+    for(const value of ids){
+      try{
+        const s=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",value)));
+        s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
+      }catch(e){}
+    }
+  }
+  if(email){
+    try{
+      const s=await getDocs(query(collection(db,"tabungan_member"),where("memberEmail","==",email)));
+      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
+    }catch(e){}
+  }
+
+  mine=[...map.values()].sort((a,b)=>time(b.requestedAt)-time(a.requestedAt));
+}
+
+async function loadOwner(){
+  const map=new Map();
+  for(const field of ["ownerUid","ownerId"]){
+    try{
+      const s=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",uid)));
+      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
+    }catch(e){}
+  }
+  ownerRequests=[...map.values()].sort((a,b)=>time(b.requestedAt)-time(a.requestedAt));
+}
+
+function time(v){
+  try{
+    if(v?.toMillis)return v.toMillis();
+    if(v?.seconds)return Number(v.seconds)*1000;
+    return new Date(v||0).getTime()||0;
+  }catch{return 0}
+}
+function tanggal(v){
+  const t=time(v);
+  return t?new Date(t).toLocaleString("id-ID"):"-";
+}
+function statusText(s){
+  s=norm(s);
+  return s==="approved"?"DISETUJUI":s==="rejected"?"DITOLAK":"MENUNGGU APPROVAL";
+}
+
+function renderMine(){
+  const approved=mine.filter(r=>norm(r.status)==="approved")
+    .reduce((s,r)=>s+Math.max(0,num(r.nominal)),0);
+  $("balance").textContent=rp(approved);
+
+  $("history").innerHTML=mine.length?mine.map(r=>{
+    const st=norm(r.status)||"pending";
+    return `<div class="item">
+      <div>
+        <div class="money">${rp(r.nominal)}</div>
+        <div class="muted">${tanggal(r.requestedAt)}</div>
+      </div>
+      <span class="status ${st}">${statusText(st)}</span>
+    </div>`;
+  }).join(""):'<div class="empty">Belum ada request menabung.</div>';
+}
+
+function renderOwner(){
+  const pending=ownerRequests.filter(r=>norm(r.status)==="pending");
+  $("pendingList").innerHTML=ownerRequests.length?ownerRequests.map(r=>{
+    const st=norm(r.status)||"pending";
+    const actions=st==="pending"
+      ?`<div class="actions">
+          <button class="btn primary" onclick="approve('${r.id}')">✓ Approve</button>
+          <button class="btn danger" onclick="tolak('${r.id}')">Tolak</button>
+        </div>`:"";
+    return `<div class="item">
+      <div>
+        <div class="money">${esc(r.memberNama||r.memberEmail||"Member")}</div>
+        <div class="muted">${esc(r.memberKode||"")} • ${tanggal(r.requestedAt)}</div>
+        <span class="status ${st}">${statusText(st)}</span>
+      </div>
+      <div class="right">
+        <div class="money">${rp(r.nominal)}</div>
+        ${actions}
+      </div>
+    </div>`;
+  }).join(""):'<div class="empty">Tidak ada request tabungan.</div>';
+  $("notice").textContent=`${pending.length} request menunggu approval.`;
+  $("notice").className="notice "+(pending.length?"":"ok");
+}
+
+window.tampilkanQR=()=>{
+  const v=Math.floor(num($("nominal").value));
+  if(v<1000){notice("Minimal nominal menabung Rp1.000.","err");return}
+  requestAmount=v;
+  $("qrAmount").textContent=rp(v);
+  $("qrBox").classList.add("show");
+  $("qrBox").scrollIntoView({behavior:"smooth",block:"center"});
+};
+
+window.batalQR=()=>{
+  requestAmount=0;
+  $("qrBox").classList.remove("show");
+};
+
+window.kirimRequest=async()=>{
+  if(!uid||!ownerUid)return;
+  if(requestAmount<1000){notice("Nominal request tidak valid.","err");return}
+  const btn=$("sendBtn");
+  btn.disabled=true;btn.textContent="Mengirim...";
+  try{
+    await addDoc(collection(db,"tabungan_member"),{
+      ownerUid,
+      memberUid:uid,
+      memberId:String(profile.memberId||"").trim()||uid,
+      memberEmail:String(profile.email||auth.currentUser?.email||"").trim().toLowerCase(),
+      memberNama:memberName(),
+      memberKode:memberCode(),
+      nominal:requestAmount,
+      status:"pending",
+      requestedAt:serverTimestamp(),
+      approvedAt:null,
+      approvedBy:null
+    });
+    notice("Request menabung berhasil dikirim. Menunggu approval Owner.","ok");
+    $("nominal").value="";
+    batalQR();
+    await loadMine();
+    renderMine();
+  }catch(e){
+    console.error(e);
+    notice("Gagal mengirim request: "+(e?.message||e),"err");
+  }finally{
+    btn.disabled=false;btn.textContent="✓ Saya Sudah Transfer";
+  }
+};
+
+window.approve=async(id)=>{
+  if(role!=="owner")return;
+  if(!confirm("Pastikan transfer QRIS sudah masuk. Approve request ini?"))return;
+  try{
+    await updateDoc(doc(db,"tabungan_member",id),{
+      status:"approved",
+      approvedAt:serverTimestamp(),
+      approvedBy:uid
+    });
+    notice("Request berhasil di-approve.","ok");
+    await loadOwner();renderOwner();
+  }catch(e){
+    console.error(e);
+    notice("Gagal approve: "+(e?.message||e),"err");
+  }
+};
+
+window.tolak=async(id)=>{
+  if(role!=="owner")return;
+  if(!confirm("Tolak request tabungan ini?"))return;
+  try{
+    await updateDoc(doc(db,"tabungan_member",id),{
+      status:"rejected",
+      approvedAt:null,
+      approvedBy:uid
+    });
+    notice("Request ditolak.","ok");
+    await loadOwner();renderOwner();
+  }catch(e){
+    console.error(e);
+    notice("Gagal menolak request: "+(e?.message||e),"err");
+  }
+};
+
+window.muatUlang=async()=>{
+  try{
+    notice("Memuat ulang data...");
+    await muatData();
+    if(role==="owner")renderOwner();else renderMine();
+    notice("Data berhasil diperbarui.","ok");
+  }catch(e){notice(e?.message||String(e),"err")}
+};
+
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.replace("login.html");return}
+  try{
+    await init(user);
+    notice(role==="owner"?"Panel approval Owner siap.":"Silakan masukkan nominal untuk request menabung.","ok");
+  }catch(e){
+    console.error(e);notice(e?.message||String(e),"err");
+  }
+});
+</script>
+</body>
+</html>
