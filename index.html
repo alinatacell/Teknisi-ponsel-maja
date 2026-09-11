@@ -57,7 +57,7 @@ body{overflow:hidden}
 .account-exp{font-size:9px;color:#6b7280;margin-top:3px}
 .account-saving{display:none;font-size:10px;color:#166534;font-weight:900;margin-top:3px;white-space:nowrap}
 .account-saving.show{display:block}
-.account-saving b{font-size:11px}.account-saving.pending b{opacity:.42;filter:blur(1.2px)}
+.account-saving b{font-size:11px}
 @media(max-width:480px){.account-saving{font-size:9px}.account-saving b{font-size:10px}}
 .content{position:fixed;top:62px;left:0;right:0;bottom:0;background:#f3f4f6;overflow:hidden;z-index:1}
 .content iframe{width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1}
@@ -461,76 +461,278 @@ function memberTabunganOrderHeader(r){
 async function loadMemberSavingsHeader(user, profile){
   const box=document.getElementById("accountSaving"), val=document.getElementById("accountSavingValue");
   if(!box||!val)return;
-  const role=normHeader(profile?.role||profile?.profileRole);
 
-  // Jangan membatasi berdasarkan role === "member".
-  // Pada data FIXZY lama, akun member bisa tersimpan sebagai employee/karyawan/everyone,
-  // sehingga pembatasan role membuat tabungan tidak pernah tampil di header.
+  const role=normHeader(profile?.role||profile?.profileRole);
   box.classList.remove("show");
   val.textContent="Rp 0";
-  box.classList.remove("pending");
+
+  // SUPERADMIN/ADMIN tidak menampilkan tabungan bisnis.
+  if(role==="superadmin"||role==="admin")return;
 
   try{
-    const ordersMap=new Map();
     const uid=String(user?.uid||"").trim();
     const em=String(user?.email||profile?.email||"").trim().toLowerCase();
 
-    // Cari order berdasarkan UID akun yang sedang login.
-    if(uid){
-      for(const field of ["memberUid","memberId","createdByMemberUid","uidMember"]){
-        try{
-          const s=await getDocs(query(collection(db,"order_member"),where(field,"==",uid)));
-          s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
-        }catch(e){console.warn("Query "+field+" dilewati",e?.message||e)}
-      }
-    }
-
-    // Fallback email untuk data lama.
-    if(em){
-      try{
-        const s=await getDocs(query(collection(db,"order_member"),where("memberEmail","==",em)));
-        s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
-      }catch(e){console.warn("Query order memberEmail dilewati",e?.message||e)}
-    }
-
-    let total=0;
-    let adaTagihan=false;
-    ordersMap.forEach(r=>{
-      const ap=normHeader(r.approvalStatus||"");
-      const st=normHeader(r.status||"");
-      if(ap!=="approved")return;
-
-      // Tabungan tetap ditampilkan sebagai hasil perhitungan meskipun
-      // order masih TAGIHAN. Jika masih ada tagihan, angka dibuat samar.
-      total+=memberTabunganOrderHeader(r);
-
-      const totalOrder=Math.max(0,numHeader(r.totalBayar??r.total??0));
-      const totalDibayar=Math.max(0,numHeader(r.totalDibayar??r.pembayaran??r.dp??0));
-      const sisa=Math.max(0,numHeader(r.sisaBayar??r.sisa??(totalOrder-totalDibayar)));
-      const sudahLunas=st==="lunas" || (totalOrder>0 && sisa<=0);
-      if(!sudahLunas)adaTagihan=true;
-    });
-
     // ============================================================
-    // PENGAMBILAN TABUNGAN MEMBER
-    // Sumber dibuat sama dengan Data Tabungan Member:
-    // ambil berdasarkan ownerUid / ownerId / uid, lalu cocokkan
-    // identitas member dari memberId/memberUid/email/nama.
+    // SUMBER DATA DISAMAKAN DENGAN data-tabungan-member.html
+    // 1. Tentukan owner pemilik akun.
+    // 2. Ambil member, order, dan pengambilan dari owner yang sama.
+    // 3. Cocokkan member berdasarkan UID / email / kode / nama.
+    // 4. Hitung tabungan dengan rumus yang sama.
     // ============================================================
-    const withdrawalsMap=new Map();
-
-    const ownerForWithdrawal=String(
+    const ownerUid=String(
       profile?.ownerUid||profile?.ownerId||
       (role==="owner"?uid:"")
     ).trim();
 
-    for(const field of ["ownerUid","ownerId","uid"]){
-      const value=field==="uid"?uid:ownerForWithdrawal;
-      if(!value)continue;
+    if(!ownerUid && role!=="owner"){
+      val.textContent="Rp 0";
+      box.classList.add("show");
+      return;
+    }
+
+    // Identitas akun yang sedang login.
+    const memberIds=new Set([
+      uid,
+      String(profile?.memberId||"").trim(),
+      String(profile?.uidMember||"").trim(),
+      String(profile?.userId||"").trim()
+    ].filter(Boolean));
+
+    const memberEmails=new Set([
+      em,
+      String(profile?.email||"").trim().toLowerCase()
+    ].filter(Boolean));
+
+    const memberCodes=new Set([
+      String(profile?.kodeMember||"").trim().toLowerCase(),
+      String(profile?.kode||"").trim().toLowerCase()
+    ].filter(Boolean));
+
+    const memberNames=new Set([
+      String(profile?.nama||"").trim().toLowerCase(),
+      String(profile?.namaMember||"").trim().toLowerCase(),
+      String(profile?.namaPemilik||"").trim().toLowerCase(),
+      String(profile?.namaKonter||"").trim().toLowerCase(),
+      String(profile?.name||"").trim().toLowerCase(),
+      String(profile?.displayName||"").trim().toLowerCase()
+    ].filter(Boolean));
+
+    // Ambil profil member yang berada di owner yang sama.
+    // Ini penting karena Data Tabungan Member menggunakan koleksi users
+    // berdasarkan ownerUid/ownerId sebelum mengagregasi order.
+    const membersMap=new Map();
+
+    for(const field of ["ownerUid","ownerId"]){
       try{
-        const s=await getDocs(
-          query(collection(db,"pengeluaran"),where(field,"==",value))
-        );
+        const s=await getDocs(query(
+          collection(db,"users"),
+          where(field,"==",ownerUid)
+        ));
+        s.forEach(d=>{
+          const m={id:d.id,...(d.data()||{})};
+          const mr=normHeader(m.role||m.profileRole);
+          if(["employee","karyawan","reseller","member"].includes(mr)){
+            membersMap.set(d.id,m);
+          }
+        });
+      }catch(e){
+        console.warn("Query member "+field+" dilewati",e?.message||e);
+      }
+    }
+
+    // Jika akun login sendiri adalah member tetapi tidak ditemukan lewat
+    // query owner, tetap gunakan profil akun login sebagai identitas.
+    if(!membersMap.has(uid) && (role==="member" || profile?.isMember===true)){
+      membersMap.set(uid,{id:uid,...profile});
+    }
+
+    // Temukan record member yang sama dengan akun login.
+    let currentMember=null;
+    for(const m of membersMap.values()){
+      const mid=String(m.id||"").trim();
+      const muid=String(m.uid||m.userId||m.memberUid||"").trim();
+      const mem=String(m.email||"").trim().toLowerCase();
+      const mcode=String(m.kodeMember||m.kode||"").trim().toLowerCase();
+      const mname=String(
+        m.nama||m.namaMember||m.namaKaryawan||m.name||m.displayName||m.email||""
+      ).trim().toLowerCase();
+
+      if(
+        memberIds.has(mid)||memberIds.has(muid)||
+        (mem && memberEmails.has(mem))||
+        (mcode && memberCodes.has(mcode))||
+        (mname && memberNames.has(mname))
+      ){
+        currentMember=m;
+        break;
+      }
+    }
+
+    // Identitas final. Profil member hasil query menjadi prioritas karena
+    // inilah identitas yang dipakai Data Tabungan Member.
+    const ids=new Set([
+      ...memberIds,
+      String(currentMember?.id||"").trim(),
+      String(currentMember?.uid||currentMember?.userId||currentMember?.memberUid||"").trim()
+    ].filter(Boolean));
+
+    const emails=new Set([
+      ...memberEmails,
+      String(currentMember?.email||"").trim().toLowerCase()
+    ].filter(Boolean));
+
+    const codes=new Set([
+      ...memberCodes,
+      String(currentMember?.kodeMember||currentMember?.kode||"").trim().toLowerCase()
+    ].filter(Boolean));
+
+    const names=new Set([
+      ...memberNames,
+      String(
+        currentMember?.nama||currentMember?.namaMember||
+        currentMember?.namaKaryawan||currentMember?.name||
+        currentMember?.displayName||""
+      ).trim().toLowerCase()
+    ].filter(Boolean));
+
+    // Ambil order berdasarkan OWNER, sama seperti data-tabungan-member.html.
+    const ordersMap=new Map();
+    for(const field of ["ownerUid","ownerId"]){
+      try{
+        const s=await getDocs(query(
+          collection(db,"order_member"),
+          where(field,"==",ownerUid)
+        ));
+        s.forEach(d=>{
+          if(!ordersMap.has(d.id))ordersMap.set(d.id,{id:d.id,...(d.data()||{})});
+        });
+      }catch(e){
+        console.warn("Query order "+field+" dilewati",e?.message||e);
+      }
+    }
+
+    const orders=[...ordersMap.values()].filter(r=>{
+      const ap=normHeader(r.approvalStatus||"");
+      const st=normHeader(r.status||"");
+      return ap==="approved" ||
+        ["order_member","approved","tagihan","lunas"].includes(st);
+    });
+
+    function orderMemberIdentity(r){
+      const m=r.member||r.pelanggan||{};
+      return {
+        ids:[
+          r.memberUid,r.memberId,r.createdByMemberUid,r.uidMember,
+          m.uid,m.userId,m.memberUid
+        ].map(x=>String(x??"").trim()).filter(Boolean),
+        emails:[
+          r.memberEmail,m.email
+        ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean),
+        codes:[
+          r.kodeMember,m.kodeMember,m.kode
+        ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean),
+        names:[
+          r.memberNama,m.nama,m.namaMember
+        ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean)
+      };
+    }
+
+    function orderMatchesCurrentMember(r){
+      const k=orderMemberIdentity(r);
+      return k.ids.some(x=>ids.has(x)) ||
+             k.emails.some(x=>emails.has(x)) ||
+             k.codes.some(x=>codes.has(x)) ||
+             k.names.some(x=>names.has(x));
+    }
+
+    function itemListHeader(r){
+      const a=Array.isArray(r.approvedItems)
+        ?r.approvedItems
+        :(Array.isArray(r.items)?r.items:
+          (Array.isArray(r.produkList)?r.produkList:[]));
+
+      return a.map(x=>({
+        qty:Math.max(0,numHeader(
+          x.approvedQty??x.qty??x.jumlah??x.quantity
+        )),
+        tabStored:x.tabunganPerPcs??
+          x.tabunganMember??
+          x.menabungMemberPerPcs??
+          x.menabungMember
+      }));
+    }
+
+    function calcOrderTabungan(r){
+      const memberObj=r.member||r.pelanggan||{};
+
+      const fallbackTab=numHeader(
+        r.tabunganPerPcs??
+        r.tabunganMember??
+        r.menabungMemberPerPcs??
+        memberObj.tabunganPerPcs??
+        memberObj.tabunganMember??
+        currentMember?.tabunganPerPcs??
+        currentMember?.tabunganMember??
+        4000
+      )||4000;
+
+      const items=itemListHeader(r);
+
+      // Sama dengan data-tabungan-member:
+      // total tersimpan diprioritaskan, lalu item, lalu qty x tarif.
+      const explicitTab=
+        r.totalTabunganOrder??
+        r.totalTabunganMember??
+        r.totalTabungan??
+        r.tabunganTotal??
+        r.totalMenabungMember;
+
+      if(explicitTab!==undefined&&explicitTab!==null&&explicitTab!==""){
+        return Math.max(0,numHeader(explicitTab));
+      }
+
+      const qtyFromItems=items.reduce((a,x)=>a+x.qty,0);
+      const qtyStored=Math.max(0,numHeader(
+        r.totalQty??r.approvedQty??r.qty??r.jumlah??0
+      ));
+      const q=qtyFromItems>0?qtyFromItems:qtyStored;
+
+      if(items.length){
+        return items.reduce((sum,x)=>{
+          const tab=x.tabStored!==undefined&&
+                    x.tabStored!==null&&
+                    x.tabStored!==""
+            ?numHeader(x.tabStored)
+            :fallbackTab;
+          return sum+x.qty*tab;
+        },0);
+      }
+
+      return q*fallbackTab;
+    }
+
+    let total=0;
+    orders.forEach(r=>{
+      if(orderMatchesCurrentMember(r)){
+        total+=calcOrderTabungan(r);
+      }
+    });
+
+    // Ambil pengambilan dengan sumber dan filter yang sama dengan
+    // data-tabungan-member.html.
+    const withdrawalsMap=new Map();
+
+    for(const field of ["ownerUid","ownerId","uid"]){
+      const value=field==="uid"?uid:ownerUid;
+      if(!value)continue;
+
+      try{
+        const s=await getDocs(query(
+          collection(db,"pengeluaran"),
+          where(field,"==",value)
+        ));
+
         s.forEach(d=>{
           const r=d.data()||{};
           if(
@@ -545,36 +747,32 @@ async function loadMemberSavingsHeader(user, profile){
       }
     }
 
-    // Identitas akun member yang sedang login.
-    const memberIds=new Set([uid,String(profile?.memberId||"").trim()])
-      ;
-    const memberEmails=new Set([em,String(profile?.email||"").trim().toLowerCase()])
-      ;
-    const memberNames=new Set([
-      String(profile?.nama||"").trim().toLowerCase(),
-      String(profile?.namaPemilik||"").trim().toLowerCase(),
-      String(profile?.namaKonter||"").trim().toLowerCase()
-    ].filter(Boolean));
-
     let taken=0;
+
     withdrawalsMap.forEach(r=>{
-      const ids=[
+      const wIds=[
         r.memberId,r.memberUid,r.uidMember,r.uid
       ].map(x=>String(x??"").trim()).filter(Boolean);
-      const emails=[
+
+      const wEmails=[
         r.memberEmail,r.email
       ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-      const names=[
+
+      const wCodes=[
+        r.memberKode,r.kodeMember,r.kode
+      ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+
+      const wNames=[
         r.memberNama,r.namaMember,r.memberName
       ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
 
-      // Sama seperti Data Tabungan Member: pengambilan hanya
-      // dikurangi jika identitasnya cocok dengan member akun ini.
+      // Sama dengan withdrawalFor() di Data Tabungan Member,
+      // ditambah kode member untuk data lama yang hanya menyimpan kode.
       if(
-        (!ids.length&&!emails.length&&!names.length) ||
-        ids.some(x=>memberIds.has(x)) ||
-        emails.some(x=>memberEmails.has(x)) ||
-        names.some(x=>memberNames.has(x))
+        wIds.some(x=>ids.has(x)) ||
+        wEmails.some(x=>emails.has(x)) ||
+        wCodes.some(x=>codes.has(x)) ||
+        wNames.some(x=>names.has(x))
       ){
         taken+=Math.max(0,numHeader(r.nominal));
       }
@@ -582,16 +780,7 @@ async function loadMemberSavingsHeader(user, profile){
 
     const saldo=Math.max(0,total-taken);
 
-    // Tampilkan untuk akun yang memang memiliki data member.
-    // Jika belum ada transaksi sama sekali, tetap tampil Rp 0 agar statusnya jelas.
-    // Superadmin/admin tetap tidak perlu menampilkan tabungan bisnis.
-    if(role==="superadmin"||role==="admin"){
-      box.classList.remove("show");
-      return;
-    }
-
     val.textContent=rpHeader(saldo);
-    box.classList.toggle("pending",adaTagihan);
     box.classList.add("show");
 
   }catch(e){
@@ -600,7 +789,6 @@ async function loadMemberSavingsHeader(user, profile){
     box.classList.add("show");
   }
 }
-
 async function validasiDanTampilkan(user){
   if(!user){
     authReady=false;
