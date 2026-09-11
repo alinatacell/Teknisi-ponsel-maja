@@ -152,7 +152,7 @@ body{overflow:hidden}
     </button>
 
     <button class="menu-link" data-page="data-tabungan-member.html"
-            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+            data-roles="owner" onclick="bukaHalaman(this)">
       <span class="ico">🏦</span>Data Tabungan
     </button>
 
@@ -178,7 +178,7 @@ body{overflow:hidden}
     </button>
 
     <button class="menu-link" data-page="tampil-stock-member.html"
-            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+            data-roles="owner" onclick="bukaHalaman(this)">
       <span class="ico">🔎</span>Stock produk
     </button>
 
@@ -461,6 +461,7 @@ function memberTabunganOrderHeader(r){
 async function loadMemberSavingsHeader(user, profile){
   const box=document.getElementById("accountSaving"), val=document.getElementById("accountSavingValue");
   if(!box||!val)return;
+  const role=normHeader(profile?.role||profile?.profileRole);
 
   // Jangan membatasi berdasarkan role === "member".
   // Pada data FIXZY lama, akun member bisa tersimpan sebagai employee/karyawan/everyone,
@@ -587,7 +588,6 @@ async function loadMemberSavingsHeader(user, profile){
     // Tampilkan untuk akun yang memang memiliki data member.
     // Jika belum ada transaksi sama sekali, tetap tampil Rp 0 agar statusnya jelas.
     // Superadmin/admin tetap tidak perlu menampilkan tabungan bisnis.
-    const role=normHeader(profile?.role||profile?.profileRole);
     if(role==="superadmin"||role==="admin"){
       box.classList.remove("show");
       return;
