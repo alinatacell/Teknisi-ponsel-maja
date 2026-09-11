@@ -136,12 +136,7 @@ body{overflow:hidden}
       <span class="ico">📁</span>Rekapan orderan
     </button>
 
-<button class="menu-link" data-page="stock-setiap-member.html"
-            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
-      <span class="ico">📡</span>Beli produk dari member (+20.000)
-    </button>
-    
-    <button class="menu-link" data-page="data-order-member.html"
+<button class="menu-link" data-page="data-order-member.html"
             data-roles="owner" onclick="bukaHalaman(this)">
       <span class="ico">📋</span>Data Tagihan
     </button>
@@ -505,74 +500,90 @@ async function loadMemberSavingsHeader(user, profile){
       }
     });
 
-    // PENGAMBILAN TABUNGAN: setiap transaksi yang benar-benar
-    // bertipe pengambilan tabungan member harus mengurangi saldo.
+    // ============================================================
+    // PENGAMBILAN TABUNGAN MEMBER
+    // ============================================================
     const withdrawalsMap=new Map();
 
-    // Data baru/lama yang menyimpan UID member.
     if(uid){
       for(const field of ["memberUid","memberId","uid","uidMember"]){
         try{
-          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",uid)));
+          const s=await getDocs(
+            query(collection(db,"pengeluaran"),where(field,"==",uid))
+          );
           s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
-        }catch(e){console.warn("Query pengambilan "+field+" dilewati",e?.message||e)}
+        }catch(e){}
       }
     }
 
-    // Data yang menyimpan email member.
     if(em){
       for(const field of ["memberEmail","email"]){
         try{
-          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",em)));
+          const s=await getDocs(
+            query(collection(db,"pengeluaran"),where(field,"==",em))
+          );
           s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
-        }catch(e){console.warn("Query pengambilan "+field+" dilewati",e?.message||e)}
+        }catch(e){}
       }
     }
 
-    // Fallback untuk data lama: cari berdasarkan Owner lalu cocokkan
-    // kode/nama member bila UID/email tidak tersimpan pada pengeluaran.
-    const kodeMember=String(
-      profile?.kodeMember||profile?.memberKode||profile?.kode||profile?.kodeAnggota||""
-    ).trim().toLowerCase();
-    const namaMember=String(
-      profile?.namaMember||profile?.memberNama||profile?.nama||profile?.namaKonter||profile?.namaPemilik||""
-    ).trim().toLowerCase();
     const ownerForWithdrawal=String(
-      profile?.ownerUid||profile?.ownerId||(role==="owner"?uid:"")
+      profile?.ownerUid||
+      profile?.ownerId||
+      (role==="owner"?uid:"")
     ).trim();
 
     if(ownerForWithdrawal){
-      for(const field of ["ownerUid","ownerId"]){
+      for(const field of ["ownerUid","ownerId","uid"]){
+        const value=field==="uid"?uid:ownerForWithdrawal;
+        if(!value)continue;
         try{
-          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",ownerForWithdrawal)));
+          const s=await getDocs(
+            query(collection(db,"pengeluaran"),where(field,"==",value))
+          );
           s.forEach(d=>{
             const r=d.data()||{};
-            if(normHeader(r.modul)!=="member" || normHeader(r.jenis)!=="pengambilan tabungan member") return;
-            const ids=[r.memberUid,r.memberId,r.uid,r.uidMember,r.member?.uid,r.member?.userId,r.member?.id]
-              .map(x=>String(x??"").trim()).filter(Boolean);
-            const emails=[r.memberEmail,r.email,r.member?.email]
-              .map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-            const kode=[r.kodeMember,r.memberKode,r.kodeAnggota,r.member?.kodeMember,r.member?.kode]
-              .map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-            const nama=[r.memberNama,r.namaMember,r.namaAnggota,r.nama,r.member?.namaMember,r.member?.nama]
-              .map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-            if((uid&&ids.includes(uid))||(em&&emails.includes(em))||(kodeMember&&kode.includes(kodeMember))||(namaMember&&nama.includes(namaMember))){
+            const ids=[
+              r.memberUid,r.memberId,r.uid,r.uidMember,
+              r.member?.uid,r.member?.userId,r.member?.id
+            ].map(x=>String(x??"").trim()).filter(Boolean);
+
+            const emails=[
+              r.memberEmail,r.email,r.member?.email
+            ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+
+            if(
+              (uid&&ids.includes(uid)) ||
+              (em&&emails.includes(em))
+            ){
               withdrawalsMap.set(d.id,r);
             }
           });
-        }catch(e){console.warn("Query pengambilan Owner "+field+" dilewati",e?.message||e)}
+        }catch(e){}
       }
     }
 
     let taken=0;
     withdrawalsMap.forEach(r=>{
-      if(normHeader(r.modul)==="member" && normHeader(r.jenis)==="pengambilan tabungan member"){
-        taken+=Math.max(0,numHeader(r.nominal??r.jumlah??r.amount??r.nilai??0));
+      if(
+        normHeader(r.modul)==="member" &&
+        normHeader(r.jenis)==="pengambilan tabungan member"
+      ){
+        taken+=Math.max(
+          0,
+          numHeader(
+            r.nominal??
+            r.jumlah??
+            r.amount??
+            r.nilai??
+            0
+          )
+        );
       }
     });
 
-    // Saldo akhir = tabungan dari order - seluruh pengambilan tabungan.
     const saldo=Math.max(0,total-taken);
+
     // Tampilkan untuk akun yang memang memiliki data member.
     // Jika belum ada transaksi sama sekali, tetap tampil Rp 0 agar statusnya jelas.
     // Superadmin/admin tetap tidak perlu menampilkan tabungan bisnis.
