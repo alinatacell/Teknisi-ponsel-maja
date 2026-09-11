@@ -61,7 +61,7 @@ input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:13px;font-s
 
   <section class="card">
     <div class="title">Tagihan Anda</div>
-    <div class="sub">Owner melihat semua tagihan milik Owner. Karyawan/Everyone hanya melihat tagihan akun login sendiri. Cicilan mengurangi tagihan setelah Owner melakukan approval.</div>
+    <div class="sub">Hanya order yang sudah <b>disetujui</b> dan masih memiliki tagihan yang ditampilkan. Cicilan mengurangi tagihan setelah Owner melakukan approval.</div>
     <div id="invoiceList"><div class="empty">Memuat tagihan...</div></div>
   </section>
 
@@ -151,115 +151,96 @@ function statusOrder(r){
 function approvedOrder(r){
   const ap=norm(r.approvalStatus||"");
   const st=norm(r.status||"");
-  return ap==="approved" || st==="approved";
+  return ap==="approved" || st==="approved" || st==="order_member";
 }
 
 /* =========================================================
    IDENTITAS MEMBER
    ========================================================= */
 function memberIds(){
-  return [uid,profile.memberUid,profile.memberId,profile.idMember,profile.uidMember,profile.id]
-    .map(x=>String(x??"").trim()).filter(Boolean);
+  return [...new Set([
+    uid,
+    profile.memberUid,
+    profile.memberId,
+    profile.idMember,
+    profile.uidMember,
+    profile.id
+  ].map(x=>String(x??"").trim()).filter(Boolean))];
 }
 function memberEmail(){
   return String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();
 }
-
-// PENTING: akun karyawan/everyone TIDAK menggunakan role "member".
-// Isolasi tagihan untuk karyawan dilakukan berdasarkan UID akun login.
-function orderMemberUid(r){
+function memberNames(){
+  return [...new Set([
+    profile.nama,profile.name,profile.namaPemilik,profile.namaMember
+  ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean))];
+}
+function matchesMember(r){
   const m=memberObj(r);
-  return String(
-    r.memberUid ??
-    r.createdByMemberUid ??
-    r.uidMember ??
-    m.uid ??
-    m.userId ??
-    m.memberUid ??
-    ""
-  ).trim();
-}
-function isOwnerMode(){
-  return role==="owner";
-}
-function isEmployeeMode(){
-  return !isOwnerMode() && ["employee","karyawan","everyone"].includes(role);
-}
-function belongsToLogin(r){
-  // HANYA UID login. Tidak memakai nama/email/kode untuk isolasi karyawan.
-  return orderMemberUid(r)===String(uid).trim();
-}
-function belongsToOwner(r){
-  const ou=String(r.ownerUid||r.ownerId||"").trim();
-  return ou===String(ownerUid).trim();
+  const ids=[
+    r.memberUid,r.memberId,r.createdByMemberUid,r.uidMember,
+    m.uid,m.userId,m.memberUid,m.id,m.memberId,m.kode,m.kodeMember
+  ].map(x=>String(x??"").trim()).filter(Boolean);
+  const emails=[
+    r.memberEmail,m.email
+  ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+  const names=[
+    m.nama,m.name,r.memberNama,r.namaMember
+  ].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+
+  const idsSet=new Set(memberIds());
+  const em=memberEmail();
+  const namesSet=new Set(memberNames());
+
+  return ids.some(x=>idsSet.has(x))
+      || emails.some(x=>x===em && em)
+      || names.some(x=>namesSet.has(x));
 }
 
 /* =========================================================
    LOAD ORDER DARI PENJUALAN
    Sumber utama member = memberUid/memberId/memberEmail.
    ========================================================= */
+
+function orderMemberUid(r){
+  const m=memberObj(r)||{};
+  return String(r.memberUid||m.uid||m.memberUid||m.userId||"").trim();
+}
 async function loadOrders(){
   const map=new Map();
 
-  if(isOwnerMode()){
-    // OWNER: tampilkan SEMUA tagihan member milik Owner ini.
+  // OWNER: tampilkan semua tagihan milik Owner.
+  if(role==="owner"){
     for(const field of ["ownerUid","ownerId"]){
       try{
         const s=await getDocs(query(collection(db,"order_member"),where(field,"==",uid)));
         s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{}),_source:"order_member"}));
-      }catch(e){ console.warn("Query owner order_member "+field+" dilewati:",e?.message||e); }
+      }catch(e){
+        console.warn("Query order_member owner "+field+" dilewati:",e?.message||e);
+      }
     }
-
-    // Data lama: penjualan milik Owner yang sudah approval.
-    for(const field of ["ownerUid","ownerId"]){
-      try{
-        const s=await getDocs(query(collection(db,"penjualan"),where(field,"==",uid)));
-        s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{}),_source:"penjualan"}));
-      }catch(e){ console.warn("Query owner penjualan "+field+" dilewati:",e?.message||e); }
-    }
-  }else if(isEmployeeMode()){
-    // KARYAWAN / EVERYONE: mulai dari memberUid UID login.
-    // Tidak query seluruh owner lalu memfilter di tampilan.
-    try{
-      const s=await getDocs(query(collection(db,"penjualan"),where("memberUid","==",uid)));
-      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{}),_source:"penjualan"}));
-    }catch(e){ console.warn("Query penjualan memberUid login dilewati:",e?.message||e); }
-
-    // Ambil order_member yang dirujuk oleh penjualan, lalu cek UID secara ketat.
-    for(const p of [...map.values()]){
-      const oid=String(p.orderMemberId||"").trim();
-      if(!oid)continue;
-      try{
-        const s=await getDoc(doc(db,"order_member",oid));
-        if(s.exists()){
-          const om={id:s.id,...(s.data()||{}),_source:"order_member"};
-          if(belongsToLogin(om) || String(p.memberUid||"").trim()===String(uid).trim()) map.set(p.id,om);
-        }
-      }catch(e){ console.warn("order_member "+oid+" tidak terbaca:",e?.message||e); }
-    }
-
-    // Data order_member lama yang memiliki memberUid top-level.
+  }else{
+    // KARYAWAN / EMPLOYEE / EVERYONE: HANYA order milik UID yang login.
+    // Jangan gunakan nama, email, memberId, atau owner untuk menentukan kepemilikan.
     try{
       const s=await getDocs(query(collection(db,"order_member"),where("memberUid","==",uid)));
-      s.forEach(d=>{
-        const om={id:d.id,...(d.data()||{}),_source:"order_member"};
-        if(belongsToLogin(om)) map.set(om.sourcePenjualanId||om.id,om);
-      });
-    }catch(e){ console.warn("Query order_member memberUid login dilewati:",e?.message||e); }
-  }else{
-    orders=[];
-    return;
+      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{}),_source:"order_member"}));
+    }catch(e){
+      console.warn("Query order_member memberUid dilewati:",e?.message||e);
+    }
+    try{
+      const s=await getDocs(query(collection(db,"order_member"),where("member.uid","==",uid)));
+      s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{}),_source:"order_member"}));
+    }catch(e){
+      console.warn("Query order_member member.uid dilewati:",e?.message||e);
+    }
   }
 
   orders=[...map.values()]
-    .filter(r=>{
-      if(!belongsToOwner(r)) return false;
-      if(isEmployeeMode() && !belongsToLogin(r)) return false;
-      return approvedOrder(r) && statusOrder(r)==="tagihan";
-    })
+    .filter(r=>approvedOrder(r) && (role==="owner" || orderMemberUid(r)===uid))
+    .filter(r=>statusOrder(r)==="tagihan")
     .sort((a,b)=>time(b.createdAt||b.approvedAt||b.tanggal)-time(a.createdAt||a.approvedAt||a.tanggal));
 }
-
 /* =========================================================
    LOAD REQUEST CICILAN
    Koleksi tetap tabungan_member, dibedakan dengan jenis/tipe.
@@ -267,32 +248,29 @@ async function loadOrders(){
 async function loadRequests(){
   const map=new Map();
 
-  if(isOwnerMode()){
-    // OWNER: seluruh laporan cicilan milik Owner.
+  if(role==="owner"){
     for(const field of ["ownerUid","ownerId"]){
       try{
         const s=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",uid)));
         s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
-      }catch(e){ console.warn("Query laporan Owner "+field+" dilewati:",e?.message||e); }
+      }catch(e){
+        console.warn("Query request owner "+field+" dilewati:",e?.message||e);
+      }
     }
-  }else if(isEmployeeMode()){
-    // KARYAWAN / EVERYONE: hanya laporan yang dibuat oleh UID login.
+  }else{
     try{
       const s=await getDocs(query(collection(db,"tabungan_member"),where("memberUid","==",uid)));
       s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
-    }catch(e){ console.warn("Query laporan memberUid login dilewati:",e?.message||e); }
+    }catch(e){
+      console.warn("Query request memberUid dilewati:",e?.message||e);
+    }
   }
 
   requests=[...map.values()]
-    .filter(r=>{
-      if(norm(r.jenis||r.tipe)!=="cicilan_tagihan") return false;
-      if(!isOwnerMode() && !isEmployeeMode()) return false;
-      if(!belongsToOwner(r)) return false;
-      return isOwnerMode() || String(r.memberUid||"").trim()===String(uid).trim();
-    })
+    .filter(r=>norm(r.jenis||r.tipe)==="cicilan_tagihan")
+    .filter(r=>role==="owner" || String(r.memberUid||"")===uid)
     .sort((a,b)=>time(b.requestedAt||b.createdAt)-time(a.requestedAt||a.createdAt));
 }
-
 function renderInvoices(){
   const box=$("invoiceList");
   if(!orders.length){
@@ -396,14 +374,14 @@ window.kirimRequest=async()=>{
       jenis:"cicilan_tagihan",
       tipe:"cicilan_tagihan",
       ownerUid,
-      memberUid:uid,
-      memberId:String(profile.memberId||profile.idMember||m.memberId||m.id||m.kode||""),
+      memberUid:role==="owner" ? orderMemberUid(selected) : uid,
+      memberId:String(m.memberId||m.id||m.kode||profile.memberId||profile.idMember||profile.kodeMember||""),
       memberEmail:memberEmail(),
       member:{
-        uid,
+        uid:role==="owner" ? orderMemberUid(selected) : uid,
         nama:String(m.nama||profile.nama||profile.name||"Member"),
         kode:String(m.kode||profile.kodeMember||""),
-        email:memberEmail()
+        email:String(m.email||profile.email||auth.currentUser?.email||"").trim().toLowerCase()
       },
       orderMemberId:selected.id,
       sourcePenjualanId:selected.sourcePenjualanId||"",
@@ -447,7 +425,7 @@ async function init(u){
   ownerUid=role==="owner"?uid:String(profile.ownerUid||profile.ownerId||sess.ownerUid||"").trim();
 
   if(!ownerUid && role!=="superadmin" && role!=="admin")
-    throw Error("Owner akun belum ditemukan. Pastikan akun karyawan terhubung ke Owner.");
+    throw Error("Owner akun belum ditemukan. Pastikan akun member terhubung ke Owner.");
 
   $("email").textContent=profile.email||u?.email||sess.profile?.email||sess.email||"-";
 
@@ -479,7 +457,7 @@ onAuthStateChanged(auth,async u=>{
   }
   try{
     await init(effective);
-    notice(isOwnerMode()?"Akun aktif • Owner • semua tagihan member milik Owner ditampilkan.":"Akun aktif • Karyawan/Everyone • hanya tagihan akun login ditampilkan.","ok");
+    notice("Akun aktif • tagihan diambil dari order yang sudah approval.","ok");
   }catch(e){
     console.error(e);
     notice(e.message||String(e),"err");
