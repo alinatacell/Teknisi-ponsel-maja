@@ -43,11 +43,30 @@ function targetOwner(r){return String(r.ownerUid||r.ownerId||r.uid||"").trim();}
 
 async function loadOrders(){
  const map=new Map();
+ // Owner: ambil seluruh order milik Owner.
+ // Karyawan/Everyone: ambil order milik Owner terlebih dahulu,
+ // lalu ISOLASI ketat berdasarkan UID/email akun login.
  for(const field of ["ownerUid","ownerId"]){
   try{const q=await getDocs(query(collection(db,"order_member"),where(field,"==",ownerUid)));q.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}
   catch(e){console.warn("Query order_member "+field+" dilewati:",e?.message||e);}
  }
- orders=[...map.values()].filter(r=>approvedOrder(r)&&!cashOrder(r)&&sisaOrder(r)>0&&((!targetOwner(r))||targetOwner(r)===ownerUid)).sort((a,b)=>time(b.approvedAt||b.createdAt||b.tanggal)-time(a.approvedAt||a.createdAt||a.tanggal));
+ 
+ // Tambahan jalur pencarian langsung untuk data lama yang mempunyai
+ // memberUid di level atas. Tetap akan difilter ulang dengan ownerUid.
+ if(!isOwner() && uid){
+  try{const q=await getDocs(query(collection(db,"order_member"),where("memberUid","==",uid)));q.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}
+  catch(e){console.warn("Query memberUid langsung dilewati:",e?.message||e);}
+ }
+ 
+ orders=[...map.values()].filter(r=>{
+   if(!approvedOrder(r)||cashOrder(r)||sisaOrder(r)<=0)return false;
+   const own=targetOwner(r);
+   if(own && own!==ownerUid)return false;
+   // OWNER melihat semua tagihan Owner.
+   if(isOwner())return true;
+   // Karyawan/Everyone hanya boleh melihat tagihan akun login.
+   return matchesMember(r);
+ }).sort((a,b)=>time(b.approvedAt||b.createdAt||b.tanggal)-time(a.approvedAt||a.createdAt||a.tanggal));
 }
 async function loadRequests(){
  const map=new Map(),ids=memberIds(),em=memberEmail();
@@ -59,11 +78,11 @@ async function loadRequests(){
    }
    if(em)try{const s=await getDocs(query(collection(db,"tabungan_member"),where("memberEmail","==",em)));s.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}catch(e){console.warn("request email",e?.message||e);}
  }
- requests=[...map.values()].filter(r=>norm(r.jenis||r.tipe)==="cicilan_tagihan"&&String(r.ownerUid||r.ownerId||"").trim()===ownerUid).sort((a,b)=>time(b.requestedAt||b.createdAt)-time(a.requestedAt||a.createdAt));
+ requests=[...map.values()].filter(r=>norm(r.jenis||r.tipe)==="cicilan_tagihan"&&String(r.ownerUid||r.ownerId||"").trim()===ownerUid&&(isOwner() || String(r.memberUid||"").trim()===uid || matchesMember(r))).sort((a,b)=>time(b.requestedAt||b.createdAt)-time(a.requestedAt||a.createdAt));
 }
 function renderInvoices(){
  const box=$("invoiceList");
- $("tagihanSub").textContent=isOwner()?"Mode Owner: seluruh tagihan member milik Owner ditampilkan.":"Mode Karyawan: seluruh tagihan member milik Owner ditampilkan.";
+ $("tagihanSub").textContent=isOwner()?"Mode Owner: seluruh tagihan member milik Owner ditampilkan.":"Mode Karyawan: hanya tagihan sesuai akun yang sedang login ditampilkan.";
  if(!orders.length){box.innerHTML='<div class="empty">🎉 Tidak ada tagihan yang harus dicicil.</div>';$('payCard').style.display="none";return;}
  box.innerHTML=orders.map(r=>{const m=memberObj(r),s=sisaOrder(r);return `<div class="invoice ${selected?.id===r.id?"selected":""}" onclick="pilihOrder('${esc(r.id)}')"><div class="invoice-head"><div><div class="invoice-title">${esc(r.nomorNota||r.id)}</div><div class="muted">${esc(m.nama||r.memberNama||"Member")}${isOwner()?` • Member UID: ${esc(orderMemberUid(r)||"-")}`:""} • Jatuh tempo: ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"-")}</div></div><span class="badge">TAGIHAN</span></div><div class="grid"><div class="box"><span>TOTAL ORDER</span><b>${rp(totalOrder(r))}</b></div><div class="box"><span>SUDAH DIBAYAR</span><b>${rp(totalDibayar(r))}</b></div><div class="box"><span>SISA TAGIHAN</span><b>${rp(s)}</b></div></div></div>`;}).join("");
 }
