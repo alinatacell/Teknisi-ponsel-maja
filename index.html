@@ -1,506 +1,630 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FIXZY | Data Tabungan Member</title>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#FFC107">
+<title>FIXZY - FIXED INDEX LENGKAP</title>
+<meta name="fixzy-version" content="index-fixed-20260819-isolasi">
+
 <style>
-*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626;--blue:#2563eb;--orange:#f59e0b}
-html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
-header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
-main{max-width:1100px;margin:auto;padding:88px 12px 30px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
-.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:none}.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
-.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;box-shadow:none}.metric .label{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}.metric .value{font-size:20px;font-weight:900;margin-top:5px}.metric .sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.4}.metric.green{background:#f0fdf4}.metric.orange{background:#fffbeb}.metric.red{background:#fef2f2}
-.empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
-.member-panels{display:grid;grid-template-columns:1fr;gap:14px}.member-panel{border:2px solid #111827;border-radius:14px;background:#fff;box-shadow:none;overflow:hidden}.member-panel-head{padding:14px;background:#111827;color:#fff;border-bottom:3px solid var(--y)}.member-owner{font-size:18px;font-weight:900;line-height:1.25}.member-owner-label{font-size:10px;font-weight:900;color:#ffc107;letter-spacing:.7px;margin-bottom:4px}.member-id{font-size:10px;color:#cbd5e1;margin-top:5px}.member-status{float:right;margin-left:8px}.member-main{padding:14px}.saving-box{border:2px solid #111827;border-radius:11px;background:#f0fdf4;padding:14px;margin-bottom:12px;box-shadow:none}.saving-label{font-size:11px;font-weight:900;color:#166534;text-transform:uppercase}.saving-total{font-size:27px;font-weight:900;margin-top:4px}.saving-sub{font-size:10px;color:#64748b;margin-top:4px}.saving-balance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}.saving-balance-box{border:2px solid #111827;border-radius:11px;padding:13px;box-shadow:none;background:#f8fafc}.saving-balance-box .k{font-size:10px;font-weight:900;text-transform:uppercase;color:#64748b}.saving-balance-box .v{font-size:20px;font-weight:900;margin-top:5px}.saving-balance-box.awal{background:#eff6ff}.saving-balance-box.ambil{background:#fff7ed}.saving-balance-box.sisa{background:#f0fdf4}.saving-formula{font-size:10px;font-weight:800;color:#475569;margin:-4px 0 12px;padding:8px 10px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc}.member-contact{font-size:11px;color:#475569;line-height:1.6;margin-bottom:10px}.member-contact b{color:#111827}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;border:1px solid #f59e0b;background:#fef3c7;color:#92400e}.badge.active{border-color:#22c55e;background:#dcfce7;color:#166534}.badge.off{border-color:#94a3b8;background:#f1f5f9;color:#475569}
-body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .metric,body.dark .member-panel{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark label{color:#9ca3af}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .saving-box,body.dark .saving-balance-box{border-color:#475569}body.dark .saving-formula{background:#0f172a;border-color:#64748b;color:#cbd5e1}
-@media(max-width:850px){.summary-grid{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
-@media(max-width:650px){header{height:68px}.hi h1{font-size:16px}main{padding:80px 8px 24px}.summary-grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.acts .btn{padding:8px}.metric .value{font-size:18px}.card{padding:12px}.saving-balance-grid{grid-template-columns:1fr}.member-owner{font-size:17px}.saving-total{font-size:25px}}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111827}
+body{overflow:hidden}
+.header{height:62px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;position:fixed;top:0;left:0;right:0;z-index:9999;box-shadow:0 2px 12px rgba(0,0,0,.10)}
+.menu-btn{width:44px;height:44px;margin-left:9px;border:0;border-radius:11px;background:#111827;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;z-index:10002;position:relative}
+.menu-btn span{width:21px;height:2px;background:#FFC107;border-radius:4px;box-shadow:0 1px 0 rgba(255,193,7,.45)}
+.header-running{flex:1;min-width:0;height:42px;margin-left:12px;margin-right:8px;overflow:hidden;display:flex;align-items:center;position:relative;border-radius:10px;background:#fff}
+.running-track{display:flex;align-items:center;width:max-content;white-space:nowrap;animation:fixzyRunning 28s linear infinite;font-size:12px;font-weight:800;color:#374151}
+.running-track span{display:inline-flex;align-items:center;margin-right:42px}
+@keyframes fixzyRunning{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+.header-account{margin-left:auto;margin-right:13px;text-align:right;line-height:1.15}
+.account-name{
+  font-size:12px;
+  font-weight:900;
+  max-width:190px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#FFC107;
+  text-shadow:
+    1px 1px 0 #111827,
+    2px 2px 2px rgba(0,0,0,.45);
+  transform:perspective(160px) rotateX(2deg);
+  transform-origin:right center;
+}
+.account-exp{font-size:9px;color:#6b7280;margin-top:3px}
+.account-saving{display:none;font-size:10px;color:#166534;font-weight:900;margin-top:3px;white-space:nowrap}
+.account-saving.show{display:block}
+.account-saving b{font-size:11px}
+@media(max-width:480px){.account-saving{font-size:9px}.account-saving b{font-size:10px}}
+.content{position:fixed;top:62px;left:0;right:0;bottom:0;background:#f3f4f6;overflow:hidden;z-index:1}
+.content iframe{width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1}
+.overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.28);opacity:0;visibility:hidden;transition:.2s}
+.overlay.show{opacity:1;visibility:visible}
+.menu{position:fixed;z-index:10001;top:0;left:0;height:100dvh;width:min(330px,86vw);background:#fff;transform:translateX(-105%);transition:.25s ease;box-shadow:8px 0 30px rgba(0,0,0,.15);overflow:auto}
+.menu.show{transform:translateX(0)}
+.menu-head{min-height:62px;padding:10px 13px;background:#111827;color:#fff;display:flex;align-items:center;gap:10px}
+.menu-head img{width:78px;max-height:40px;object-fit:contain;background:#000;border-radius:7px}
+.menu-title{font-weight:900;font-size:15px}
+.menu-sub{font-size:9px;color:#d1d5db;margin-top:3px}
+.close{margin-left:auto;border:0;background:rgba(255,255,255,.12);color:#fff;width:34px;height:34px;border-radius:9px;font-size:20px;cursor:pointer}
+.menu-list{padding:9px}
+.menu-section{font-size:10px;font-weight:900;color:#94a3b8;margin:12px 0 4px 8px;letter-spacing:.5px}
+.menu-link{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;text-decoration:none;color:#111827;padding:11px 11px;border-radius:10px;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer}
+.menu-link:hover,.menu-link.active{background:#f3f4f6}
+.menu-link .ico{width:25px;text-align:center;font-size:15px}
+.logout-link{color:#dc2626;font-weight:900}
+.logout-link:hover{background:#fef2f2}
+@media(max-width:480px){
+  .header-running{margin-left:8px;margin-right:5px;height:38px}
+  .running-track{font-size:10px;animation-duration:24s}
+  .header-account{margin-right:9px}
+  .account-name{font-size:11px;max-width:150px}
+}
 </style>
 </head>
+
 <body>
-<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Data Tabungan Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="muatUlang()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
-<main>
-<div id="notice" class="notice">Menunggu akun...</div>
-<div class="card"><div class="title">DATA TABUNGAN MEMBER</div>
-<div class="filters"><div><label>PILIH MEMBER</label><select id="search"><option value="">Semua Member</option></select></div><div><label>STATUS AKUN</label><select id="statusFilter"><option value="">Semua Status</option><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div><div class="actions"><button class="btn secondary" type="button" onclick="resetFilter()">Reset</button></div></div>
-</div>
-<div class="summary-grid">
-<div class="metric orange"><div class="label">Total Qty</div><div class="value" id="totalQty">0 pcs</div><div class="sub">Qty order yang masuk tabungan</div></div>
-<div class="metric red"><div class="label">Saldo Tabungan</div><div class="value" id="saldoTabungan">Rp 0</div><div class="sub">Setelah pengambilan tabungan</div></div>
-<div class="metric green"><div class="label">Saldo UP Pengelola</div><div class="value" id="saldoUpPengelola">Rp 0</div><div class="sub">UP masuk − pengeluaran UP</div></div>
-<div class="metric orange"><div class="label">Saldo Uang Kas</div><div class="value" id="saldoUangKas">Rp 0</div><div class="sub">Kas masuk − pengeluaran Kas</div></div>
-</div>
-<div class="card"><div class="title">SALDO TABUNGAN MEMBER</div>
-<div id="memberPanels" class="member-panels"><div class="empty">Memuat Firebase...</div></div>
-</div>
-</main>
+<header class="header">
+  <button class="menu-btn" onclick="bukaMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="header-running">
+    <div class="running-track">
+      <span>🌟 Selamat Datang di FIXZY</span>
+      <span>🔒 Data sudah di uji coba</span>
+      <span>🤲 Member dengan owner sama bisa lihat bareng</span>
+      <span>💰 Semoga rezeki bertambah dan berkah</span>
+    </div>
+  </div>
+  <div class="header-account">
+    <div class="account-name" id="accountName">Memuat...</div>
+    <div class="account-exp">Exp: <span id="accountExp">-</span></div>
+    <div class="account-saving" id="accountSaving">💰 Tabungan Anda: <b id="accountSavingValue">Rp 0</b></div>
+  </div>
+</header>
+
+<div class="content" id="contentArea"></div>
+<div class="overlay" id="overlay" onclick="tutupMenu()"></div>
+
+<aside class="menu" id="menu">
+  <div class="menu-head">
+    <img src="logo.png?v=2" alt="FIXZY">
+    <div>
+      <div class="menu-title">Menu</div>
+      <div class="menu-sub">klik halaman</div>
+    </div>
+    <button class="close" onclick="tutupMenu()">×</button>
+  </div>
+
+  <nav class="menu-list">
+    <button class="menu-link" onclick="refreshIndex()">
+      <span class="ico">🔄</span>Refresh Halaman
+    </button>
+
+    <div class="menu-section">ORDER MEMBER</div>
+
+    <button class="menu-link" data-page="input-order-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">🛒</span>Keranjang Order
+    </button>
+
+<button class="menu-link" data-page="rekap-order-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">📁</span>Rekapan orderan
+    </button>
+
+<button class="menu-link" data-page="stock-setiap-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">📡</span>Beli produk dari member (+20.000)
+    </button>
+    
+    <button class="menu-link" data-page="data-order-member.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
+      <span class="ico">📋</span>Data Tagihan
+    </button>
+
+<button class="menu-link" data-page="gabungan-order.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
+      <span class="ico">🚛</span> Orderan ke distrubutor
+    </button>
+
+    <button class="menu-link" data-page="approval-order-member.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
+      <span class="ico">✅</span>Persetujuan Orderan
+    </button>
+
+    <button class="menu-link" data-page="data-tabungan-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">🏦</span>Data Tabungan
+    </button>
+
+    <div class="menu-section">KEUANGAN MEMBER</div>
+
+    <button class="menu-link" data-page="data-keuangan.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">💰</span>Data Keuangan
+    </button>
+
+    <div class="menu-section">PENGELUARAN</div>
+
+    <button class="menu-link" data-page="pengeluaran-member.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
+      <span class="ico">📥</span>Pengeluaran
+    </button>
+    
+    <div class="menu-section">STOCK KOMUNITAS</div>
+
+    <button class="menu-link" data-page="reload-stock-member.html"
+            data-roles="owner" onclick="bukaHalaman(this)">
+      <span class="ico">📦</span>Reload Stock
+    </button>
+
+    <button class="menu-link" data-page="tampil-stock-member.html"
+            data-roles="owner,employee,karyawan" onclick="bukaHalaman(this)">
+      <span class="ico">🔎</span>Stock produk
+    </button>
+
+    <div class="menu-section">PENGATURAN</div>
+
+    <button class="menu-link" data-page="izin-akses.html"
+            data-roles="owner,superadmin" onclick="bukaHalaman(this)">
+      <span class="ico">🔑</span>Izin Akses Karyawan
+    </button>
+
+    <div class="menu-section">LAINNYA</div>
+
+    <button class="menu-link" onclick="logoutFixzy()">
+      <span class="ico">🚪</span>Logout
+    </button>
+  </nav>
+</aside>
+
 <script type="module">
-import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-const $=id=>document.getElementById(id);
-const setText=(id,v)=>{const e=$(id);if(e)e.textContent=v};
-const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),num=v=>Number(v)||0;
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-let uid="",ownerUid="",profile={},members=[],orders=[],withdrawals=[],expenses=[],ready=false,loading=false;
+const app=initializeApp(cfg);
+const auth=getAuth(app);
+const db=getFirestore(app);
 
-function norm(v){return String(v??"").trim().toLowerCase()}
-function notice(t,c=""){setText("notice",t);const e=$("notice");if(e)e.className="notice "+c}
-function ownerOf(d){const r=norm(d.role||d.profileRole);if(r==="owner"||r==="admin")return String(d.ownerUid||d.ownerId||uid).trim()||uid;if(r==="superadmin"||r==="super_admin")return "";return String(d.ownerUid||d.ownerId||"").trim()}
-function nama(a){return String(a?.nama||a?.namaMember||a?.namaKaryawan||a?.name||a?.displayName||a?.email||"-")}
-function email(a){return String(a?.email||"")}
-function wa(a){return String(a?.noWA||a?.wa||a?.noWa||a?.noHp||a?.noWhatsapp||a?.nomorWA||a?.phone||"")}
-function kode(a){return String(a?.kodeMember||a?.kode||"")}
-function toDate(v){if(v?.toDate)return v.toDate();if(v instanceof Date)return v;const d=new Date(v);return isNaN(d)?null:d}
-function orderDate(r){return toDate(r.createdAt)||toDate(r.approvedAt)||toDate(r.updatedAt)||toDate(r.tanggal)||toDate(r.date)||new Date()}
-function monthKey(r){const d=orderDate(r);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
+let authReady=false;
 
-function itemList(r){
- const a=Array.isArray(r.approvedItems)?r.approvedItems:(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
- return a.map(x=>({
-   qty:Math.max(0,num(x.approvedQty??x.qty??x.jumlah??x.quantity)),
-   tabStored:x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs??x.menabungMember,
-   upStored:x.upPengelolaPerPcs??x.upPengelolaPerPcs??x.upPerPcs
- }));
+const FIXZY_PERMISSION_BY_PAGE={
+  "servisan.html":"servis",
+  "penjualan.html":"penjualan",
+  "pengeluaran.html":"pengeluaran",
+  "data-servis.html":"dataServis",
+  "data-penjualan.html":"dataPenjualan",
+  "stock.html":"stock",
+  "tampil-stock.html":"stock",
+  "pengeluaran.html":"pengeluaran",
+  "ringkasan-pendapatan.html":"laporanKeuangan",
+  "dashboard-admin.html":"ownerOnly",
+  "absensi-karyawan.html":"absensi",
+  "data-karyawan.html":"ownerOnly",
+  "upah-kerja.html":"ownerOnly",
+  "pengaturan.html":"ownerOnly",
+  "data-tabungan-member.html":"dataTabunganMember",
+  "izin-akses.html":"ownerOnly",
+  "saldo-token.html":"saldoToken",
+  "cek-paket.html":"cekPaket",
+  "token-registrasi.html":"superAdminOnly",
+  "token-perpanjangan.html":"superAdminOnly",
+  "token-reseller.html":"superAdminOnly",
+  "request-saldo.html":"superAdminOnly",
+  "daftar-pengguna.html":"superAdminOnly"
+};
+
+function formatExpFIXZY(v){
+  if(!v) return "-";
+  try{
+    let d=null;
+    if(typeof v==="object" && typeof v.toDate==="function") d=v.toDate();
+    else if(typeof v==="object" && v.seconds!==undefined) d=new Date(Number(v.seconds)*1000);
+    else if(v instanceof Date) d=v;
+    else d=new Date(String(v));
+    if(!d || isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
+  }catch{return "-";}
+}
+function normalisasiIzin(raw){
+  if(!raw) return {};
+  if(typeof raw==="object" && !Array.isArray(raw)) return raw;
+  if(Array.isArray(raw)){const o={}; raw.forEach(k=>o[k]=true); return o;}
+  return {};
+}
+function permissionTersedia(permissions, key){
+  if(!key) return true;
+  if(key==="ownerOnly") return false;
+  if(key==="superAdminOnly") return false;
+  const session=window.fixzySession||{};
+  const role=String(session.role||"").toLowerCase();
+  const basicAllow=["servis","penjualan","pengeluaran","dataServis","dataPenjualan","stock","laporanKeuangan","absensi","saldoToken","cekPaket","laporanPendapatan","dashboardPendapatan","dataTabunganMember"];
+  // SUPERADMIN adalah pengelola aplikasi, bukan Owner bisnis.
+  if(role==="superadmin" || role==="admin") return key==="superAdminOnly";
+  if(["karyawan","employee","kasir","kurir","reseller"].includes(role) && basicAllow.includes(key)) return true;
+  if(!permissions) return false;
+  if(permissions[key]===true) return true;
+  if(permissions["semua"]===true) return true;
+  if(permissions["all"]===true) return true;
+  return false;
+}
+function roleDiizinkan(btn, role){
+  const attr=String(btn.dataset.roles||"").trim();
+  if(!attr) return true;
+  const roles=attr.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+  if(!roles.length) return true;
+  const r=String(role||"").toLowerCase();
+  if(r==="superadmin"||r==="admin")return true;
+  if(r==="employee"&&roles.includes("karyawan"))return true;
+  if(r==="karyawan"&&roles.includes("employee"))return true;
+  if(r==="karyawan"&&roles.includes("kasir"))return true;
+  if(r==="kasir"&&roles.includes("karyawan"))return true;
+  if(r==="kurir"&&roles.includes("karyawan"))return true;
+  return roles.includes(r);
+}
+function bolehAksesMenu(btn){
+  const session=window.fixzySession||{};
+  const role=String(session.role||"").toLowerCase();
+  const email=String(session.profile?.email||auth.currentUser?.email||"").toLowerCase();
+  // superadmin selalu boleh
+  if(role==="superadmin"||role==="admin"||email==="servicehpmaja@gmail.com") return true;
+  if(!roleDiizinkan(btn,role))return false;
+  if(role==="owner")return true;
+  const permission=btn.dataset.permission||FIXZY_PERMISSION_BY_PAGE[btn.dataset.page]||"";
+  if(!permission)return true;
+  if(permission==="ownerOnly")return false;
+  if(permission==="superAdminOnly")return false;
+  return permissionTersedia(session.permissions,permission);
+}
+function terapkanHakAksesMenu(){
+  document.querySelectorAll(".menu-link[data-page]").forEach(btn=>{
+    const boleh=bolehAksesMenu(btn);
+    btn.style.display=boleh?"":"none";
+    btn.setAttribute("aria-hidden",boleh?"false":"true");
+  });
+}
+function tampilkanAksesDitolak(){
+  const area=document.getElementById("contentArea");
+  area.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;background:#f3f4f6">
+    <div style="width:min(460px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;text-align:center;box-shadow:0 5px 20px #0001">
+      <div style="font-size:42px">🔒</div>
+      <h2 style="margin:10px 0 7px;font-size:20px">Akses Terbatas</h2>
+      <p style="margin:0;color:#667085;font-size:13px;line-height:1.6">Akun ini tidak memiliki izin untuk membuka halaman tersebut. Hanya superadmin atau owner yang diizinkan.</p>
+    </div>
+  </div>`;
+}
+function bukaMenu(){document.getElementById("menu").classList.add("show");document.getElementById("overlay").classList.add("show");}
+function tutupMenu(){document.getElementById("menu").classList.remove("show");document.getElementById("overlay").classList.remove("show");}
+window.bukaMenu=bukaMenu; window.tutupMenu=tutupMenu;
+function refreshIndex(){location.reload();} window.refreshIndex=refreshIndex;
+function tampilkanBeranda(){
+  const area=document.getElementById("contentArea");
+  area.innerHTML="";
+  const frame=document.createElement("iframe");
+  frame.title="Page FIXZY";
+  frame.src="page.html";
+  frame.style.cssText="width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1";
+  area.appendChild(frame);
+  document.querySelectorAll(".menu-link").forEach(x=>x.classList.remove("active"));
+  const pageBtn=document.querySelector('[data-page="page.html"]');
+  if(pageBtn) pageBtn.classList.add("active");
 }
 
-function orderMemberKey(r){
- const m=r.member||r.pelanggan||{};
- return{
-   uid:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||""),
-   email:String(r.memberEmail||m.email||""),
-   kode:String(m.kode||m.kodeMember||r.kodeMember||""),
-   nama:String(m.nama||m.namaMember||r.memberNama||"")
- };
-}
-
-async function safeQuery(q){try{return await getDocs(q)}catch(e){console.warn("FIXZY query dilewati:",e?.message||e);return null}}
-
-async function loadMembers(){
- const map=new Map();
- for(const field of ["ownerUid","ownerId"]){
-   const s=await safeQuery(query(collection(db,"users"),where(field,"==",ownerUid)));
-   if(!s)continue;
-   s.forEach(d=>{
-     const x={id:d.id,...(d.data()||{})};
-     const r=norm(x.role||x.profileRole);
-     if(["employee","karyawan","reseller","member"].includes(r)&&!map.has(d.id))map.set(d.id,x)
-   });
- }
- members=[...map.values()];
-}
-
-function isiDropdownMember(){
- const el=$("search");if(!el)return;
- const nilai=el.value;
- const list=[...members].sort((a,b)=>nama(a).localeCompare(nama(b),"id"));
- el.innerHTML='<option value="">Semua Member</option>'+list.map(m=>`<option value="${esc(m.id)}">${esc(nama(m))}</option>`).join("");
- if(list.some(m=>String(m.id)===nilai))el.value=nilai;
-}
-
-async function loadOrders(){
- const map=new Map();
- for(const field of ["ownerUid","ownerId"]){
-   const s=await safeQuery(query(collection(db,"order_member"),where(field,"==",ownerUid)));
-   if(!s)continue;
-   s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...(d.data()||{})})});
- }
- orders=[...map.values()].filter(r=>{
-   const ap=norm(r.approvalStatus||"");
-   const st=norm(r.status||"");
-   return ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st)
- });
-}
-
-async function loadWithdrawals(){
- const map=new Map();
- for(const field of ["ownerUid","ownerId","uid"]){
-   const value=field==="uid"?uid:ownerUid;if(!value)continue;
-   const s=await safeQuery(query(collection(db,"pengeluaran"),where(field,"==",value)));
-   if(!s)continue;
-   s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}));
- }
- withdrawals=[...map.values()].filter(r=>norm(r.modul)==="member"&&norm(r.jenis)==="pengambilan tabungan member");
-}
-
-async function loadAllExpenses(){
- const map=new Map();
- for(const collectionName of ["pengeluaran","pengeluaranMember"]){
-  for(const field of ["ownerUid","ownerId","uid"]){
-   const value=field==="uid"?uid:ownerUid;if(!value)continue;
-   const s=await safeQuery(query(collection(db,collectionName),where(field,"==",value)));
-   if(!s)continue;
-   s.forEach(d=>map.set(collectionName+":"+d.id,{id:d.id,...(d.data()||{})}));
+function bukaHalaman(btn){
+  if(!authReady||!auth.currentUser){
+    window.location.replace("login.html");
+    return;
   }
- }
- expenses=[...map.values()];
+  if(!bolehAksesMenu(btn)){
+    tampilkanAksesDitolak();
+    tutupMenu();
+    return;
+  }
+  const area=document.getElementById("contentArea");
+  area.innerHTML="";
+  const frame=document.createElement("iframe");
+  frame.title="Halaman FIXZY";
+  // Kalau file FIXED ada, prioritaskan FIXED
+  let page=btn.dataset.page;
+  // Mapping otomatis ke versi FIXED jika ada
+  const fixedMap={
+    "data-penjualan.html":"data-penjualan-FIXED.html",
+    "data-servis.html":"data-servis-FIXED.html",
+    "data-karyawan.html":"data-karyawan-FIXED.html",
+    "absensi-karyawan.html":"absensi-karyawan-FIXED.html",
+    "dashboard-admin.html":"dashboard-admin-FIXED.html",
+    "daftar-pengguna.html":"daftar-pengguna-FIXED.html",
+    "token-registrasi.html":"token-registrasi-FIXED.html",
+    "token-perpanjangan.html":"token-perpanjangan-FIXED.html",
+    "token-reseller.html":"token-reseller-FIXED.html",
+    "request-saldo.html":"request-saldo-FIXED.html"
+  };
+  // Coba load FIXED dulu, kalau gagal fallback ke original (browser akan 404 lalu kita fallback manual? untuk sekarang tetap original name, user sudah ganti file)
+  // Kita tetap pakai nama asli supaya kalau user sudah rename FIXED jadi nama asli tetap jalan
+  // Tapi kalau file FIXED tersedia, pakai FIXED
+  // Di sini kita cek apakah user sudah upload FIXED: kita coba pakai FIXED jika ada mapping
+  // Untuk sekarang, pakai nama asli (user disuruh rename), tapi kalau FIXED ada di folder, pakai FIXED
+  // Simple: pakai page asli, tapi beri catatan
+  // Untuk menghindari 404, kita tetap pakai page asli - user tinggal rename file FIXED jadi nama asli
+  frame.src=page;
+  frame.style.cssText="width:100%;height:100%;border:0;display:block;background:#fff;position:relative;z-index:1";
+  frame.onerror=()=>{ if(fixedMap[page]) frame.src=fixedMap[page]; };
+  area.appendChild(frame);
+  document.querySelectorAll(".menu-link").forEach(x=>x.classList.remove("active"));
+  btn.classList.add("active");
+  tutupMenu();
 }
+window.bukaHalaman=bukaHalaman;
 
-function expenseTotals(){
- let kas=0,up=0;
- expenses.forEach(e=>{
-   const n=Math.max(0,num(e.nominal));
-   const source=norm(e.sumberDana||e.sumber||"");
-   const jenis=norm(e.jenisLabel||e.jenis||"");
-   if(source.includes("pengelola")||jenis.includes("pengelola"))up+=n;
-   else if(source.includes("kas")||source===""||jenis.includes("transport")||jenis.includes("acara")||jenis.includes("lain"))kas+=n;
- });
- return{kas,up};
-}
-
-function fallbackMembersFromOrders(){
- const map=new Map();
- orders.forEach(r=>{
-   const m=r.member||r.pelanggan||{};
-   const id=String(r.memberUid||r.memberId||m.uid||m.userId||"").trim();
-   const em=String(r.memberEmail||m.email||"").trim();
-   const kd=String(m.kodeMember||m.kode||r.kodeMember||"").trim();
-   const nm=String(m.nama||m.namaMember||r.memberNama||"").trim();
-   const key=(id||em||kd||nm).toLowerCase();if(!key)return;
-   if(!map.has(key))map.set(key,{id:id||key,...m,email:em||m.email||"",kodeMember:kd,nama:nm||"-",role:"member",status:m.status||"aktif"});
- });
- return [...map.values()];
-}
-
-function findRec(by,r){
- const k=orderMemberKey(r);
- return by.id.get(k.uid)||by.email.get(norm(k.email))||by.code.get(norm(k.kode))||by.name.get(norm(k.nama))||null
-}
-
-function withdrawalFor(r){
- const ids=[String(r.member?.id||"").trim(),String(r.member?.uid||"").trim(),norm(email(r.member)),norm(nama(r.member))].filter(Boolean);
- let total=0;
- withdrawals.forEach(w=>{
-   const idsW=[String(w.memberId||w.memberUid||"").trim(),norm(w.memberEmail||""),norm(w.memberNama||"")].filter(Boolean);
-   if(ids.some(x=>idsW.includes(x)))total+=num(w.nominal);
- });
- return total;
-}
-
-/*
- * UP PENGELOLA — SUMBER YANG DISAMAKAN DENGAN REKAP ORDER MEMBER
- *
- * Pada Rekap Order Member, nilai seperti:
- * Rp12.500, Rp9.000, Rp6.500, Rp5.000
- * adalah nilai UP per ORDER/baris.
- *
- * Karena itu field r.upPengelola tidak boleh dianggap sebagai tarif
- * per pcs dan tidak boleh dikalikan lagi dengan qty.
- *
- * Prioritas sumber:
- * 1. totalUPPengelola
- * 2. totalUpPengelola
- * 3. upPengelolaTotal
- * 4. totalUp
- * 5. totalPengelola
- * 6. upPengelola  <-- field yang dipakai Rekap Order Member
- *
- * Hanya jika semua total order tidak ada, baru hitung dari item.
- */
-function getOrderUp(r,items,q,member){
- const explicitTotal=
-   r.totalUPPengelola??
-   r.totalUpPengelola??
-   r.upPengelolaTotal??
-   r.totalUp??
-   r.totalPengelola??
-   r.upPengelola;
-
- const hasTotal=explicitTotal!==undefined&&explicitTotal!==null&&explicitTotal!=="";
-
- if(hasTotal)return Math.max(0,num(explicitTotal));
-
- const fallbackUp=
-   r.upPengelolaPerPcs??
-   r.upPerPcs??
-   member?.upPengelolaPerPcs??
-   member?.upPengelolaPerPcsMember??
-   member?.upPerPcs;
-
- if(items.length){
-   return items.reduce((sum,x)=>{
-     const p=x.upStored!==undefined&&x.upStored!==null&&x.upStored!==""?num(x.upStored):num(fallbackUp);
-     return sum+x.qty*p;
-   },0);
- }
-
- return q*Math.max(0,num(fallbackUp));
-}
-
-function aggregate(){
- const byId=new Map(),byEmail=new Map(),byCode=new Map(),byName=new Map();
-
- members.forEach(m=>{
-   const rec={member:m,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};
-   byId.set(m.id,rec);
-   if(email(m))byEmail.set(norm(email(m)),rec);
-   if(kode(m))byCode.set(norm(kode(m)),rec);
-   if(nama(m))byName.set(norm(nama(m)),rec);
- });
-
- orders.forEach(r=>{
-   let rec=findRec({id:byId,email:byEmail,code:byCode,name:byName},r);
-
-   if(!rec){
-     const m=r.member||r.pelanggan||{};
-     const temp={
-       id:String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||"").trim(),
-       ...m,
-       email:r.memberEmail||m.email||"",
-       kodeMember:m.kodeMember||m.kode||r.kodeMember||"",
-       nama:m.nama||m.namaMember||r.memberNama||"-",
-       role:"member",
-       status:m.status||"aktif"
-     };
-
-     if(temp.id){
-       rec={member:temp,qty:0,total:0,paid:0,up:0,upPcs:0,kas:0,kasMonths:new Set(),withdraw:0};
-       byId.set(temp.id,rec);
-       if(email(temp))byEmail.set(norm(email(temp)),rec);
-       if(kode(temp))byCode.set(norm(kode(temp)),rec);
-       byName.set(norm(nama(temp)),rec);
-     }
-   }
-
-   if(!rec)return;
-
-   const orderTotal=Math.max(0,num(r.approvedTotal??r.totalBayar??r.total??0));
-   const paidRecorded=Math.max(0,num(r.totalDibayar??r.pembayaran??r.approvedDp??r.dp??r.uangMuka??0));
-   const paymentType=norm(r.tipeOrder||r.tipeTransaksi||r.jenisTransaksi||r.metodePembayaran||r.paymentMethod||r.pembayaranJenis||"");
-   const cashOrder=/cash|tunai/.test(paymentType)||paymentType==="member_cash";
-
-   rec.paid+=Math.min(orderTotal,Math.max(0,cashOrder?orderTotal:paidRecorded));
-
-   const memberObj=r.member||r.pelanggan||{};
-   const fallbackTab=num(
-     r.tabunganPerPcs??
-     r.tabunganMember??
-     r.menabungMemberPerPcs??
-     memberObj.tabunganPerPcs??
-     memberObj.tabunganMember??
-     rec.member.tabunganPerPcs??
-     rec.member.tabunganMember??
-     4000
-   )||4000;
-
-   const items=itemList(r);
-   const qtyFromItems=items.reduce((a,x)=>a+x.qty,0);
-   const qtyStored=Math.max(0,num(r.totalQty??r.approvedQty??r.qty??r.jumlah??0));
-   const q=qtyFromItems>0?qtyFromItems:qtyStored;
-
-   /* TABUNGAN: prioritas dan sumber dibuat sama dengan INDEX */
-   const explicitTab=
-     r.totalTabunganMember??
-     r.totalTabunganOrder??
-     r.totalTabungan??
-     r.tabunganTotal??
-     r.totalMenabungMember??
-     r.tabungan;
-
-   const hasExplicitTab=explicitTab!==undefined&&explicitTab!==null&&explicitTab!=="";
-   let orderTab=hasExplicitTab?Math.max(0,num(explicitTab)):0;
-
-   if(!hasExplicitTab){
-     if(items.length){
-       orderTab=items.reduce((sum,x)=>{
-         const tab=x.tabStored!==undefined&&x.tabStored!==null&&x.tabStored!==""?num(x.tabStored):fallbackTab;
-         return sum+x.qty*tab;
-       },0);
-     }else{
-       orderTab=q*fallbackTab;
-     }
-   }
-
-   /* UP sekarang benar-benar mengambil TOTAL UP order */
-   const orderUp=getOrderUp(r,items,q,rec.member);
-
-   rec.qty+=q;
-   rec.total+=orderTab;
-   rec.up+=orderUp;
-
-   if(q>0)rec.upPcs=orderUp/q;
-
-   /* Kas hanya sekali per member per bulan */
-   const kas=num(
-     r.kasBulanan??
-     r.uangKasBulanan??
-     r.kasBulananMember??
-     r.uangKas??
-     rec.member.kasBulanan??
-     rec.member.uangKasBulanan??
-     0
-   );
-
-   if(kas>0){
-     const mk=monthKey(r);
-     if(!rec.kasMonths.has(mk)){
-       rec.kasMonths.add(mk);
-       rec.kas+=kas;
-     }
-   }
- });
-
- for(const rec of byId.values())rec.withdraw=withdrawalFor(rec);
- return [...byId.values()];
-}
-
-function render(){
- if(!ready)return;
-
- const search=String($("search")?.value||"").trim();
- const sf=norm($("statusFilter")?.value);
-
- const data=aggregate().filter(r=>{
-   const a=r.member;
-   return(!search||String(a.id||"")===search)&&(!sf||norm(a.status||"aktif")===sf);
- });
-
- let total=0,qty=0,up=0,kas=0,withdraw=0;
- data.forEach(r=>{
-   total+=r.total;
-   qty+=r.qty;
-   up+=r.up;
-   kas+=r.kas;
-   withdraw+=r.withdraw;
- });
-
- setText("totalQty",qty.toLocaleString("id-ID")+" pcs");
- setText("saldoTabungan",rp(Math.max(0,total-withdraw)));
-
- const ex=expenseTotals();
-
- /*
-  * Saldo UP:
-  * UP masuk dari order approved
-  * dikurangi pengeluaran UP.
-  */
- setText("saldoUpPengelola",rp(Math.max(0,up-ex.up)));
- setText("saldoUangKas",rp(Math.max(0,kas-ex.kas)));
-
- const body=$("memberPanels");
- if(!body)return;
-
- body.innerHTML=data.length?data.map((r,i)=>{
-   const a=r.member,saldo=Math.max(0,r.total-r.withdraw);
-   const status=norm(a.status)==="nonaktif"?"off":"active";
-
-   return `<div class="member-panel">
-     <div class="member-panel-head">
-       <span class="member-status"><span class="badge ${status}">${esc(a.status||"aktif")}</span></span>
-       <div class="member-owner-label">PEMILIK TABUNGAN MEMBER</div>
-       <div class="member-owner">${esc(nama(a))}</div>
-       <div class="member-id">Kode Member: <b>${esc(kode(a)||"-")}</b> &nbsp;•&nbsp; No. ${i+1}</div>
-     </div>
-     <div class="member-main">
-       <div class="member-contact"><b>Email:</b> ${esc(email(a)||"-")} &nbsp; • &nbsp; <b>WA:</b> ${esc(wa(a)||"-")}</div>
-
-       <div class="saving-box">
-         <div class="saving-label">TABUNGAN AWAL — MILIK ${esc(nama(a))}</div>
-         <div class="saving-total">${rp(r.total)}</div>
-         <div class="saving-sub">Total tabungan yang terkumpul dari ${r.qty.toLocaleString("id-ID")} pcs approved.</div>
-       </div>
-
-       <div class="saving-balance-grid">
-         <div class="saving-balance-box awal"><div class="k">TABUNGAN AWAL</div><div class="v">${rp(r.total)}</div></div>
-         <div class="saving-balance-box ambil"><div class="k">PENGAMBILAN</div><div class="v">${rp(r.withdraw)}</div></div>
-         <div class="saving-balance-box sisa"><div class="k">SISA TABUNGAN</div><div class="v">${rp(saldo)}</div></div>
-       </div>
-
-       <div class="saving-formula">Sisa Tabungan <b>${esc(nama(a))}</b> = Tabungan Awal ${rp(r.total)} − Pengambilan ${rp(r.withdraw)} = <b>${rp(saldo)}</b></div>
-     </div>
-   </div>`;
- }).join(""):`<div class="empty">Belum ada data member/order yang sesuai.</div>`;
-}
-
-async function load(){
- if(!ownerUid||loading)return;
-
- loading=true;
- ready=false;
- notice("Menghubungkan Firebase FIXZY...","ok");
-
- try{
-   await Promise.all([loadMembers(),loadOrders(),loadWithdrawals(),loadAllExpenses()]);
-
-   if(!members.length)members=fallbackMembersFromOrders();
-
-   isiDropdownMember();
-   ready=true;
-   render();
-
-   notice(`Firebase FIXZY terhubung • ${members.length} member • ${orders.length} order approved.`,"ok");
- }catch(e){
-   console.error(e);
-   notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err");
- }finally{
-   loading=false;
- }
-}
-
-window.muatUlang=async()=>{
- if(auth.currentUser){
-   try{
-     const s=await getDoc(doc(db,"users",auth.currentUser.uid));
-     if(s.exists()){
-       profile=s.data()||{};
-       const role=norm(profile.role||profile.profileRole);
-       ownerUid=(role==="owner"||profile.isOwner===true)
-         ?auth.currentUser.uid
-         :String(profile.ownerUid||profile.ownerId||"").trim();
-     }
-   }catch(e){}
- }
- if(ownerUid)await load();
-};
-
-window.resetFilter=()=>{
- if($("search"))$("search").value="";
- if($("statusFilter"))$("statusFilter").value="";
- render();
-};
-
-$("search")?.addEventListener("change",render);
-$("statusFilter")?.addEventListener("change",render);
-
-$("dark")?.addEventListener("click",()=>{
- document.body.classList.toggle("dark");
- setText("dark",document.body.classList.contains("dark")?"☀️":"🌙");
+// LISTENER TUTUP IFRAME DARI PAGE.HTML
+window.addEventListener("message", e=>{
+  if(!e.data) return;
+  if(e.data.type==="FIXZY_CLOSE_PAGE" || e.data.type==="FIXZY_CLOSE_IZIN_AKSES"){
+    tampilkanBeranda();
+  }
 });
 
-onAuthStateChanged(auth,async u=>{
- if(!u){
-   notice("Menunggu sesi login FIXZY...");
-   return;
- }
+function popupLogout(){
+  const old=document.getElementById("fixzyLogoutPopup");
+  if(old)old.remove();
+  const wrap=document.createElement("div");
+  wrap.id="fixzyLogoutPopup";
+  wrap.style.cssText="position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:18px";
+  wrap.innerHTML=`<div style="width:min(420px,100%);background:#fff;border-radius:15px;padding:18px;box-shadow:0 15px 40px #0004">
+    <h3 style="margin:0 0 8px;color:#111827">🚪 Keluar dari FIXZY?</h3>
+    <div style="font-size:13px;line-height:1.6;color:#667085">Sesi akun akan ditutup dan Anda akan kembali ke halaman login.</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:15px">
+      <button id="fixzyLogoutCancel" style="border:0;border-radius:8px;padding:10px 13px;background:#e5e7eb;color:#111827;font-weight:900;cursor:pointer">Batal</button>
+      <button id="fixzyLogoutOk" style="border:0;border-radius:8px;padding:10px 13px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer">Logout</button>
+    </div>
+  </div>`;
+  document.body.appendChild(wrap);
+  document.getElementById("fixzyLogoutCancel").onclick=()=>wrap.remove();
+  document.getElementById("fixzyLogoutOk").onclick=async()=>{
+    const ok=document.getElementById("fixzyLogoutOk");
+    ok.disabled=true; ok.textContent="Keluar...";
+    try{await signOut(auth)}catch(e){}
+    window.location.replace("login.html");
+  };
+}
+window.logoutFixzy=popupLogout;
 
- try{
-   uid=u.uid;
 
-   const s=await getDoc(doc(db,"users",uid));
-   if(!s.exists())throw Error("Profil akun tidak ditemukan di users/"+uid);
+function rpHeader(n){return "Rp "+(Number(n)||0).toLocaleString("id-ID")}
+function numHeader(v){return Number(v)||0}
+function normHeader(v){return String(v??"").trim().toLowerCase()}
+function toDateHeader(v){if(v?.toDate)return v.toDate();if(v instanceof Date)return v;const d=new Date(v);return isNaN(d)?null:d}
+function orderDateHeader(r){return toDateHeader(r.createdAt)||toDateHeader(r.approvedAt)||toDateHeader(r.updatedAt)||toDateHeader(r.tanggal)||toDateHeader(r.date)||new Date()}
+function memberUidFromOrderHeader(r){const m=r.member||r.pelanggan||{};return String(r.memberUid||r.memberId||r.createdByMemberUid||r.uidMember||m.uid||m.userId||"").trim()}
+function memberEmailFromOrderHeader(r){const m=r.member||r.pelanggan||{};return String(r.memberEmail||m.email||"").trim().toLowerCase()}
+function memberTabunganOrderHeader(r){
+  // Sumber dan prioritas dibuat SAMA dengan Data Tabungan Member.
+  // Nilai total order dipakai lebih dulu; jika tidak ada, hitung dari item.
+  const explicit=
+    r.totalTabunganMember??
+    r.totalTabunganOrder??
+    r.totalTabungan??
+    r.tabunganTotal??
+    r.totalMenabungMember??
+    r.tabungan;
 
-   profile=s.data()||{};
-   const role=norm(profile.role||profile.profileRole);
+  if(explicit!==undefined&&explicit!==null&&explicit!==""){
+    return Math.max(0,numHeader(explicit));
+  }
 
-   if(role==="superadmin"||role==="super_admin"||norm(u.email)==="servicehpmaja@gmail.com")
-     throw Error("SUPERADMIN tidak memiliki akses data bisnis Owner.");
+  const m=r.member||r.pelanggan||{};
+  const fallback=numHeader(
+    r.tabunganPerPcs??
+    r.tabunganMember??
+    r.menabungMemberPerPcs??
+    m.tabunganPerPcs??
+    m.tabunganMember??
+    4000
+  )||4000;
 
-   ownerUid=(role==="owner"||profile.isOwner===true)?uid:ownerOf(profile);
+  const items=Array.isArray(r.approvedItems)
+    ?r.approvedItems
+    :(Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]));
 
-   if(!ownerUid)throw Error("ownerUid/ownerId pemilik akun tidak ditemukan.");
+  if(items.length){
+    return items.reduce((s,x)=>{
+      const q=Math.max(0,numHeader(x.approvedQty??x.qty??x.jumlah??x.quantity));
+      const tab=x.tabunganPerPcs??x.tabunganMember??x.menabungMemberPerPcs;
+      return s+q*numHeader(tab!==undefined&&tab!==null&&tab!==""?tab:fallback);
+    },0);
+  }
 
-   setText("email",u.email||profile.email||"-");
+  const q=Math.max(0,numHeader(r.totalQty??r.approvedQty??r.qty??r.jumlah??0));
+  return q*fallback;
+}
+async function loadMemberSavingsHeader(user, profile){
+  const box=document.getElementById("accountSaving"), val=document.getElementById("accountSavingValue");
+  if(!box||!val)return;
 
-   await load();
- }catch(e){
-   console.error(e);
-   notice("Gagal memuat Data Tabungan Member: "+(e?.message||e),"err");
- }
-});
+  // Jangan membatasi berdasarkan role === "member".
+  // Pada data FIXZY lama, akun member bisa tersimpan sebagai employee/karyawan/everyone,
+  // sehingga pembatasan role membuat tabungan tidak pernah tampil di header.
+  box.classList.remove("show");
+  val.textContent="Rp 0";
+
+  try{
+    const ordersMap=new Map();
+    const uid=String(user?.uid||"").trim();
+    const em=String(user?.email||profile?.email||"").trim().toLowerCase();
+
+    // Cari order berdasarkan UID akun yang sedang login.
+    if(uid){
+      for(const field of ["memberUid","memberId","createdByMemberUid","uidMember"]){
+        try{
+          const s=await getDocs(query(collection(db,"order_member"),where(field,"==",uid)));
+          s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
+        }catch(e){console.warn("Query "+field+" dilewati",e?.message||e)}
+      }
+    }
+
+    // Fallback email untuk data lama.
+    if(em){
+      try{
+        const s=await getDocs(query(collection(db,"order_member"),where("memberEmail","==",em)));
+        s.forEach(d=>ordersMap.set(d.id,d.data()||{}));
+      }catch(e){console.warn("Query order memberEmail dilewati",e?.message||e)}
+    }
+
+    let total=0;
+    ordersMap.forEach(r=>{
+      const ap=normHeader(r.approvalStatus||"");
+      const st=normHeader(r.status||"");
+      if(ap==="approved"||["order_member","approved","tagihan","lunas"].includes(st)){
+        total+=memberTabunganOrderHeader(r);
+      }
+    });
+
+    // Ambil pengambilan tabungan dengan pola pencocokan yang sama
+    // seperti Data Tabungan Member: UID, email, dan validasi modul/jenis.
+    const withdrawalsMap=new Map();
+
+    if(uid){
+      for(const field of ["memberUid","memberId","uid"]){
+        try{
+          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",uid)));
+          s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
+        }catch(e){console.warn("Query pengambilan "+field+" dilewati",e?.message||e)}
+      }
+    }
+
+    if(em){
+      for(const field of ["memberEmail"]){
+        try{
+          const s=await getDocs(query(collection(db,"pengeluaran"),where(field,"==",em)));
+          s.forEach(d=>withdrawalsMap.set(d.id,d.data()||{}));
+        }catch(e){console.warn("Query pengambilan "+field+" dilewati",e?.message||e)}
+      }
+    }
+
+    let taken=0;
+    withdrawalsMap.forEach(r=>{
+      if(
+        normHeader(r.modul)==="member" &&
+        normHeader(r.jenis)==="pengambilan tabungan member"
+      ){
+        taken+=Math.max(0,numHeader(r.nominal));
+      }
+    });
+
+    const saldo=Math.max(0,total-taken);
+
+    // Tampilkan untuk akun yang memang memiliki data member.
+    // Jika belum ada transaksi sama sekali, tetap tampil Rp 0 agar statusnya jelas.
+    // Superadmin/admin tetap tidak perlu menampilkan tabungan bisnis.
+    const role=normHeader(profile?.role||profile?.profileRole);
+    if(role==="superadmin"||role==="admin"){
+      box.classList.remove("show");
+      return;
+    }
+
+    val.textContent=rpHeader(saldo);
+    box.classList.add("show");
+
+  }catch(e){
+    console.warn("Tabungan akun di header belum dapat dimuat:",e?.message||e);
+    val.textContent="Rp 0";
+    box.classList.add("show");
+  }
+}
+
+async function validasiDanTampilkan(user){
+  if(!user){
+    authReady=false;
+    document.getElementById("accountName").textContent="Memuat...";
+    document.getElementById("accountExp").textContent="-";
+    document.getElementById("accountSaving")?.classList.remove("show");
+    window.location.replace("login.html");
+    return;
+  }
+  try{
+    const snap=await getDoc(doc(db,"users",user.uid));
+    if(!snap.exists()){
+      await signOut(auth);
+      window.location.replace("login.html");
+      return;
+    }
+    const data=snap.data()||{};
+    const role=String(data.role||"").toLowerCase();
+    const status=String(data.status||"").toLowerCase();
+    const ownerUid=role==="owner"?user.uid:(data.ownerUid||data.ownerId||"");
+    if(!ownerUid&&role!=="superadmin"&&role!=="admin"){
+      await signOut(auth);
+      window.location.replace("login.html");
+      return;
+    }
+    const allowedRoles=["owner","employee","karyawan","kasir","kurir","reseller","member","superadmin","admin"];
+    if(!allowedRoles.includes(role)){
+      await signOut(auth);
+      window.location.replace("login.html");
+      return;
+    }
+    if(status==="blocked"||status==="rejected"){
+      await signOut(auth);
+      window.location.replace("login.html");
+      return;
+    }
+    const exp=data.exp||data.expAt||data.expiredAt||data.tanggalBerakhir||null;
+    let expDate=null;
+    if(exp&&typeof exp.toDate==="function")expDate=exp.toDate();
+    else if(exp&&typeof exp==="object"&&exp.seconds!==undefined)expDate=new Date(Number(exp.seconds)*1000);
+    else if(exp)expDate=new Date(exp);
+    if(expDate&&!Number.isNaN(expDate.getTime())&&new Date()>expDate){
+      await signOut(auth);
+      window.location.replace("login.html");
+      return;
+    }
+    window.fixzySession={
+      uid:user.uid,
+      role,
+      ownerUid:ownerUid||user.uid,
+      profile:data,
+      permissions:normalisasiIzin(data.izin??data.permissions??data.hakAkses??data.access)
+    };
+    document.getElementById("accountName").textContent=data.namaKonter||data.namaPemilik||data.nama||user.email||"Akun";
+    document.getElementById("accountExp").textContent=formatExpFIXZY(exp);
+    await loadMemberSavingsHeader(user,data);
+    authReady=true;
+    terapkanHakAksesMenu();
+    tampilkanBeranda();
+  }catch(err){
+    console.error(err);
+    await signOut(auth).catch(()=>{});
+    window.location.replace("login.html");
+  }
+}
+
+onAuthStateChanged(auth,user=>{validasiDanTampilkan(user)});
 </script>
-</body>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
