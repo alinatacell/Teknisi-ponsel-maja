@@ -43,7 +43,7 @@ function totalOrder(r){return Math.max(0,num(r.totalBayar??r.total??r.subtotal??
 function totalDibayar(r){if(r.totalDibayar!=null)return Math.max(0,num(r.totalDibayar));if(r.pembayaran!=null)return Math.max(0,num(r.pembayaran));if(r.dp!=null)return Math.max(0,num(r.dp));if(r.uangMuka!=null)return Math.max(0,num(r.uangMuka));return 0;}
 function sisaOrder(r){const stored=r.sisaBayar??r.sisa;if(stored!==undefined&&stored!==null&&stored!=="")return Math.max(0,num(stored));return Math.max(0,totalOrder(r)-totalDibayar(r));}
 function cashOrder(r){const x=norm(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||r.metodePembayaran);return ["cash","member_cash","tunai","cash/tunai","cash_tunai","member_cash_tunai"].includes(x);}
-function approvedOrder(r){const ap=norm(r.approvalStatus||""),st=norm(r.status||"");return ap==="approved"||st==="approved"||st==="order_member";}
+function approvedOrder(r){const ap=norm(r.approvalStatus||""),st=norm(r.status||"");return ap==="approved"||st==="approved"||st==="order_member"||st==="tagihan"||st==="lunas";}
 function targetOwner(r){return String(r.ownerUid||r.ownerId||r.uid||"").trim();}
 
 async function loadOrders(){
