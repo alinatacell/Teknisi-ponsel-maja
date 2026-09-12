@@ -195,17 +195,23 @@ function reservedForSheetProduct(p,map){const c=String(p.kode||"").trim().toUppe
 async function loadProducts(){
   try{
     if(!businessUid)throw Error("ownerUid akun aktif tidak ditemukan.");
-    let url=ownerSheetUrl;
-    if(!url){try{url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim()}catch(e){}}
-    if(!url)throw Error("Link Google Sheet milik Owner belum ditemukan.");
-    url=normalizeSheetUrl(url);
-    const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);
-    const rows=normalizeSheetProducts(parseSheetCSV(await r.text()));
+    // HARUS sama dengan Stock Member: satu sumber produk master dari Google Spreadsheet.
+    const FIXZY_DEFAULT_SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vSpCIO_9kEnIX4IjSfD7EGcB_lT_LAl7H7JTz904hhII7h6-CyMCYQ6oVTShFvJlS4QHzjuzIwCdAg7/pub?gid=1960398218&single=true";
+    let url=normalizeSheetUrl(FIXZY_DEFAULT_SHEET_URL);
+    try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok)throw Error("HTTP "+r.status);
+    const text=await r.text();
+    if(!text.trim())throw Error("CSV kosong.");
+    const rows=normalizeSheetProducts(parseSheetCSV(text));
     products=rows.map((p,i)=>({...p,id:sheetProductId(p,i)}));
     const reserved=await getApprovedOrderQtyForOwner();
     products=products.map(p=>({...p,sisa:Math.max(0,sheetNum(p.sisa)-reservedForSheetProduct(p,reserved))}));
     syncCartWithStock();
-  }catch(e){console.error("LOAD SHEET ORDER:",e);products=[];syncCartWithStock();throw e}
+  }catch(e){
+    console.error("LOAD SHEET ORDER:",e);
+    products=[];syncCartWithStock();throw e;
+  }
 }
 
 function renderCart(){
