@@ -94,17 +94,9 @@ function calc(){
 }
 
 async function loadProducts(){
-  // Stok master berasal dari Google Sheet. Keranjang sudah membawa snapshot
-  // produk dari tampil-stock-member, jadi halaman order tidak lagi membaca koleksi stok Firebase.
-  loadCartStorage();
-  products=cart.map(x=>({
-    id:x.produkId,nama:x.nama,kode:x.kode,kategori:x.kategori,
-    hargaModal:Number(x.modalSatuan)||0,
-    hargaJual:Number(x.hargaTempo??x.hargaDasar??x.harga)||0,
-    hargaTempo:Number(x.hargaTempo??x.hargaDasar??x.harga)||0,
-    sisa:Number(x.stok)||0
-  }));
-  syncCartWithStock();
+ const map=new Map(),qs=[query(collection(db,"stok"),where("ownerUid","==",businessUid)),query(collection(db,"stok"),where("ownerId","==",businessUid))];
+ for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>map.set(d.id,{id:d.id,...(d.data()||{})}))}catch(e){console.warn("Query stok:",e)}}
+ products=[...map.values()];syncCartWithStock();
 }
 
 function renderCart(){
