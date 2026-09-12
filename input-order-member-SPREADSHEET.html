@@ -5,163 +5,139 @@
 <style>
 *{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6}html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
 header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107;display:flex;align-items:center}.head{width:100%;max-width:920px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px}.email{font-size:11px;color:#9ca3af;font-weight:700}.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:11px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
-main{max-width:920px;margin:auto;padding:88px 12px 20px}.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-bottom:5px}input,textarea{width:100%;padding:11px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}textarea{min-height:70px}.info{border:2px solid #111827;border-radius:9px;overflow:hidden}.row{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eee;font-size:12px}.row:last-child{border:0}.row span{color:#667085;font-weight:700}.search{position:relative}.results{display:none;position:absolute;z-index:20;left:0;right:0;top:100%;max-height:250px;overflow:auto;background:#fff;border:1px solid #ddd;box-shadow:0 7px 18px #0002}.results.show{display:block}.result{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eee;padding:10px;cursor:pointer}.pname{font-weight:900}.meta{font-size:11px;color:#667085;margin-top:3px}.selected{margin-top:7px;padding:9px;border:1px dashed #16a34a;background:#f0fdf4;border-radius:8px;font-size:12px}.empty{border-color:#d1d5db;background:#f8fafc;color:#667085}.cartbox{border:2px solid #111827;border-radius:10px;overflow:hidden;box-shadow:3px 3px 0 #111827}.cart-empty{padding:14px;text-align:center;font-size:12px;color:#667085}.cart-item{padding:11px;border-bottom:1px solid #e5e7eb}.cart-item:last-child{border-bottom:0}.cart-head{display:flex;justify-content:space-between;gap:8px}.cart-name{font-weight:900;font-size:13px}.cart-meta{font-size:11px;color:#667085;line-height:1.5;margin-top:3px}.cart-remove{border:2px solid #111827;border-radius:7px;background:#fee2e2;color:#b91c1c;font-weight:900;padding:6px 8px;cursor:pointer}.cart-controls{display:flex;gap:7px;align-items:center;margin-top:8px;flex-wrap:wrap}.cart-controls button{border:2px solid #111827;border-radius:7px;background:#e5e7eb;font-weight:900;padding:7px 12px;cursor:pointer}.qtybox{display:flex;align-items:center;gap:5px}.qtybtn{min-width:42px;font-size:18px!important;padding:5px 10px!important}.qtyvalue{min-width:48px;text-align:center;font-weight:900;border:2px solid #111827;border-radius:7px;padding:7px 5px;background:#fff}.stockhint{font-size:10px;color:#64748b;font-weight:800;margin-left:3px}.cart-total{margin-top:7px;text-align:right;font-weight:900}.money{font-size:12px;color:#667085;line-height:1.8}.money b{color:#111827}.tempo{border:2px solid #111827;border-radius:10px;padding:12px;background:#fffbeb}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.quick button{padding:9px;border:2px solid #111827;border-radius:8px;background:#fff;font-weight:900;box-shadow:2px 2px 0 #111827}.quick button.active{background:#ffc107}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.primary{background:#111827;color:#fff}.secondary{background:#e5e7eb}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
-body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .cart-item{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark input,body.dark textarea{background:#0f172a;color:#fff;border-color:#475569}body.dark .results,body.dark .result{background:#111827;color:#fff;border-color:#334155}body.dark .tempo{background:#1c1917;border-color:#475569}body.dark .cartbox{border-color:#475569}body.dark .money{color:#94a3b8}body.dark .money b{color:#fff}.cart-over{background:#fff7ed!important;border-left:4px solid #dc2626}
+main{max-width:920px;margin:auto;padding:88px 12px 20px}.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-bottom:5px}input,textarea,select{width:100%;padding:11px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}textarea{min-height:70px}.info{border:2px solid #111827;border-radius:9px;overflow:hidden}.row{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #eee;font-size:12px}.row:last-child{border:0}.row span{color:#667085;font-weight:700}.search{position:relative}.results{display:none;position:absolute;z-index:20;left:0;right:0;top:100%;max-height:250px;overflow:auto;background:#fff;border:1px solid #ddd;box-shadow:0 7px 18px #0002}.results.show{display:block}.result{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eee;padding:10px;cursor:pointer}.pname{font-weight:900}.meta{font-size:11px;color:#667085;margin-top:3px}.selected{margin-top:7px;padding:9px;border:1px dashed #16a34a;background:#f0fdf4;border-radius:8px;font-size:12px}.empty{border-color:#d1d5db;background:#f8fafc;color:#667085}.cartbox{border:2px solid #111827;border-radius:10px;overflow:hidden;box-shadow:3px 3px 0 #111827}.cart-empty{padding:14px;text-align:center;font-size:12px;color:#667085}.cart-item{padding:11px;border-bottom:1px solid #e5e7eb}.cart-item:last-child{border-bottom:0}.cart-head{display:flex;justify-content:space-between;gap:8px}.cart-name{font-weight:900;font-size:13px}.cart-meta{font-size:11px;color:#667085;line-height:1.5;margin-top:3px}.cart-remove{border:2px solid #111827;border-radius:7px;background:#fee2e2;color:#b91c1c;font-weight:900;padding:6px 8px;cursor:pointer}.cart-controls{display:flex;gap:7px;align-items:center;margin-top:8px;flex-wrap:wrap}.cart-controls button{border:2px solid #111827;border-radius:7px;background:#e5e7eb;font-weight:900;padding:7px 12px;cursor:pointer}.qtybox{display:flex;align-items:center;gap:5px}.qtybtn{min-width:42px;font-size:18px!important;padding:5px 10px!important}.qtyvalue{min-width:48px;text-align:center;font-weight:900;border:2px solid #111827;border-radius:7px;padding:7px 5px;background:#fff}.stockhint{font-size:10px;color:#64748b;font-weight:800;margin-left:3px}.cart-total{margin-top:7px;text-align:right;font-weight:900}.money{font-size:12px;color:#667085;line-height:1.8}.money b{color:#111827}.tempo{border:2px solid #111827;border-radius:10px;padding:12px;background:#fffbeb}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.quick button{padding:9px;border:2px solid #111827;border-radius:8px;background:#fff;font-weight:900;box-shadow:2px 2px 0 #111827}.quick button.active{background:#ffc107}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.primary{background:#111827;color:#fff}.secondary{background:#e5e7eb}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .cart-item{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .title{border-color:#475569}body.dark input,body.dark textarea,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .results,body.dark .result{background:#111827;color:#fff;border-color:#334155}body.dark .tempo{background:#1c1917;border-color:#475569}body.dark .cartbox{border-color:#475569}body.dark .money{color:#94a3b8}body.dark .money b{color:#fff}.cart-over{background:#fff7ed!important;border-left:4px solid #dc2626}
 body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
-
-@media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.quick{grid-template-columns:repeat(3,1fr)}}
+.modal{display:none;position:fixed;inset:0;z-index:10000;background:#0008;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.modal-box{width:min(420px,100%);background:#fff;border:2px solid #111827;border-radius:14px;box-shadow:6px 6px 0 #111827;padding:18px}.modal-title{font-size:18px;font-weight:900;margin-bottom:9px;color:#dc2626}.modal-msg{font-size:13px;line-height:1.6;color:#374151;margin-bottom:15px}.modal-close{width:100%;border:2px solid #111827;border-radius:9px;padding:10px;background:#ffc107;color:#111827;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}body.dark .modal-box{background:#111827;color:#fff;border-color:#475569}body.dark .modal-msg{color:#d1d5db}body.dark .modal-close{border-color:#475569}
+@media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.quick{grid-template-columns:repeat(2,1fr)}}
 </style></head>
 <body>
-<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
+<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
-<div class="card"><div class="title">Informasi Pesanan</div><div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis</span><b>MEMBER • TEMPO • MENUNGGU APPROVAL</b></div></div></div>
+<div id="errorModal" class="modal" aria-hidden="true"><div class="modal-box" role="dialog" aria-modal="true"><div id="modalTitle" class="modal-title">⚠️ Pesanan Tidak Bisa Disimpan</div><div id="errorModalMsg" class="modal-msg"></div><button type="button" class="modal-close" onclick="closeErrorModal()">OK</button></div></div>
+
+<div class="card"><div class="title">Informasi Pesanan</div><div class="info"><div class="row"><span>Nomor Nota</span><b id="nota">-</b></div><div class="row"><span>Tanggal</span><b id="tgl">-</b></div><div class="row"><span>Jenis Transaksi</span><b>TUNAI • TEMPO</b></div></div></div>
 <div class="card"><div class="title">Data Member</div><div class="grid">
-<div><label>NAMA MEMBER *</label><input id="nama" readonly></div>
-<div><label>NO. WA *</label><input id="wa" inputmode="tel" readonly></div>
-<div><label>KODE MEMBER (OTOMATIS)</label><input id="kode" readonly></div>
-<div><label>CATATAN</label><input id="catatan"></div>
+<div><label>NAMA MEMBER *</label><input id="nama" readonly></div><div><label>NO. WA *</label><input id="wa" inputmode="tel" readonly></div>
+<div><label>KODE MEMBER (OTOMATIS)</label><input id="kode" readonly></div><div><label>CATATAN</label><input id="catatan"></div>
 <div class="full"><label>ALAMAT</label><textarea id="alamat"></textarea></div>
 </div><div id="memberAutoInfo" class="notice ok" style="margin-top:9px">Nama dan No. WA otomatis mengikuti akun yang sedang login.</div></div>
-<div class="card"><div class="title">🛒 Keranjang Order Member</div>
-  <div class="notice">Produk dimasukkan langsung dari <b>Stok Produk</b>. Tambah produk dari halaman stok, lalu keranjang ini digunakan untuk mengatur qty sebelum order diajukan.</div>
-  <div class="actions" style="margin-bottom:10px">
-    <button type="button" class="btn primary" onclick="kembaliKeStok()">＋ Tambah Produk dari Stok</button>
-    <button type="button" class="btn secondary" onclick="refreshCartFromStock()">↻ Cek Stok Terbaru</button>
-  </div>
-  <div id="stockSyncMsg" class="notice"></div>
-  <div id="cartBox" class="cartbox"><div class="cart-empty">Keranjang masih kosong.</div></div>
-  <div class="money" style="margin-top:10px">
-    Subtotal: <b id="sub">Rp 0</b><br>
-    Diskon item: <b id="disItem">Rp 0</b><br>
-    Total pesanan: <b id="total">Rp 0</b>
-  </div>
+
+<div class="card"><div class="title">🛒 Keranjang Order</div>
+<div class="notice">Produk dimasukkan langsung dari <b>Stok Produk</b>. Tambah produk dari halaman stok, lalu keranjang ini digunakan untuk mengatur qty sebelum order diajukan.</div>
+<div class="actions" style="margin-bottom:10px"><button type="button" class="btn primary" onclick="kembaliKeStok()">＋ Tambah Produk dari Stok</button><button type="button" class="btn secondary" onclick="refreshCartFromStock()">↻ Cek Stok Terbaru</button></div>
+<div id="stockSyncMsg" class="notice"></div><div id="cartBox" class="cartbox"><div class="cart-empty">Keranjang masih kosong.</div></div>
+<div class="money" style="margin-top:10px">Subtotal: <b id="sub">Rp 0</b><br>Diskon item: <b id="disItem">Rp 0</b><br>Total pesanan: <b id="total">Rp 0</b></div>
 </div>
-<div class="card"><div class="title">Pembayaran & Tempo</div><div class="grid"><div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div><div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div><div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div><div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b><div class="quick" style="margin-top:9px"><button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button><button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button><button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button></div><div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: 7 Hari = 2 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs</div><div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div><div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div></div></div></div></div>
-<div class="card"><div class="title">Simpan Pesanan</div><div style="font-size:11px;color:#64748b;line-height:1.7;margin-bottom:10px">Pesanan <b>belum mengurangi stok</b>. Setelah disimpan, Admin melakukan <b>Approval Member</b> untuk mencocokkan stok. Hanya produk/qty yang disetujui yang mengurangi stok dan masuk ke <b>Data Order Member</b>.</div><div class="actions"><button class="btn secondary" onclick="simpan()">💾 Simpan Pesanan</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button></div><div id="save" class="notice">Menunggu akun...</div></div>
+
+<div class="card"><div class="title">Pembayaran Tunai & Tempo</div><div class="grid">
+<div><label>JENIS HARGA</label><select id="paymentType"><option value="tempo">TEMPO</option><option value="cash">CASH / TUNAI</option></select></div>
+<div id="dpWrap"><label>DP / PEMBAYARAN AWAL</label><input id="dp" value="0" inputmode="numeric"></div>
+<div id="sisaWrap"><label>SISA TAGIHAN</label><input id="sisa" readonly></div>
+<div class="full"><div class="tempo"><b>PILIH JATUH TEMPO</b>
+<div class="quick" style="margin-top:9px">
+<button type="button" data-tempo-days="7" onclick="tempo(7,this)">7 Hari</button>
+<button type="button" data-tempo-days="14" onclick="tempo(14,this)">14 Hari</button>
+<button type="button" data-tempo-days="30" onclick="tempo(30,this)">30 Hari</button>
+<button type="button" data-tempo-days="38" onclick="tempo(38,this)">38 Hari</button>
+</div>
+<div id="tempoRule" style="margin-top:9px;font-size:11px;font-weight:800;color:#64748b">Minimal order: CASH / TUNAI = 3 pcs • 7 Hari = 3 pcs • 14 Hari = 5 pcs • 30 Hari = 10 pcs • 38 Hari = 15 pcs</div>
+<div class="grid" style="margin-top:10px"><div><label>LAMA TEMPO (HARI)</label><input id="lama" type="number" min="1" value="30"></div><div><label>JATUH TEMPO</label><input id="jatuh" type="date"></div></div>
+<div id="due" style="margin-top:9px;font-size:12px;font-weight:800">Jatuh tempo: -</div>
+</div></div></div></div>
+
+<div class="card"><div class="title">Simpan Pesanan</div><div style="font-size:11px;color:#64748b;line-height:1.7;margin-bottom:10px">Pesanan <b>belum mengurangi stok</b>. Setelah disimpan, Admin melakukan <b>Approval Member</b> untuk mencocokkan stok. Hanya produk/qty yang disetujui yang mengurangi stok dan masuk ke <b>Data Order Member</b>.</div>
+<div class="actions"><button class="btn secondary" onclick="simpan()">💾 Simpan Pesanan</button><button class="btn primary" onclick="resetForm()">↺ Bersihkan</button></div><div><div id="save" class="notice">Menunggu akun...</div></div></div>
 </main>
+
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);let uid="",businessUid="",products=[],selected=null,cart=[],ready=false,members=[],selectedMember=null,ownerSettings={up:1000,kas:0},ownerSheetUrl="";
-const $=x=>document.getElementById(x),
-num=x=>Number(String($(x)?.value||"").replace(/[^\d]/g,""))||0,
-rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),
-today=()=>new Date().toISOString().slice(0,10);
+import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc,setDoc,increment,writeBatch,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+let uid="",businessUid="",products=[],selected=null,cart=[],ready=false,members=[],selectedMember=null,ownerSettings={up:1000,kas:0},currentProfile={};
+const $=x=>document.getElementById(x),num=x=>Number(String($(x)?.value||"").replace(/[^\d]/g,""))||0,rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),today=()=>new Date().toISOString().slice(0,10);
 
 function nota(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MBR-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+String(d.getMilliseconds()).padStart(3,"0")}
 function kodeMember(){let d=new Date(),p=n=>String(n).padStart(2,"0");return"MEM-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+(Math.floor(Math.random()*9000)+1000)}
 function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
-function business(d){
-  let r=String(d.role||"").toLowerCase();
-  if(r==="owner"||r==="superadmin")return uid;
-  return String(d.ownerUid||d.ownerId||uid);
-}
+function showErrorModal(t){$("modalTitle").textContent="⚠️ Pesanan Tidak Bisa Disimpan";$("modalTitle").style.color="#dc2626";$("errorModalMsg").textContent=String(t||"Pesanan tidak dapat disimpan.");$("errorModal").classList.add("show");$("errorModal").setAttribute("aria-hidden","false")}
+window.closeErrorModal=()=>{$("errorModal").classList.remove("show");$("errorModal").setAttribute("aria-hidden","true")};
+function showSuccessModal(t){$("modalTitle").textContent="✅ Pesanan Berhasil Disimpan";$("modalTitle").style.color="#15803d";$("errorModalMsg").textContent=String(t||"Pesanan berhasil disimpan dan menunggu approval.");$("errorModal").classList.add("show");$("errorModal").setAttribute("aria-hidden","false")}
 
-function cartKey(){
-  return businessUid ? "fixzy_member_cart_"+businessUid : "fixzy_member_cart";
-}
+function business(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||uid)}
+function cartKey(){return businessUid?"fixzy_member_cart_"+businessUid:"fixzy_member_cart"}
+function loadCartStorage(){try{const raw=localStorage.getItem(cartKey()),data=raw?JSON.parse(raw):[];cart=Array.isArray(data)?data:[]}catch(e){console.warn("Cart storage:",e);cart=[]}}
+function saveCartStorage(){try{if(cart.length)localStorage.setItem(cartKey(),JSON.stringify(cart));else localStorage.removeItem(cartKey())}catch(e){console.error("Cart storage:",e)}}
 
-function loadCartStorage(){
-  try{
-    const raw=localStorage.getItem(cartKey());
-    const data=raw?JSON.parse(raw):[];
-    cart=Array.isArray(data)?data:[];
-  }catch(e){
-    console.warn("Cart storage:",e);
-    cart=[];
-  }
-}
-
-function saveCartStorage(){
-  try{
-    if(cart.length)localStorage.setItem(cartKey(),JSON.stringify(cart));
-    else localStorage.removeItem(cartKey());
-  }catch(e){console.error("Cart storage:",e)}
-}
-
-function activeBasePrice(p){
-  // TEMPO = harga jual, CASH/TUNAI = harga modal.
-  const tempo=Number(p.hargaJual??p.hargaTempo??p.harga??0)||0;
-  const cash=Number(p.hargaModal??p.modal??0)||0;
-  return $("paymentType")?.value==="cash"?cash:tempo;
-}
-function getTabunganMember(){
-  const v=selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??selectedMember?.tabunganMemberPerPcs;
-  return Number(v??0)||0;
-}
-function getUpPengelola(){
-  return Number(ownerSettings.up??0)||0;
-}
+function activeBasePrice(p){const tempo=Number(p.hargaJual??p.hargaTempo??p.harga??0)||0,cash=Number(p.hargaModal??p.modal??0)||0;return $("paymentType")?.value==="cash"?cash:tempo}
+function getTabunganMember(){const v=selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??selectedMember?.tabunganMemberPerPcs;return Number(v??0)||0}
+function getUpPengelola(){return Number(ownerSettings.up??0)||0}
 function composedPrice(p){return activeBasePrice(p)+getTabunganMember()+getUpPengelola()}
+
 function syncCartWithStock(){
-  const map=new Map(products.map(p=>[p.id,p]));
-  cart.forEach(x=>{
-    const p=map.get(x.produkId);
-    if(p){
-      x.nama=String(p.nama||x.nama||"-");
-      x.kode=String(p.kode||x.kode||"");
-      x.kategori=String(p.kategori||x.kategori||"");
-      x.hargaDasar=activeBasePrice(p);
-      x.hargaTempo=Number(p.hargaJual??p.hargaTempo??p.harga??0)||0;
-      x.hargaCash=Number(p.hargaModal??p.modal??0)||0;
-      x.tabunganPerPcs=getTabunganMember();
-      x.upPengelolaPerPcs=getUpPengelola();
-      x.harga=x.hargaDasar+x.tabunganPerPcs+x.upPengelolaPerPcs;
-      x.modalSatuan=Number(p.hargaModal??p.modal??x.modalSatuan??0)||0;
-      x.stok=Number(p.sisa??p.stok??0)||0;
-    }else x.stok=0
-  });
-  saveCartStorage();
-  const masalah=cart.filter(x=>Number(x.qty)>Number(x.stok||0));
-  $("stockSyncMsg").textContent=masalah.length?"⚠️ Ada qty di keranjang yang melebihi stok terbaru.":(cart.length?"✓ Stok terbaru sudah dicocokkan dengan keranjang.":"");
-  $("stockSyncMsg").className="notice "+(masalah.length?"err":"ok");
+ const map=new Map(products.map(p=>[p.id,p]));
+ cart.forEach(x=>{const p=map.get(x.produkId);if(p){x.nama=String(p.nama||x.nama||"-");x.kode=String(p.kode||x.kode||"");x.kategori=String(p.kategori||x.kategori||"");x.hargaDasar=activeBasePrice(p);x.hargaTempo=Number(p.hargaJual??p.hargaTempo??p.harga??0)||0;x.hargaCash=Number(p.hargaModal??p.modal??0)||0;x.tabunganPerPcs=getTabunganMember();x.upPengelolaPerPcs=getUpPengelola();x.harga=x.hargaDasar+x.tabunganPerPcs+x.upPengelolaPerPcs;x.modalSatuan=Number(p.hargaModal??p.modal??x.modalSatuan??0)||0;x.stok=Number(p.sisa??p.stok??0)||0}else x.stok=0});
+ saveCartStorage();
+ const masalah=cart.filter(x=>Number(x.qty)>Number(x.stok||0));
+ $("stockSyncMsg").textContent=masalah.length?"⚠️ Ada qty di keranjang yang melebihi stok terbaru.":(cart.length?"✓ Stok terbaru sudah dicocokkan dengan keranjang.":"");
+ $("stockSyncMsg").className="notice "+(masalah.length?"err":"ok");
 }
 
 function calc(){
-  const sub=cart.reduce((a,x)=>a+(Number(x.lineTotal)||0),0);
-  const di=cart.reduce((a,x)=>a+(Number(x.diskon)||0),0);
-  const cash=$("paymentType")?.value==="cash";
-  const dp=cash?sub:Math.min(num("dp"),sub);
-  const s=cash?0:Math.max(0,sub-dp);
-  $("sub").textContent=rp(sub+di);
-  $("disItem").textContent=rp(di);
-  $("total").textContent=rp(sub);
-  if($("sisa"))$("sisa").value=s;
-  return{subtotal:sub+di,diskonItem:di,total:sub,dp,sisa:s};
+ const sub=cart.reduce((a,x)=>a+(Number(x.lineTotal)||0),0),di=cart.reduce((a,x)=>a+(Number(x.diskon)||0),0),cash=$("paymentType")?.value==="cash";
+ const dp=cash?sub:Math.min(num("dp"),sub),s=cash?0:Math.max(0,sub-dp);
+ $("sub").textContent=rp(sub+di);$("disItem").textContent=rp(di);$("total").textContent=rp(sub);if($("sisa"))$("sisa").value=s;
+ return{subtotal:sub+di,diskonItem:di,total:sub,dp,sisa:s};
 }
 
-function sheetCleanKey(s){return String(s??"").trim().toLowerCase().replace(/[\s_\-()./]+/g,"")}
-function sheetNum(s){
-  if(typeof s==="number")return s;
-  let x=String(s??"").trim(); if(!x)return 0;
-  x=x.replace(/[^\d,.-]/g,"");
-  if(x.includes(",")&&x.includes(".")){
-    if(x.lastIndexOf(",")>x.lastIndexOf("."))x=x.replace(/\./g,"").replace(",",".");
-    else x=x.replace(/,/g,"");
-  }else if(x.includes(".")){
-    const parts=x.split("."); if(parts.length===2&&parts[1].length===3)x=x.replace(".","");
-  }else if(x.includes(","))x=x.replace(",",".");
-  const n=parseFloat(x); return Number.isFinite(n)?n:0;
+function cleanSheetKey(v){
+  return String(v??"").trim().toLowerCase()
+    .replace(/[\s_\-\/]+/g,"")
+    .replace(/[^\p{L}\p{N}]/gu,"");
 }
-function parseSheetCSV(text){
-  const out=[];let row=[],cell="",q=false;text=text.replace(/^\uFEFF/,"");
+function sheetNum(v){
+  if(v===null||v===undefined||v==="")return 0;
+  let s=String(v).trim().replace(/rp/ig,"").replace(/\s/g,"");
+  if(s.includes(".")&&s.includes(","))s=s.replace(/\./g,"").replace(",",".");
+  else if(s.includes(","))s=s.replace(",",".");
+  else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,"");
+  const n=Number(String(s).replace(/[^\d.-]/g,""));
+  return Number.isFinite(n)?n:0;
+}
+function sheetParseCSV(text){
+  const out=[];let row=[],cell="",q=false;
+  text=String(text??"").replace(/^\uFEFF/,"");
   for(let i=0;i<text.length;i++){
     const c=text[i],n=text[i+1];
-    if(c==='"'){if(q&&n==='"'){cell+='"';i++}else q=!q}
-    else if(c===","&&!q){row.push(cell);cell=""}
-    else if((c==="\n"||c==="\r")&&!q){if(c==="\r"&&n==="\n")i++;row.push(cell);cell="";if(row.some(v=>String(v).trim()!==""))out.push(row);row=[]}
-    else cell+=c;
+    if(c==='"'){
+      if(q&&n==='"'){cell+='"';i++;}else q=!q;
+    }else if(c===","&&!q){row.push(cell);cell="";}
+    else if((c==="\n"||c==="\r")&&!q){
+      if(c==="\r"&&n==="\n")i++;
+      row.push(cell);cell="";
+      if(row.some(v=>String(v).trim()!==""))out.push(row);
+      row=[];
+    }else cell+=c;
   }
-  if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()!==""))out.push(row)}
+  if(cell!==""||row.length){
+    row.push(cell);
+    if(row.some(v=>String(v).trim()!==""))out.push(row);
+  }
   return out;
 }
-function sheetPick(o,keys){for(const k of keys){const v=o[sheetCleanKey(k)];if(v!==undefined&&String(v).trim()!=="")return v}return ""}
-function normalizeSheetProducts(rows){
-  if(!rows.length)throw Error("CSV kosong.");
-  const h=rows[0].map(x=>sheetCleanKey(x)),data=[];
+function sheetPick(obj,keys){
+  for(const key of keys){
+    const v=obj[cleanSheetKey(key)];
+    if(v!==undefined&&String(v).trim()!=="")return v;
+  }
+  return "";
+}
+function sheetNormalizeCSV(rows){
+  if(!rows.length)throw Error("CSV Google Sheet kosong.");
+  const h=rows[0].map(x=>cleanSheetKey(x)),data=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];if(!r||r.every(x=>String(x).trim()===""))continue;
     const o={};h.forEach((k,j)=>o[k]=r[j]??"");
@@ -173,266 +149,197 @@ function normalizeSheetProducts(rows){
     const sisa=sheetNum(sheetPick(o,["sisa","sisa stock","sisa stok","stok","stock","qty","jumlah","jumlah stok","stock akhir","saldo"]));
     const kategori=sheetPick(o,["kategori","category","jenis"])||"LAINNYA";
     const merk=sheetPick(o,["merk","brand","supplier"]);
-    data.push({kode:String(kode||"").trim(),nama:String(nama||"").trim(),kategori:String(kategori).trim().toUpperCase(),hargaModal:modal,hargaJual:jual||Math.round(modal+(modal*15/100)),sisa:Math.max(0,sisa),merk:String(merk||"").trim()});
+    data.push({
+      kode:String(kode||"").trim(),
+      nama:String(nama||"").trim(),
+      kategori:String(kategori).trim().toUpperCase(),
+      hargaModal:modal,
+      hargaJual:jual||modal,
+      sisa:Math.max(0,sisa),
+      merk:String(merk||"").trim()
+    });
   }
-  if(!data.length)throw Error("Tidak ada produk yang dikenali dari Google Spreadsheet.");
+  if(!data.length)throw Error("Tidak ada produk yang dikenali dari Google Sheet.");
   return data;
 }
-function sheetProductId(p,i){const base=String(p.kode||`${p.nama||"produk"}_${p.kategori||""}`).trim().toUpperCase();let h=0;for(let j=0;j<base.length;j++)h=((h<<5)-h+base.charCodeAt(j))|0;return `sheet_${Math.abs(h)}_${i}`;}
-function findSheetUrlFromProfile(d){
-  if(!d||typeof d!=="object")return "";
-  for(const k of ["sheetUrl","googleSheetUrl","stokSheetUrl","csvUrl","googleSheetsUrl","spreadsheetUrl","linkGoogleSheet"]){const v=d[k];if(typeof v==="string"&&/^https?:\/\//i.test(v.trim()))return v.trim()}
-  return "";
+function sheetProductId(p,i){
+  const base=String(p.kode||`${p.nama||"produk"}_${p.kategori||""}`).trim().toUpperCase();
+  let h=0;for(let j=0;j<base.length;j++)h=((h<<5)-h+base.charCodeAt(j))|0;
+  return `sheet_${Math.abs(h)}_${i}`;
 }
-function normalizeSheetUrl(url){try{const u=new URL(url);if(u.hostname.toLowerCase()==="docs.google.com"&&u.pathname.includes("/spreadsheets/")){const gid=u.searchParams.get("gid")||(url.match(/[#&?]gid=(\d+)/i)||[])[1]||"0";const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/i);if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);if(id)return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`}}catch(e){throw Error("Link Google Sheet tidak valid.")}return url}
-async function getApprovedOrderQtyForOwner(){
-  const map={},seen=new Map();if(!businessUid)return map;
-  for(const f of ["ownerUid","ownerId"]){try{const snap=await getDocs(query(collection(db,"order_member"),where(f,"==",businessUid)));snap.forEach(d=>seen.set(d.id,d.data()||{}))}catch(e){console.warn("Query order_member:",e)}}
-  seen.forEach(o=>{const st=String(o.status||o.approvalStatus||"").toLowerCase();if(["batal","dibatalkan","cancel","cancelled","rejected","ditolak","pending","menunggu_approval"].includes(st))return;const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);items.forEach(it=>{const q=sheetNum(it.qty);if(!q)return;const c=String(it.kode||it.kodeProduk||it.sku||"").trim().toUpperCase(),n=String(it.nama||it.namaProduk||it.produk||"").trim().toLowerCase();if(c)map["code:"+c]=(map["code:"+c]||0)+q;if(n)map["name:"+n]=(map["name:"+n]||0)+q})});
-  return map;
+function normalizeSheetUrlForOrder(url){
+  try{
+    const u=new URL(url);
+    if(u.hostname.toLowerCase()==="docs.google.com"&&u.pathname.includes("/spreadsheets/")){
+      const gid=u.searchParams.get("gid")||(url.match(/[#&?]gid=(\d+)/i)||[])[1]||"0";
+      const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/i);
+      if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+      const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);
+      if(id)return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;
+    }
+  }catch(e){throw Error("Link Google Sheet tidak valid.")}
+  return url;
 }
-function reservedForSheetProduct(p,map){const c=String(p.kode||"").trim().toUpperCase(),n=String(p.nama||"").trim().toLowerCase();return Math.max(map["code:"+c]||0,map["name:"+n]||0)}
+async function getOrderSheetUrl(){
+  const role=String(currentProfile?.role||"").toLowerCase();
+  const isOwner=role==="owner"||role==="superadmin";
+  const ownerUid=String(isOwner?uid:(currentProfile?.ownerUid||currentProfile?.ownerId||"")).trim();
+  const fields=["sheetUrl","googleSheetUrl","stokSheetUrl","csvUrl"];
+  let url="";
+  if(isOwner){
+    for(const f of fields){if(String(currentProfile?.[f]||"").trim()){url=String(currentProfile[f]).trim();break;}}
+  }else if(ownerUid){
+    try{
+      const os=await getDoc(doc(db,"users",ownerUid));
+      if(os.exists()){
+        const od=os.data()||{};
+        for(const f of fields){if(String(od?.[f]||"").trim()){url=String(od[f]).trim();break;}}
+      }
+    }catch(e){console.warn("Gagal membaca Sheet Owner:",e);}
+  }
+  if(!url&&ownerUid){
+    try{
+      url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL_"+ownerUid)||"").trim();
+      if(!url&&isOwner)url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim();
+    }catch(e){}
+  }
+  if(url&&ownerUid){try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL_"+ownerUid,url);}catch(e){}}
+  return url;
+}
 async function loadProducts(){
   try{
-    if(!businessUid)throw Error("ownerUid akun aktif tidak ditemukan.");
-    // HARUS sama dengan Stock Member: satu sumber produk master dari Google Spreadsheet.
-    const FIXZY_DEFAULT_SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vSpCIO_9kEnIX4IjSfD7EGcB_lT_LAl7H7JTz904hhII7h6-CyMCYQ6oVTShFvJlS4QHzjuzIwCdAg7/pub?gid=1960398218&single=true";
-    let url=normalizeSheetUrl(FIXZY_DEFAULT_SHEET_URL);
-    try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
-    const r=await fetch(url,{cache:"no-store"});
-    if(!r.ok)throw Error("HTTP "+r.status);
-    const text=await r.text();
-    if(!text.trim())throw Error("CSV kosong.");
-    const rows=normalizeSheetProducts(parseSheetCSV(text));
-    products=rows.map((p,i)=>({...p,id:sheetProductId(p,i)}));
-    const reserved=await getApprovedOrderQtyForOwner();
-    products=products.map(p=>({...p,sisa:Math.max(0,sheetNum(p.sisa)-reservedForSheetProduct(p,reserved))}));
+    const url0=await getOrderSheetUrl();
+    if(!url0){
+      products=[];syncCartWithStock();
+      $("stockSyncMsg").textContent="Link Google Sheet milik Owner belum ditemukan.";
+      $("stockSyncMsg").className="notice err";
+      return;
+    }
+    const url=normalizeSheetUrlForOrder(url0);
+    const r=await fetch(url,{method:"GET",mode:"cors",cache:"no-store",redirect:"follow"});
+    if(!r.ok)throw Error("Google Sheet HTTP "+r.status);
+    const text=await r.text(),first=text.trim().slice(0,300).toLowerCase();
+    if(first.startsWith("<!doctype")||first.startsWith("<html")||first.includes("<html"))
+      throw Error("Google tidak mengirim CSV. Pastikan Sheet Owner sudah Publish to web sebagai CSV.");
+    products=sheetNormalizeCSV(sheetParseCSV(text)).map((p,i)=>({...p,id:sheetProductId(p,i)}));
     syncCartWithStock();
   }catch(e){
-    console.error("LOAD SHEET ORDER:",e);
-    products=[];syncCartWithStock();throw e;
+    console.error("LOAD SHEET STOCK:",e);
+    products=[];syncCartWithStock();
+    $("stockSyncMsg").textContent="Gagal membaca stok Google Sheet: "+(e?.message||e);
+    $("stockSyncMsg").className="notice err";
   }
 }
 
 function renderCart(){
-  const box=$("cartBox");
-  if(!cart.length){
-    box.innerHTML='<div class="cart-empty">Keranjang masih kosong.<br>Kembali ke Stok Produk untuk menambahkan barang.</div>';
-    calc();
-    return;
-  }
-
-  box.innerHTML=cart.map((x,i)=>{
-    const stok=Number(x.stok)||0;
-    const qty=Number(x.qty)||0;
-    const over=qty>stok;
-    x.lineTotal=Math.max(0,qty*(Number(x.harga)||0)-(Number(x.diskon)||0));
-    return `<div class="cart-item ${over?"cart-over":""}">
-      <div class="cart-head">
-        <div>
-          <div class="cart-name">${esc(x.nama)}</div>
-          <div class="cart-meta">
-            Kode: ${esc(x.kode||"-")} • Harga awal: ${rp(x.hargaDasar)}<br>
-            + UP Pengelola: ${rp(x.upPengelolaPerPcs)} /pcs<br>
-            + Menabung Member: ${rp(x.tabunganPerPcs)} /pcs<br>
-            <b>Total harga/pcs: ${rp(x.harga)}</b><br>
-            Stok tersedia: <b>${stok}</b> pcs • Diskon: ${rp(x.diskon)}
-          </div>
-        </div>
-        <button type="button" class="cart-remove" data-remove="${i}">🗑️ Hapus</button>
-      </div>
-      <div class="cart-controls">
-        <div class="qtybox">
-          <button type="button" class="qtybtn" data-minus="${i}">−</button>
-          <div class="qtyvalue">${qty}</div>
-          <button type="button" class="qtybtn" data-plus="${i}">+</button>
-          <span class="stockhint">Maks. ${stok}</span>
-        </div>
-      </div>
-      ${over?`<div class="notice err" style="margin-top:7px">Qty ${qty} melebihi stok terbaru ${stok}. Kurangi qty.</div>`:""}
-      <div class="cart-total">Jumlah: ${rp(x.lineTotal)}</div>
-    </div>`;
-  }).join("");
-  calc();
-  if(typeof updateTempoRules==="function")updateTempoRules();
+ const box=$("cartBox");
+ if(!cart.length){box.innerHTML='<div class="cart-empty">Keranjang masih kosong.<br>Kembali ke Stok Produk untuk menambahkan barang.</div>';calc();updateTempoRules();return}
+ box.innerHTML=cart.map((x,i)=>{const stok=Number(x.stok)||0,qty=Number(x.qty)||0,over=qty>stok;x.lineTotal=Math.max(0,qty*(Number(x.harga)||0)-(Number(x.diskon)||0));
+ return `<div class="cart-item ${over?"cart-over":""}"><div class="cart-head"><div><div class="cart-name">${esc(x.nama)}</div><div class="cart-meta">Kode: ${esc(x.kode||"-")} • Harga awal: ${rp(x.hargaDasar)}<br>+ UP Pengelola: ${rp(x.upPengelolaPerPcs)} /pcs<br>+ Menabung Member: ${rp(x.tabunganPerPcs)} /pcs<br><b>Total harga/pcs: ${rp(x.harga)}</b><br>Stok tersedia: <b>${stok}</b> pcs • Diskon: ${rp(x.diskon)}</div></div><button type="button" class="cart-remove" data-remove="${i}">🗑️ Hapus</button></div>
+ <div class="cart-controls"><div class="qtybox"><button type="button" class="qtybtn" data-minus="${i}">−</button><div class="qtyvalue">${qty}</div><button type="button" class="qtybtn" data-plus="${i}">+</button><span class="stockhint">Maks. ${stok}</span></div></div>
+ ${over?`<div class="notice err" style="margin-top:7px">Qty ${qty} melebihi stok terbaru ${stok}. Kurangi qty.</div>`:""}<div class="cart-total">Jumlah: ${rp(x.lineTotal)}</div></div>`}).join("");
+ calc();updateTempoRules();
 }
 
-$("cartBox").onclick=e=>{
-  const b=e.target.closest("button");
-  if(!b)return;
-  const i=Number(b.dataset.remove??b.dataset.minus??b.dataset.plus);
-  if(Number.isNaN(i)||!cart[i])return;
-
-  if(b.dataset.remove!==undefined){
-    cart.splice(i,1);
-  }else if(b.dataset.minus!==undefined){
-    cart[i].qty=Math.max(1,(Number(cart[i].qty)||1)-1);
-  }else if(b.dataset.plus!==undefined){
-    const stok=Number(cart[i].stok)||0;
-    if((Number(cart[i].qty)||0)+1>stok){
-      return msg(`Pesanan ${cart[i].nama} tidak boleh melebihi stok ${stok} pcs.`,"err");
-    }
-    cart[i].qty=(Number(cart[i].qty)||0)+1;
-  }
-  saveCartStorage();
-  renderCart();
-};
+$("cartBox").onclick=e=>{const b=e.target.closest("button");if(!b)return;const i=Number(b.dataset.remove??b.dataset.minus??b.dataset.plus);if(Number.isNaN(i)||!cart[i])return;
+ if(b.dataset.remove!==undefined)cart.splice(i,1);else if(b.dataset.minus!==undefined)cart[i].qty=Math.max(1,(Number(cart[i].qty)||1)-1);else if(b.dataset.plus!==undefined){const stok=Number(cart[i].stok)||0;if((Number(cart[i].qty)||0)+1>stok)return msg(`Pesanan ${cart[i].nama} tidak boleh melebihi stok ${stok} pcs.`,"err");cart[i].qty=(Number(cart[i].qty)||0)+1}
+ saveCartStorage();renderCart()};
 
 window.kembaliKeStok=()=>{window.location.href="tampil-stock-member-SPREADSHEET.html"};
-window.refreshCartFromStock=async()=>{
-  if(!ready)return;
-  try{
-    await loadProducts();
-    renderCart();
-    msg("Stok terbaru sudah diperiksa.","ok");
-  }catch(e){msg("Gagal memeriksa stok: "+e.message,"err")}
-};
-
+window.refreshCartFromStock=async()=>{if(!ready)return;try{await loadProducts();renderCart();msg("Stok terbaru sudah diperiksa.","ok")}catch(e){msg("Gagal memeriksa stok: "+e.message,"err")}};
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-
 function totalQtyCart(){return cart.reduce((n,x)=>n+(Number(x.qty)||0),0)}
-function minQtyTempo(days){if(Number(days)===7)return 2;if(Number(days)===14)return 5;if(Number(days)===30)return 10;return 1}
-function updateTempoRules(){
-  const q=totalQtyCart();
-  document.querySelectorAll(".quick button[data-tempo-days]").forEach(b=>{
-    const days=Number(b.dataset.tempoDays), min=minQtyTempo(days), ok=q>=min;
-    b.disabled=!ok;
-    b.title=ok?`${days} Hari • minimal ${min} pcs`:`Minimal ${min} pcs untuk tempo ${days} Hari`;
-    b.style.opacity=ok?"1":".45";
-    b.style.cursor=ok?"pointer":"not-allowed";
-  });
-  const rule=$("tempoRule");
-  if(rule)rule.textContent=`Qty keranjang: ${q} pcs • 7 Hari ≥ 2 pcs • 14 Hari ≥ 5 pcs • 30 Hari ≥ 10 pcs`;
+
+function minQtyTempo(days){
+ if(Number(days)===7)return 3;
+ if(Number(days)===14)return 5;
+ if(Number(days)===30)return 10;
+ if(Number(days)===38)return 15;
+ return 1;
 }
-function setDue(days, silent=false){
-  const q=totalQtyCart(), min=minQtyTempo(days);
-  if(q<min){
-    $("lama").value=""; $("jatuh").value=""; due(); updateTempoRules();
-    if(!silent)msg(`Tempo ${days} Hari minimal order ${min} pcs. Keranjang saat ini ${q} pcs.`,"err");
-    return false;
-  }
-  let d=new Date(); d.setDate(d.getDate()+Number(days));
-  $("lama").value=days; $("jatuh").value=d.toISOString().slice(0,10); due(); updateTempoRules();
-  return true;
+
+function updateTempoRules(){
+ const q=totalQtyCart();
+ document.querySelectorAll(".quick button[data-tempo-days]").forEach(b=>{const days=Number(b.dataset.tempoDays),min=minQtyTempo(days),ok=q>=min;b.disabled=!ok;b.title=ok?`${days} Hari • minimal ${min} pcs`:`Minimal ${min} pcs untuk tempo ${days} Hari`;b.style.opacity=ok?"1":".45";b.style.cursor=ok?"pointer":"not-allowed"});
+ const rule=$("tempoRule");if(rule)rule.textContent=`Qty keranjang: ${q} pcs • CASH/TUNAI ≥ 3 pcs • 7 Hari ≥ 3 pcs • 14 Hari ≥ 5 pcs • 30 Hari ≥ 10 pcs • 38 Hari ≥ 15 pcs`;
+}
+
+function setDue(days,silent=false){
+ const q=totalQtyCart(),min=minQtyTempo(days);
+ if(q<min){$("lama").value="";$("jatuh").value="";due();updateTempoRules();if(!silent)msg(`Tempo ${days} Hari minimal order ${min} pcs. Keranjang saat ini ${q} pcs.`,"err");return false}
+ let d=new Date();d.setDate(d.getDate()+Number(days));$("lama").value=days;$("jatuh").value=d.toISOString().slice(0,10);due();updateTempoRules();return true;
 }
 function due(){let v=$("jatuh").value;$("due").textContent=v?"Jatuh tempo: "+new Date(v+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}):"Jatuh tempo: -"}
-window.tempo=(d,b)=>{
-  if(b.disabled)return;
-  document.querySelectorAll(".quick button").forEach(x=>x.classList.remove("active"));
-  if(setDue(d))b.classList.add("active");
-};
-$("lama").oninput=()=>{
-  const d=Math.max(1,Number($("lama").value)||1);
-  if([7,14,30].includes(d))setDue(d);else{due();updateTempoRules()}
-};
+window.tempo=(d,b)=>{if(b.disabled)return;document.querySelectorAll(".quick button").forEach(x=>x.classList.remove("active"));if(setDue(d))b.classList.add("active")};
+
+$("lama").oninput=()=>{const d=Math.max(1,Number($("lama").value)||1);if([7,14,30,38].includes(d))setDue(d);else{due();updateTempoRules()}};
 $("jatuh").onchange=due;
+
 function build(){
-  let nama=$("nama").value.trim(),wa=$("wa").value.trim(),c=calc(),jat=$("jatuh").value,jenisHarga=$("paymentType").value,tempoHari=Number($("lama").value)||0;
-  if(!nama)throw Error("Nama member wajib diisi.");
-  if(!wa)throw Error("Nomor WA akun belum memiliki nomor HP.");
-  if(!cart.length)throw Error("Keranjang produk masih kosong.");
-  const totalQty=totalQtyCart();
-  if(jenisHarga==="tempo"){
-    if(!jat)throw Error("Pilih jatuh tempo sesuai minimal jumlah pcs.");
-    if(![7,14,30].includes(tempoHari))throw Error("Tempo hanya boleh 7, 14, atau 30 hari.");
-    const minTempo=minQtyTempo(tempoHari);
-    if(totalQty<minTempo)throw Error(`Tempo ${tempoHari} Hari minimal order ${minTempo} pcs. Total keranjang saat ini ${totalQty} pcs.`);
-  }else{
-    jat=null; tempoHari=0;
-  }
-  for(const x of cart){
-  if(x.qty<1)throw Error(`Qty ${x.nama} minimal 1.`);
-  if(Number(x.stok)<=0)throw Error(`Produk ${x.nama} sudah tidak memiliki stok.`);
-  if(x.qty>x.stok)throw Error(`Pesanan ${x.nama} melebihi stok terbaru ${x.stok} pcs.`);
-}return{ownerUid:businessUid,uid:businessUid,createdBy:uid,memberUid:uid,memberEmail:auth.currentUser?.email||"",nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",member:{uid,memberUid:uid,email:auth.currentUser?.email||"",kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:jenisHarga==="cash"?c.total:c.dp,uangMuka:jenisHarga==="cash"?c.total:c.dp,sisa:jenisHarga==="cash"?0:c.sisa,sisaBayar:jenisHarga==="cash"?0:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:jenisHarga==="cash"?0:c.sisa,pendapatan:jenisHarga==="cash"?c.total:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}}
+ let nama=$("nama").value.trim(),wa=$("wa").value.trim(),c=calc(),jat=$("jatuh").value,jenisHarga=$("paymentType").value,tempoHari=Number($("lama").value)||0;
+ if(!nama)throw Error("Nama member wajib diisi.");if(!wa)throw Error("Nomor WA akun belum memiliki nomor HP.");if(!cart.length)throw Error("Keranjang produk masih kosong.");
+ const totalQty=totalQtyCart();
+ if(jenisHarga==="tempo"){
+  if(!jat)throw Error("Pilih jatuh tempo sesuai minimal jumlah pcs.");
+  if(![7,14,30,38].includes(tempoHari))throw Error("Tempo hanya boleh 7, 14, 30, atau 38 hari.");
+  const minTempo=minQtyTempo(tempoHari);if(totalQty<minTempo)throw Error(`Tempo ${tempoHari} Hari minimal order ${minTempo} pcs. Total keranjang saat ini ${totalQty} pcs.`);
+ }else{if(totalQty<3)throw Error(`Pembelian CASH / TUNAI minimal 3 pcs. Total keranjang saat ini ${totalQty} pcs.`);jat=null;tempoHari=0}
+ for(const x of cart){if(x.qty<1)throw Error(`Qty ${x.nama} minimal 1.`);if(Number(x.stok)<=0)throw Error(`Produk ${x.nama} sudah tidak memiliki stok.`);if(x.qty>x.stok)throw Error(`Pesanan ${x.nama} melebihi stok terbaru ${x.stok} pcs.`)}
+ return{ownerUid:businessUid,uid:businessUid,createdBy:uid,memberUid:uid,memberEmail:auth.currentUser?.email||"",nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,tipeTransaksi:$("paymentType").value==="cash"?"member_cash":"member_tempo",jenisTransaksi:"penjualan",sumber:"member",jenisHarga:$("paymentType").value,status:"menunggu_approval",approvalStatus:"menunggu_approval",
+ member:{uid,memberUid:uid,email:auth.currentUser?.email||"",kode:$("kode").value,nama,wa,alamat:$("alamat").value.trim(),catatan:$("catatan").value.trim()},pelanggan:{nama,wa,alamat:$("alamat").value.trim()},
+ items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty,harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,tambahanTabungan:(x.tabunganPerPcs||0)*(x.qty||0),tambahanUpPengelola:(x.upPengelolaPerPcs||0)*(x.qty||0),hargaJual:x.harga,discount:x.diskon,diskon:x.diskon,modalSatuan:x.modalSatuan,total:x.lineTotal})),
+ produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.qty})),produkDigunakan:cart.map(x=>x.nama).join(", "),subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,dp:jenisHarga==="cash"?c.total:c.dp,uangMuka:jenisHarga==="cash"?c.total:c.dp,sisa:jenisHarga==="cash"?0:c.sisa,sisaBayar:jenisHarga==="cash"?0:c.sisa,tempoHari:tempoHari,jatuhTempo:jat,tabunganPerPcs:getTabunganMember(),upPengelolaPerPcs:getUpPengelola(),totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*(Number(x.qty)||0),0),totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*(Number(x.qty)||0),0),kasBulanan:Number(selectedMember?.kasBulanan??selectedMember?.uangKasBulanan??ownerSettings.kas??0)||0,tanggalJatuhTempo:jat,piutang:jenisHarga==="cash"?0:c.sisa,pendapatan:jenisHarga==="cash"?c.total:0,totalModal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),modal:cart.reduce((a,x)=>a+x.modalSatuan*x.qty,0),stokDikurangi:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}
+}
+
 window.simpan=async()=>{
-  if(!ready)return msg("Halaman belum siap.","err");
-  try{
-    let d=build();
-    $("save").textContent="Menyimpan...";
-    await addDoc(collection(db,"penjualan"),d);
-    localStorage.removeItem(cartKey());
-    cart=[];
-    $("save").textContent="Pesanan menunggu approval.";
-    msg("Pesanan tersimpan. Stok BELUM dikurangi. Lanjutkan ke Approval Member.","ok");
-    resetForm();
-  }catch(e){
-    console.error(e);
-    $("save").textContent="Gagal: "+e.message;
-    msg("Gagal: "+e.message,"err");
-  }
+ if(!ready)return msg("Halaman belum siap.","err");
+ const saveBtn=document.querySelector('button[onclick="simpan()"]');if(saveBtn?.disabled)return;
+ try{
+  let d=build();if(saveBtn)saveBtn.disabled=true;$("save").textContent="Menyimpan...";
+  const batch=writeBatch(db),orderRef=doc(collection(db,"penjualan"));batch.set(orderRef,d);
+  const kasNominal=Number(d.kasBulanan)||0,upNominal=Number(d.totalUpPengelolaOrder)||0,saldoRef=doc(db,"saldo_owner",businessUid),perubahan={updatedAt:serverTimestamp()};
+  if(upNominal)perubahan.saldoPengelola=increment(upNominal);
+  const bulan=String(d.tanggal||today()).slice(0,7),kasRef=doc(db,"saldo_owner_kas_bulanan",businessUid+"_"+uid+"_"+bulan);
+  if(kasNominal){const kasSnap=await getDoc(kasRef);if(!kasSnap.exists()){perubahan.saldoKas=increment(kasNominal);batch.set(kasRef,{ownerUid:businessUid,memberUid:uid,bulan,nominal:kasNominal,sumber:"input-order-member",createdAt:serverTimestamp()})}}
+  if(Object.keys(perubahan).length>1)batch.set(saldoRef,perubahan,{merge:true});
+  await batch.commit();localStorage.removeItem(cartKey());cart=[];$("save").textContent="Pesanan menunggu approval.";msg("Pesanan tersimpan. Stok BELUM dikurangi. Lanjutkan ke Approval Member.","ok");resetForm();showSuccessModal("Pesanan tersimpan dan menunggu Approval Member. Keranjang sudah dikosongkan agar transaksi yang sama tidak terkirim ulang.");
+ }catch(e){console.error(e);const saveBtn=document.querySelector('button[onclick="simpan()"]');if(saveBtn)saveBtn.disabled=false;$("save").textContent="Siap untuk disimpan.";showErrorModal(e.message)}
 };
+
 window.resetForm=()=>{
-  ["catatan","alamat"].forEach(x=>$(x).value="");
-  if(selectedMember){
-    $("nama").value=selectedMember.nama||selectedMember.namaKaryawan||selectedMember.name||window._loginDisplayName||selectedMember.displayName||selectedMember.email||"";
-    $("wa").value=selectedMember.noWA||selectedMember.wa||selectedMember.noWa||selectedMember.noHp||selectedMember.noHP||selectedMember.nomorWA||selectedMember.nomorWhatsapp||selectedMember.phone||selectedMember.phoneNumber||"";
-    $("kode").value=selectedMember.kodeMember||selectedMember.kode||kodeMember();
-  }else{
-    $("nama").value=""; $("wa").value=""; $("kode").value=kodeMember();
-  }
-  $("dp").value=0;
-  loadCartStorage();
-  $("nota").textContent=nota();
-  $("tgl").textContent=today();
-  renderCart();
-  const q=totalQtyCart();
-  if(q>=10)setDue(30,true);
-  else if(q>=5)setDue(14,true);
-  else if(q>=2)setDue(7,true);
-  else {$("lama").value="";$("jatuh").value="";due();updateTempoRules();}
-  calc();
-  if(selectedMember) isiMemberDariAkun(selectedMember);
+ ["catatan","alamat"].forEach(x=>$(x).value="");
+ if(selectedMember){$("nama").value=selectedMember.nama||selectedMember.namaKaryawan||selectedMember.name||window._loginDisplayName||selectedMember.displayName||selectedMember.email||"";$("wa").value=selectedMember.noWA||selectedMember.wa||selectedMember.noWa||selectedMember.noHp||selectedMember.noHP||selectedMember.nomorWA||selectedMember.nomorWhatsapp||selectedMember.phone||selectedMember.phoneNumber||"";$("kode").value=selectedMember.kodeMember||selectedMember.kode||kodeMember()}
+ else{$("nama").value="";$("wa").value="";$("kode").value=kodeMember()}
+ $("dp").value=0;loadCartStorage();$("nota").textContent=nota();$("tgl").textContent=today();renderCart();
+ const q=totalQtyCart();
+ if(q>=15)setDue(38,true);else if(q>=10)setDue(30,true);else if(q>=5)setDue(14,true);else if(q>=3)setDue(7,true);
+ else{$("lama").value="";$("jatuh").value="";due();updateTempoRules()}
+ calc();if(selectedMember)isiMemberDariAkun(selectedMember);
 };
+
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+
 function isiMemberDariAkun(d){
-  selectedMember={id:uid,...d};
-  const namaAkun=d.nama||d.namaKaryawan||d.name||window._loginDisplayName||d.displayName||d.email||"";
-  const wa=d.noWA||d.wa||d.noWa||d.noHp||d.noHP||d.nomorWA||d.nomorWhatsapp||d.phone||d.phoneNumber||"";
-  $("nama").value=namaAkun;
-  $("wa").value=wa;
-  $("kode").value=d.kodeMember||d.kode||kodeMember();
-  $("memberAutoInfo").textContent=`✓ Member otomatis: ${namaAkun} • Tabungan ${rp(getTabunganMember())}/pcs`;
+ selectedMember={id:uid,...d};const namaAkun=d.nama||d.namaKaryawan||d.name||window._loginDisplayName||d.displayName||d.email||"",wa=d.noWA||d.wa||d.noWa||d.noHp||d.noHP||d.nomorWA||d.nomorWhatsapp||d.phone||d.phoneNumber||"";
+ $("nama").value=namaAkun;$("wa").value=wa;$("kode").value=d.kodeMember||d.kode||kodeMember();$("memberAutoInfo").textContent=`✓ Member otomatis: ${namaAkun} • Tabungan ${rp(getTabunganMember())}/pcs`;
 }
+
 function syncPaymentMode(){
-  const cash=$("paymentType")?.value==="cash";
-  document.querySelectorAll(".quick button").forEach(b=>b.disabled=cash);
-  const tempoPanel=document.querySelector(".tempo");
-  if(tempoPanel)tempoPanel.style.display=cash?"none":"block";
-  if($("dpWrap"))$("dpWrap").style.display=cash?"none":"block";
-  if($("sisaWrap"))$("sisaWrap").style.display=cash?"none":"block";
-  if(cash){$("lama").value="";$("jatuh").value="";due();$("dp").value=0;}
-  calc();
+ const cash=$("paymentType")?.value==="cash";document.querySelectorAll(".quick button").forEach(b=>b.disabled=cash);const tempoPanel=document.querySelector(".tempo");if(tempoPanel)tempoPanel.style.display=cash?"none":"block";
+ if($("dpWrap"))$("dpWrap").style.display=cash?"none":"block";if($("sisaWrap"))$("sisaWrap").style.display=cash?"none":"block";
+ if(cash){$("lama").value="";$("jatuh").value="";due();$("dp").value=0}calc();
 }
-$("paymentType")?.addEventListener("change",()=>{syncPaymentMode();syncCartWithStock();renderCart();});
+
+$("paymentType")?.addEventListener("change",()=>{syncPaymentMode();syncCartWithStock();renderCart()});
+
 onAuthStateChanged(auth,async u=>{
-  if(!u){msg("Belum login.","err");return}
-  try{
-    uid=u.uid;
-    let s=await getDoc(doc(db,"users",uid));
-    if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-    let d=s.data()||{};
-    businessUid=business(d);
-    let ownerDoc=d;
-    if(businessUid!==uid){
-      const os=await getDoc(doc(db,"users",businessUid));
-      if(os.exists())ownerDoc=os.data()||{};
-    }
-    ownerSettings={
-      up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??0)||0,
-      kas:Number(ownerDoc.kasBulananDefault??ownerDoc.kasBulanan??ownerDoc.uangKasBulanan??0)||0
-    };
-    ownerSheetUrl=findSheetUrlFromProfile(ownerDoc);
-    if(ownerSheetUrl){ownerSheetUrl=normalizeSheetUrl(ownerSheetUrl);try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",ownerSheetUrl)}catch(e){}}
-    window._loginDisplayName=u.displayName||"";
-    $("email").textContent=u.email||"-";
-    isiMemberDariAkun(d);
-    resetForm();
-    isiMemberDariAkun(d);
-    await loadProducts();
-    ready=true;
-    $("save").textContent=`${products.length} produk • pesanan tidak mengurangi stok sampai approval`;
-    msg("Akun aktif • nama dan No. WA mengikuti akun login.","ok");
-  }catch(e){console.error(e);msg(e.message,"err")}
+ if(!u){msg("Belum login.","err");return}
+ try{
+  uid=u.uid;let s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+  let d=s.data()||{};currentProfile=d;businessUid=business(d);let ownerDoc=d;
+  if(businessUid!==uid){const os=await getDoc(doc(db,"users",businessUid));if(os.exists())ownerDoc=os.data()||{}}
+  ownerSettings={up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??0)||0,kas:Number(ownerDoc.kasBulananDefault??ownerDoc.kasBulanan??ownerDoc.uangKasBulanan??0)||0};
+  window._loginDisplayName=u.displayName||"";$("email").textContent=u.email||"-";isiMemberDariAkun(d);resetForm();isiMemberDariAkun(d);await loadProducts();ready=true;$("save").textContent=`${products.length} produk • pesanan tidak mengurangi stok sampai approval`;msg("Akun aktif • nama dan No. WA mengikuti akun login.","ok");
+ }catch(e){console.error(e);msg(e.message,"err")}
 });
 </script></body></html>
