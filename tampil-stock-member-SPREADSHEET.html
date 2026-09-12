@@ -685,7 +685,7 @@ function refreshHalaman(){
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,serverTimestamp,getDoc,setDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,serverTimestamp,getDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig={
   apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
@@ -1210,107 +1210,97 @@ async function saveCSVToFirebase(){
 }
 
 function normalizeSheetUrl(url){try{const u=new URL(url);if(u.hostname.toLowerCase()==="docs.google.com"&&u.pathname.includes("/spreadsheets/")){const gid=u.searchParams.get("gid")||(url.match(/[#&?]gid=(\d+)/i)||[])[1]||"0";const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/i);if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);if(id)return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;}}catch(e){throw Error("Link Google Sheet tidak valid.")}return url;}
-function sheetProductId(p,i){const base=String(p.kode||`${p.nama||"produk"}_${p.kategori||""}`).trim().toUpperCase();let h=0;for(let j=0;j<base.length;j++)h=((h<<5)-h+base.charCodeAt(j))|0;return `sheet_${Math.abs(h)}_${i}`;}
+function productIdentityKey(p){
+  const kode=String(p?.kode||"").trim().toUpperCase();
+  if(kode)return "KODE:"+kode;
+  const nama=String(p?.nama||"").trim().toLowerCase();
+  const kat=String(p?.kategori||"").trim().toLowerCase();
+  return "NAMA:"+nama+"|KAT:"+kat;
+}
+function sheetProductId(p,i){
+  const base=productIdentityKey(p);
+  let h=0;for(let j=0;j<base.length;j++)h=((h<<5)-h+base.charCodeAt(j))|0;
+  return `sheet_${Math.abs(h)}`;
+}_${p.kategori||""}`).trim().toUpperCase();let h=0;for(let j=0;j<base.length;j++)h=((h<<5)-h+base.charCodeAt(j))|0;return `sheet_${Math.abs(h)}_${i}`;}
 async function getApprovedOrderQty(){const map={},role=String(currentProfile?.role||"").toLowerCase(),owner=(role==="owner"||isSuperAdmin)?uid:String(currentProfile?.ownerUid||currentProfile?.ownerId||uid||"").trim();if(!owner)return map;const seen=new Map();for(const f of ["ownerUid","ownerId"]){try{const snap=await getDocs(query(collection(db,"order_member"),where(f,"==",owner)));snap.forEach(d=>seen.set(d.id,d.data()||{}));}catch(e){}}seen.forEach(o=>{const st=String(o.status||o.approvalStatus||"").toLowerCase();if(["batal","dibatalkan","cancel","cancelled","rejected","ditolak","pending","menunggu_approval"].includes(st))return;const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);items.forEach(it=>{const q=num(it.qty);if(!q)return;const c=String(it.kode||it.kodeProduk||it.sku||"").trim().toUpperCase(),n=String(it.nama||it.namaProduk||it.produk||"").trim().toLowerCase();if(c)map["code:"+c]=(map["code:"+c]||0)+q;if(n)map["name:"+n]=(map["name:"+n]||0)+q;});});return map;}
 function reservedForProduct(p,map){const c=String(p.kode||"").trim().toUpperCase(),n=String(p.nama||"").trim().toLowerCase();return Math.max(map["code:"+c]||0,map["name:"+n]||0);}
 
-async function getSharedSheetUrl(){
+async function getOwnerSheetUrl(){
   const role=String(currentProfile?.role||"").toLowerCase();
-  const isOwner=role==="owner" || currentProfile?.isOwner===true;
-  const ownerId=isOwner
-    ? String(uid||"").trim()
-    : String(currentProfile?.ownerUid||currentProfile?.ownerId||"").trim();
+  const isOwner=role==="owner"||role==="superadmin"||isSuperAdmin;
+  const ownerUid=String(isOwner?uid:(currentProfile?.ownerUid||currentProfile?.ownerId||"")).trim();
+  const fields=["sheetUrl","googleSheetUrl","stokSheetUrl","csvUrl"];
+  let url="";
 
-  // OWNER: sumber konfigurasi utama adalah profil Owner sendiri.
-  // Input/localStorage hanya dipakai sebagai fallback agar konfigurasi Owner
-  // yang sudah berjalan tidak rusak.
   if(isOwner){
-    let url=String(
-      currentProfile?.sheetUrl ||
-      currentProfile?.googleSheetUrl ||
-      currentProfile?.stokSheetUrl ||
-      currentProfile?.csvUrl ||
-      $("csvUrl")?.value ||
-      localStorage.getItem("FIXZY_MEMBER_SHEET_URL") ||
-      ""
-    ).trim();
-
-    if(url){
-      url=normalizeSheetUrl(url);
-      try{
-        await setDoc(doc(db,"users",uid),{
-          sheetUrl:url,
-          googleSheetUrl:url,
-          stokSheetUrl:url,
-          updatedAt:serverTimestamp()
-        },{merge:true});
-        currentProfile.sheetUrl=url;
-      }catch(e){
-        console.warn("Gagal menyimpan konfigurasi Sheet Owner:",e);
+    for(const f of fields){
+      const v=String(currentProfile?.[f]||"").trim();
+      if(v){url=v;break;}
+    }
+  }else if(ownerUid){
+    try{
+      const snap=await getDoc(doc(db,"users",ownerUid));
+      if(snap.exists()){
+        const d=snap.data()||{};
+        for(const f of fields){
+          const v=String(d?.[f]||"").trim();
+          if(v){url=v;break;}
+        }
       }
-      try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
-    }
-    return url;
+    }catch(e){console.warn("Gagal membaca Sheet Owner:",e)}
   }
 
-  // KARYAWAN/EMPLOYEE: WAJIB mengikuti Owner yang tercantum pada profil.
-  // Jangan mengambil URL dari input/localStorage karyawan karena dapat
-  // menunjuk ke Sheet Owner lain.
-  if(!ownerId)return "";
-
-  try{
-    const ownerSnap=await getDoc(doc(db,"users",ownerId));
-    if(!ownerSnap.exists())return "";
-    const ownerData=ownerSnap.data()||{};
-    let url=String(
-      ownerData.sheetUrl ||
-      ownerData.googleSheetUrl ||
-      ownerData.stokSheetUrl ||
-      ownerData.csvUrl ||
-      ""
-    ).trim();
-    if(url){
-      url=normalizeSheetUrl(url);
-      try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
-    }
-    return url;
-  }catch(e){
-    console.warn("Gagal membaca konfigurasi Sheet Owner:",e);
-    return "";
+  // Cache selalu memakai kunci OWNER. Tidak pernah memakai cache global
+  // agar akun Owner A tidak bisa mewarisi Sheet Owner B.
+  if(!url&&ownerUid){
+    try{url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL_"+ownerUid)||"").trim()}catch(e){}
   }
+
+  return url;
 }
 
 async function loadProducts(){
- if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
- try{
-   const input=$("csvUrl");
-   let url=await getSharedSheetUrl();
+  if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
+  try{
+    const input=$("csvUrl");
+    let url=await getOwnerSheetUrl();
+    if(!url){
+      $("listMsg").textContent="Google Sheet milik Owner belum dikonfigurasi.";
+      products=[];fillCategories();render();return;
+    }
 
-   if(!url){
-     $("listMsg").textContent="Link Google Sheet milik Owner belum ditemukan.";
-     products=[];fillCategories();render();return;
-   }
+    url=normalizeSheetUrl(url);
+    if(input)input.value=url;
 
-   url=normalizeSheetUrl(url);
-   if(input)input.value=url;
+    const owner=String(activeOwnerUid()||"").trim();
+    if(owner){
+      try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL_"+owner,url)}catch(e){}
+    }
 
-   const r=await fetch(url,{cache:"no-store"});
-   if(!r.ok)throw Error("HTTP "+r.status);
+    const r=await fetch(url,{method:"GET",mode:"cors",cache:"no-store",redirect:"follow"});
+    if(!r.ok)throw Error("HTTP "+r.status);
+    const text=await r.text();
+    const first=text.trim().slice(0,300).toLowerCase();
+    if(!text.trim())throw Error("CSV kosong.");
+    if(first.startsWith("<!doctype")||first.startsWith("<html")||first.includes("<html"))
+      throw Error("Google tidak mengirim CSV. Pastikan Sheet sudah Publish to web.");
 
-   const text=await r.text();
-   const rows=normalizeCSV(parseCSV(text));
-   products=rows.map((p,i)=>({...p,id:sheetProductId(p,i)}));
+    const rows=normalizeCSV(parseCSV(text));
+    products=rows.map((p,i)=>({...p,id:sheetProductId(p,i),produkKey:productIdentityKey(p)}));
 
-   const reserved=await getApprovedOrderQty();
-   products=products.map(p=>({...p,sisa:Math.max(0,num(p.sisa)-reservedForProduct(p,reserved))}));
+    const reserved=await getApprovedOrderQty();
+    products=products.map(p=>({
+      ...p,
+      sisa:Math.max(0,num(p.sisa)-reservedForProduct(p,reserved))
+    }));
 
-   $("listMsg").textContent=`${products.length} produk dimuat dari Google Sheet.`;
-   fillCategories();render();updateMemberCartBadge();
- }catch(e){
-   console.error(e);
-   products=[];fillCategories();render();
-   $("listMsg").textContent="Gagal membaca Google Sheet: "+(e.message||e);
- }
+    $("listMsg").textContent=`${products.length} produk dimuat dari Google Sheet.`;
+    fillCategories();render();updateMemberCartBadge();
+  }catch(e){
+    console.error(e);
+    products=[];fillCategories();render();
+    $("listMsg").textContent="Gagal membaca Google Sheet: "+(e.message||e);
+  }
 }
 function fillCategories(){
   const sel=$("cat"),old=sel.value;
@@ -1339,12 +1329,14 @@ function render(){
 }
 
 function getMemberCartKey(){
-  const owner=String(
-    (currentProfile?.role||"").toLowerCase()==="owner" ||
-    (currentProfile?.role||"").toLowerCase()==="superadmin" ||
-    isSuperAdmin ? uid : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
-  ).trim();
-  return owner ? "fixzy_member_cart_"+owner : "fixzy_member_cart";
+  const role=String(currentProfile?.role||"").toLowerCase();
+  const owner=(
+    role==="owner" || role==="superadmin" || isSuperAdmin
+  ) ? String(uid||"").trim()
+    : String(currentProfile?.ownerUid||currentProfile?.ownerId||"").trim();
+
+  if(!owner)return "";
+  return "fixzy_member_cart_"+owner;
 }
 
 function readMemberCart(){
@@ -1403,7 +1395,16 @@ window.addToMemberCart=function(id){
   if(stok<=0){toast(`${p.nama||"Produk"} sedang kosong.`);return}
 
   const cart=readMemberCart();
-  const ex=cart.find(x=>x.produkId===p.id);
+  const pkey=productIdentityKey(p);
+  const ex=cart.find(x=>
+    String(x.produkKey||"")===pkey ||
+    (String(x.kode||"").trim().toUpperCase() &&
+     String(x.kode||"").trim().toUpperCase()===String(p.kode||"").trim().toUpperCase()) ||
+    (!String(p.kode||"").trim() &&
+     String(x.nama||"").trim().toLowerCase()===String(p.nama||"").trim().toLowerCase() &&
+     String(x.kategori||"").trim().toLowerCase()===String(p.kategori||"").trim().toLowerCase())
+  );
+
   const harga=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
   const modalSatuan=num(p.hargaModal);
 
@@ -1412,6 +1413,8 @@ window.addToMemberCart=function(id){
       toast(`Qty ${p.nama||"produk"} maksimal ${stok} pcs.`);
       return;
     }
+    ex.produkId=p.id;
+    ex.produkKey=pkey;
     ex.qty=(Number(ex.qty)||0)+1;
     ex.harga=harga;
     ex.modalSatuan=modalSatuan;
@@ -1419,6 +1422,7 @@ window.addToMemberCart=function(id){
   }else{
     cart.push({
       produkId:p.id,
+      produkKey:pkey,
       nama:String(p.nama||"-"),
       kode:String(p.kode||""),
       kategori:String(p.kategori||""),
@@ -1756,12 +1760,9 @@ async function initFixzyStockSession(user){
 
     isSuperAdmin=role==="superadmin" || email==="servicehpmaja@gmail.com";
 
-    // Hanya Owner dan Karyawan/Employee yang boleh membuka Stock Member.
-    // Setiap Karyawan tetap terikat ke ownerUid/ownerId miliknya.
-    const allowedRole = role==="owner" || role==="karyawan" || role==="employee";
-    if(!allowedRole){
-      throw new Error("Halaman Stock Member hanya untuk Owner dan Karyawan.");
-    }
+    // Owner, Superadmin, dan akun bawahan/karyawan boleh membuka halaman.
+    // Isolasi data ditentukan oleh ownerUid/ownerId seperti Data Servis.
+
 
     if(String(currentProfile.status||"").toLowerCase()==="blocked" ||
        String(currentProfile.status||"").toLowerCase()==="rejected"){
