@@ -1179,7 +1179,7 @@ async function resolveOwnerSheetUrl(){
     if(url){
       try{
         url=normalizeSheetUrl(url);
-        await setDoc(doc(db,"users",uid),{googleSheetUrl:url},{merge:true});
+        await setDoc(doc(db,"users",uid),{googleSheetUrl:url,sheetUrl:url},{merge:true});
       }catch(e){ console.warn("Link Google Sheet Owner belum dapat disimpan:",e); }
     }
     activeOwnerProfile=ownerProfile;
@@ -1189,25 +1189,49 @@ async function resolveOwnerSheetUrl(){
   // KARYAWAN / EMPLOYEE / EVERYONE: selalu ambil Sheet dari Owner.
   // Jangan pernah memakai UID karyawan sebagai Owner.
   if(owner && owner!==uid){
+    // Utama: baca profil Owner.
     try{
       const snap=await getDoc(doc(db,"users",owner));
       if(snap.exists()) ownerProfile=snap.data()||{};
-    }catch(e){ console.warn("Gagal membaca profil Owner:",e); }
+    }catch(e){ console.warn("Profil Owner tidak dapat dibaca langsung:",e); }
   }
 
   activeOwnerProfile=ownerProfile;
   let url=findSheetUrl(ownerProfile);
 
-  // Fallback bila URL sudah ikut tersimpan di profil karyawan.
+  // Fallback 1: URL mungkin sudah ikut tersimpan di profil Karyawan/Everyone.
   if(!url) url=findSheetUrl(currentProfile);
+
+  // Fallback 2: cari profil akun dalam kelompok Owner yang sama.
+  // Ini dipakai bila dokumen Owner tidak dapat dibaca langsung oleh akun bawahan.
+  if(!url && owner){
+    for(const field of ["ownerUid","ownerId"]){
+      try{
+        const qs=await getDocs(query(collection(db,"users"),where(field,"==",owner)));
+        for(const d of qs.docs){
+          const p=d.data()||{};
+          const hit=findSheetUrl(p);
+          if(hit){ url=hit; activeOwnerProfile=p; break; }
+        }
+        if(url) break;
+      }catch(e){ console.warn("Pencarian Sheet Owner via users gagal:",e); }
+    }
+  }
+
+  // Fallback perangkat: bila Owner dan Karyawan memakai browser/origin yang sama,
+  // gunakan URL Sheet yang sudah pernah tersimpan di browser.
+  if(!url){
+    try{ url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim(); }catch(e){}
+  }
 
   if(!url){
     throw new Error(
       owner
-        ? "Link Google Sheet Owner belum tersedia. Buka halaman stok dari akun Owner terlebih dahulu."
+        ? "Link Google Sheet Owner belum tersedia. Pastikan akun Owner sudah menyimpan link Sheet."
         : "ownerUid akun Karyawan/Everyone belum ditemukan."
     );
   }
+  try{ localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url); }catch(e){}
   return url;
 }
 function formatExp(v){
@@ -1340,7 +1364,7 @@ function render(){
   products.forEach(p=>{const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++});
   $("total").textContent=products.length;$("ready").textContent=ready;$("empty").textContent=empty;$("value").textContent=money(value);
   $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="9" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
-  $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>';
+  $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data dari Google Sheet.</div>';
   const sa=document.getElementById("stockSelectAll");if(sa)sa.checked=false;updateSelectedStockCount();updatePriceRulePreview();
 }
 
