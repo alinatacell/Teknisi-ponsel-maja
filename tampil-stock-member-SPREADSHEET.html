@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#111111">
-<title>Fixzy | Stok Google Sheet</title>
+<title>Fixzy | Stok Firebase</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -284,6 +284,19 @@ body.dark .kpi{
   box-shadow:0 4px 14px #0005;
 }
 </style>
+<style id="fixzy-display-only">
+/* STOCK DISPLAY ONLY — tidak ada upload, tambah, edit, hapus, atau import */
+.top,
+section.card:has(#csvUrl),
+.stockBulkBar,
+.stockSelectCol,
+.acts,
+#manualModal,
+#confirmUi,
+#loading,
+#toast{display:none!important}
+</style>
+
 <style id="stock-mobile-responsive-patch">
 /* RESPONSIVE STOCK MOBILE — hanya memperbaiki tampilan HP.
    Tidak mengubah Firebase, data, filter, logika, atau desktop. */
@@ -481,6 +494,7 @@ html,body{overflow-x:hidden}
 })();
 </script>
 
+<style id="sheet-master-mode">#saveCsvBtn,.acts,.stockBulkBar,.top button:first-child,.price-rule-box{display:none!important}</style>
 </head>
 <body><script>
 /* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
@@ -540,7 +554,7 @@ function tutupHalaman(){
   </div>
 
   <section class="stats">
-    <div class="stat"><small>Total Produk</small><strong id="total">0</strong><span>SKU Google Sheet</span></div>
+    <div class="stat"><small>Total Produk</small><strong id="total">0</strong><span>SKU Firebase</span></div>
     <div class="stat"><small>Ready Stock</small><strong id="ready">0</strong><span>sisa &gt; 0</span></div>
     <div class="stat"><small>Stok Kosong</small><strong id="empty">0</strong><span>perlu restock</span></div>
     <div class="stat"><small>Nilai Modal</small><strong id="value">Rp 0</strong><span>modal × sisa</span></div>
@@ -600,7 +614,7 @@ function tutupHalaman(){
   </section>
 
   <section class="card">
-    <div class="title">📦 Stok Google Sheet</div><div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">🔒 Stok hanya menampilkan data milik owner akun aktif — stok owner/konter lain tidak ditampilkan.</div>
+    <div class="title">📦 Stok Firebase</div><div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">🔒 Stok hanya menampilkan data milik owner akun aktif — stok owner/konter lain tidak ditampilkan.</div>
     <div id="listMsg" class="sub">Memuat data...</div>
     <div class="stockBulkBar">
   <label style="display:flex;align-items:center;gap:7px;font-weight:800;cursor:pointer">
@@ -691,7 +705,6 @@ applyDarkMode();
 let uid=null;
 let currentUser=null;
 let currentProfile=null;
-let activeOwnerProfile=null;
 let isSuperAdmin=false;
 let products=[];
 let csvRows=[];
@@ -1103,144 +1116,29 @@ function renderPreview(){
   if(csvRows.length>30)msg(`CSV terbaca ${csvRows.length} produk. Preview menampilkan 30 pertama.`,"info");
 }
 
-function activeOwnerUid(){
-  const role=String(currentProfile?.role||"").toLowerCase();
-  // ROLE YANG DIPAKAI: owner, karyawan/employee, everyone.
-  // Tidak ada role "member". Semua akun bawahan memakai Owner yang tercantum di profil.
-  if(role==="owner") return String(uid||"").trim();
-  return String(
-    currentProfile?.ownerUid ||
-    currentProfile?.ownerId ||
-    currentProfile?.ownerUID ||
-    currentProfile?.pemilikUid ||
-    ""
-  ).trim();
-}
-
 function identityFields(){
   const email=String(currentUser?.email||"").toLowerCase();
   const konterId=String(currentProfile?.konterId||"").trim();
-  const ownerUid=activeOwnerUid();
+
+  /*
+   * Owner memakai UID dirinya sendiri.
+   * Superadmin memakai ownerUid/ownerId yang tersimpan di profil;
+   * bila belum ada, gunakan UID Superadmin sendiri.
+   * Jangan pernah mengosongkan ownerUid saat menyimpan stok.
+   */
+  const ownerUid=String(
+    currentProfile?.role==="owner"
+      ? uid
+      : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
+  ).trim();
+
   const ownerEmail=String(
-    String(currentProfile?.role||"").toLowerCase()==="owner"
+    currentProfile?.role==="owner"
       ? email
-      : (currentProfile?.ownerEmail||activeOwnerProfile?.ownerEmail||email)
+      : (currentProfile?.ownerEmail||email)
   ).toLowerCase();
+
   return {uid,akun:email,ownerEmail,konterId,ownerUid};
-}
-
-function findSheetUrl(obj){
-  if(!obj||typeof obj!=="object") return "";
-  const keys=[
-    "googleSheetUrl","googleSheetsUrl","googleSheet","sheetUrl","sheetURL",
-    "spreadsheetUrl","spreadsheetURL","linkGoogleSheet","linkGoogleSheets",
-    "linkSheet","linkSpreadsheet","stokSheetUrl","stokSpreadsheetUrl",
-    "urlGoogleSheet","urlSheet","csvUrl","csvURL"
-  ];
-  for(const k of keys){
-    const v=obj[k];
-    if(typeof v==="string" && /^https?:\/\//i.test(v.trim()) && /google|csv/i.test(v)) return v.trim();
-  }
-  for(const k of ["sheet","googleSheet","spreadsheet","stok","settings","konter","pengaturan"]){
-    const v=obj[k];
-    if(v&&typeof v==="object"){
-      const hit=findSheetUrl(v);
-      if(hit)return hit;
-    }
-  }
-  return "";
-}
-
-async function syncOwnerSheetToBawahan(url){
-  if(!url || !uid) return;
-  try{
-    const targets=new Map();
-    for(const field of ["ownerUid","ownerId"]){
-      try{
-        const qs=await getDocs(query(collection(db,"users"),where(field,"==",uid)));
-        qs.forEach(d=>targets.set(d.id,d));
-      }catch(e){ console.warn("Sync Sheet via "+field+" gagal:",e); }
-    }
-    for(const [id] of targets){
-      try{
-        await setDoc(doc(db,"users",id),{googleSheetUrl:url,sheetUrl:url},{merge:true});
-      }catch(e){ console.warn("Tidak bisa menyimpan Sheet ke akun bawahan "+id,e); }
-    }
-  }catch(e){ console.warn("Sync Sheet Owner ke bawahan gagal:",e); }
-}
-
-async function resolveOwnerSheetUrl(){
-  const role=String(currentProfile?.role||"").toLowerCase();
-  let owner=activeOwnerUid();
-  let ownerProfile=currentProfile||{};
-
-  // OWNER: Sheet milik akun sendiri.
-  if(role==="owner"){
-    let url=findSheetUrl(ownerProfile);
-    if(!url){
-      try{ url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim(); }catch(e){}
-    }
-    if(url){
-      try{
-        url=normalizeSheetUrl(url);
-        // Simpan di profil Owner dan sebarkan ke akun Karyawan/Employee/Everyone
-        // yang terhubung ke Owner. Dengan begitu akun bawahan tidak perlu
-        // membaca dokumen profil Owner (yang bisa dibatasi Firestore Rules).
-        await setDoc(doc(db,"users",uid),{googleSheetUrl:url,sheetUrl:url},{merge:true});
-        await syncOwnerSheetToBawahan(url);
-      }catch(e){ console.warn("Link Google Sheet Owner belum dapat disimpan/sinkron:",e); }
-    }
-    activeOwnerProfile=ownerProfile;
-    return url;
-  }
-
-  // KARYAWAN / EMPLOYEE / EVERYONE: selalu ambil Sheet dari Owner.
-  // Jangan pernah memakai UID karyawan sebagai Owner.
-  if(owner && owner!==uid){
-    // Utama: baca profil Owner.
-    try{
-      const snap=await getDoc(doc(db,"users",owner));
-      if(snap.exists()) ownerProfile=snap.data()||{};
-    }catch(e){ console.warn("Profil Owner tidak dapat dibaca langsung:",e); }
-  }
-
-  activeOwnerProfile=ownerProfile;
-  // Prioritas pertama: URL yang sudah disinkronkan ke profil Karyawan/Employee/Everyone.
-  // Ini memungkinkan akses tanpa membaca profil Owner.
-  let url=findSheetUrl(currentProfile);
-  if(!url) url=findSheetUrl(ownerProfile);
-
-  // Fallback 2: cari profil akun dalam kelompok Owner yang sama.
-  // Ini dipakai bila dokumen Owner tidak dapat dibaca langsung oleh akun bawahan.
-  if(!url && owner){
-    for(const field of ["ownerUid","ownerId"]){
-      try{
-        const qs=await getDocs(query(collection(db,"users"),where(field,"==",owner)));
-        for(const d of qs.docs){
-          const p=d.data()||{};
-          const hit=findSheetUrl(p);
-          if(hit){ url=hit; activeOwnerProfile=p; break; }
-        }
-        if(url) break;
-      }catch(e){ console.warn("Pencarian Sheet Owner via users gagal:",e); }
-    }
-  }
-
-  // Fallback perangkat: bila Owner dan Karyawan memakai browser/origin yang sama,
-  // gunakan URL Sheet yang sudah pernah tersimpan di browser.
-  if(!url){
-    try{ url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim(); }catch(e){}
-  }
-
-  if(!url){
-    throw new Error(
-      owner
-        ? "Link Google Sheet Owner belum tersedia. Pastikan akun Owner sudah menyimpan link Sheet."
-        : "ownerUid akun Karyawan/Everyone belum ditemukan."
-    );
-  }
-  try{ localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url); }catch(e){}
-  return url;
 }
 function formatExp(v){
   if(!v)return "-";
@@ -1316,43 +1214,104 @@ function sheetProductId(p,i){const base=String(p.kode||`${p.nama||"produk"}_${p.
 async function getApprovedOrderQty(){const map={},role=String(currentProfile?.role||"").toLowerCase(),owner=(role==="owner"||isSuperAdmin)?uid:String(currentProfile?.ownerUid||currentProfile?.ownerId||uid||"").trim();if(!owner)return map;const seen=new Map();for(const f of ["ownerUid","ownerId"]){try{const snap=await getDocs(query(collection(db,"order_member"),where(f,"==",owner)));snap.forEach(d=>seen.set(d.id,d.data()||{}));}catch(e){}}seen.forEach(o=>{const st=String(o.status||o.approvalStatus||"").toLowerCase();if(["batal","dibatalkan","cancel","cancelled","rejected","ditolak","pending","menunggu_approval"].includes(st))return;const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);items.forEach(it=>{const q=num(it.qty);if(!q)return;const c=String(it.kode||it.kodeProduk||it.sku||"").trim().toUpperCase(),n=String(it.nama||it.namaProduk||it.produk||"").trim().toLowerCase();if(c)map["code:"+c]=(map["code:"+c]||0)+q;if(n)map["name:"+n]=(map["name:"+n]||0)+q;});});return map;}
 function reservedForProduct(p,map){const c=String(p.kode||"").trim().toUpperCase(),n=String(p.nama||"").trim().toLowerCase();return Math.max(map["code:"+c]||0,map["name:"+n]||0);}
 
+async function getSharedSheetUrl(){
+  const role=String(currentProfile?.role||"").toLowerCase();
+  const isOwner=role==="owner" || currentProfile?.isOwner===true;
+  const ownerId=isOwner
+    ? String(uid||"").trim()
+    : String(currentProfile?.ownerUid||currentProfile?.ownerId||"").trim();
+
+  // OWNER: sumber konfigurasi utama adalah profil Owner sendiri.
+  // Input/localStorage hanya dipakai sebagai fallback agar konfigurasi Owner
+  // yang sudah berjalan tidak rusak.
+  if(isOwner){
+    let url=String(
+      currentProfile?.sheetUrl ||
+      currentProfile?.googleSheetUrl ||
+      currentProfile?.stokSheetUrl ||
+      currentProfile?.csvUrl ||
+      $("csvUrl")?.value ||
+      localStorage.getItem("FIXZY_MEMBER_SHEET_URL") ||
+      ""
+    ).trim();
+
+    if(url){
+      url=normalizeSheetUrl(url);
+      try{
+        await setDoc(doc(db,"users",uid),{
+          sheetUrl:url,
+          googleSheetUrl:url,
+          stokSheetUrl:url,
+          updatedAt:serverTimestamp()
+        },{merge:true});
+        currentProfile.sheetUrl=url;
+      }catch(e){
+        console.warn("Gagal menyimpan konfigurasi Sheet Owner:",e);
+      }
+      try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
+    }
+    return url;
+  }
+
+  // KARYAWAN/EMPLOYEE: WAJIB mengikuti Owner yang tercantum pada profil.
+  // Jangan mengambil URL dari input/localStorage karyawan karena dapat
+  // menunjuk ke Sheet Owner lain.
+  if(!ownerId)return "";
+
+  try{
+    const ownerSnap=await getDoc(doc(db,"users",ownerId));
+    if(!ownerSnap.exists())return "";
+    const ownerData=ownerSnap.data()||{};
+    let url=String(
+      ownerData.sheetUrl ||
+      ownerData.googleSheetUrl ||
+      ownerData.stokSheetUrl ||
+      ownerData.csvUrl ||
+      ""
+    ).trim();
+    if(url){
+      url=normalizeSheetUrl(url);
+      try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
+    }
+    return url;
+  }catch(e){
+    console.warn("Gagal membaca konfigurasi Sheet Owner:",e);
+    return "";
+  }
+}
+
 async function loadProducts(){
  if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
  try{
    const input=$("csvUrl");
-   const role=String(currentProfile?.role||"").toLowerCase();
-   const ownerId=(role==="owner"||role==="superadmin"||isSuperAdmin)
-     ? String(uid||"").trim()
-     : String(currentProfile?.ownerUid||currentProfile?.ownerId||"").trim();
-   if(!ownerId)throw Error("ownerUid akun aktif tidak ditemukan.");
+   let url=await getSharedSheetUrl();
 
-   // SUMBER PRODUK MASTER: Google Spreadsheet yang ditentukan.
-   // Jangan memakai stok Firebase sebagai sumber tampilan.
-   const FIXZY_DEFAULT_SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vSpCIO_9kEnIX4IjSfD7EGcB_lT_LAl7H7JTz904hhII7h6-CyMCYQ6oVTShFvJlS4QHzjuzIwCdAg7/pub?gid=1960398218&single=true";
-   let url=FIXZY_DEFAULT_SHEET_URL;
+   if(!url){
+     $("listMsg").textContent="Link Google Sheet milik Owner belum ditemukan.";
+     products=[];fillCategories();render();return;
+   }
+
    url=normalizeSheetUrl(url);
    if(input)input.value=url;
-   try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
 
    const r=await fetch(url,{cache:"no-store"});
    if(!r.ok)throw Error("HTTP "+r.status);
+
    const text=await r.text();
-   if(!text.trim())throw Error("CSV kosong.");
    const rows=normalizeCSV(parseCSV(text));
-   products=rows.map((p,i)=>({...p,id:sheetProductId(p,i),ownerUid:ownerId,ownerId}));
+   products=rows.map((p,i)=>({...p,id:sheetProductId(p,i)}));
 
    const reserved=await getApprovedOrderQty();
    products=products.map(p=>({...p,sisa:Math.max(0,num(p.sisa)-reservedForProduct(p,reserved))}));
 
-   $("listMsg").textContent=`${products.length} produk dimuat dari Google Spreadsheet.`;
+   $("listMsg").textContent=`${products.length} produk dimuat dari Google Sheet.`;
    fillCategories();render();updateMemberCartBadge();
  }catch(e){
-   console.error("LOAD GOOGLE SHEET STOCK:",e);
+   console.error(e);
    products=[];fillCategories();render();
-   $("listMsg").textContent="Gagal membaca Google Spreadsheet: "+(e.message||e);
+   $("listMsg").textContent="Gagal membaca Google Sheet: "+(e.message||e);
  }
 }
-
 function fillCategories(){
   const sel=$("cat"),old=sel.value;
   const cats=[...new Set(products.map(x=>String(x.kategori||"LAINNYA").toUpperCase()).filter(Boolean))].sort();
@@ -1375,7 +1334,7 @@ function render(){
   products.forEach(p=>{const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++});
   $("total").textContent=products.length;$("ready").textContent=ready;$("empty").textContent=empty;$("value").textContent=money(value);
   $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="9" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
-  $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data dari Google Sheet.</div>';
+  $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>';
   const sa=document.getElementById("stockSelectAll");if(sa)sa.checked=false;updateSelectedStockCount();updatePriceRulePreview();
 }
 
@@ -1797,9 +1756,12 @@ async function initFixzyStockSession(user){
 
     isSuperAdmin=role==="superadmin" || email==="servicehpmaja@gmail.com";
 
-    // Owner, Superadmin, dan akun bawahan/karyawan boleh membuka halaman.
-    // Isolasi data ditentukan oleh ownerUid/ownerId seperti Data Servis.
-
+    // Hanya Owner dan Karyawan/Employee yang boleh membuka Stock Member.
+    // Setiap Karyawan tetap terikat ke ownerUid/ownerId miliknya.
+    const allowedRole = role==="owner" || role==="karyawan" || role==="employee";
+    if(!allowedRole){
+      throw new Error("Halaman Stock Member hanya untuk Owner dan Karyawan.");
+    }
 
     if(String(currentProfile.status||"").toLowerCase()==="blocked" ||
        String(currentProfile.status||"").toLowerCase()==="rejected"){
@@ -1812,7 +1774,8 @@ async function initFixzyStockSession(user){
     $("headerExp").textContent=formatExp(currentProfile.exp||currentProfile.expAt||currentProfile.expiredAt||currentProfile.tanggalBerakhir);
     document.body.dataset.stockAuthorized="true";
 
-    // Semua akun owner dan akun bawahan memuat stok dari Google Sheet Owner yang sama.
+    // Semua akun hanya memuat stok milik owner aktif.
+    // Superadmin memakai UID sendiri, sehingga tidak ikut melihat stok owner lain.
     await loadProducts();
   }catch(e){
     console.error("FIXZY STOCK ACCESS:",e);
