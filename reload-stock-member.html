@@ -909,17 +909,17 @@ async function initFixzyStockSession(user){
  if(!user)return;uid=user.uid;currentUser=user;try{
   const snap=await getDoc(doc(db,"users",uid));if(!snap.exists())throw new Error("Profil akun tidak ditemukan.");currentProfile=snap.data()||{};
   const role=String(currentProfile.role||"").toLowerCase(),email=String(user.email||"").toLowerCase();isSuperAdmin=role==="superadmin"||email==="servicehpmaja@gmail.com";
-  if(!isSuperAdmin&&!['owner','karyawan','employee'].includes(role))throw new Error("Akses Stock hanya untuk Owner dan Karyawan.");
-  // Owner memakai UID sendiri. Karyawan wajib mengikuti ownerUid/ownerId
-  // dari profilnya agar data antar-owner tetap terisolasi.
-  if(isSuperAdmin || role==="owner"){
+  if(!isSuperAdmin&&role!=="owner")throw new Error("Hanya superadmin atau owner yang diizinkan membuka Stock.");
+  // Penting: jangan warisi ownerUid milik akun lain pada profil superadmin.
+  if(isSuperAdmin){
     currentProfile.ownerUid=uid;
     currentProfile.ownerId=uid;
-  }else if(!String(currentProfile.ownerUid||currentProfile.ownerId||"").trim()){
-    throw new Error("Owner akun karyawan belum ditentukan.");
+  }else if(role==="owner"){
+    currentProfile.ownerUid=uid;
+    currentProfile.ownerId=uid;
   }
   if(!isSuperAdmin&&(String(currentProfile.status||"").toLowerCase()==="blocked"||String(currentProfile.status||"").toLowerCase()==="rejected"))throw new Error("Akun diblokir / ditolak.");
-  $("headerAccount").textContent=currentProfile.namaKonter||currentProfile.namaPemilik||currentProfile.nama||user.email||"Akun";$("headerRole").textContent=isSuperAdmin?"SUPERADMIN":role.toUpperCase();$("headerExp").textContent=formatExp(currentProfile.exp||currentProfile.expAt||currentProfile.expiredAt||currentProfile.tanggalBerakhir);
+  if(role==="owner")currentProfile.ownerUid=uid;$("headerAccount").textContent=currentProfile.namaKonter||currentProfile.namaPemilik||currentProfile.nama||user.email||"Akun";$("headerRole").textContent=isSuperAdmin?"SUPERADMIN":"OWNER";$("headerExp").textContent=formatExp(currentProfile.exp||currentProfile.expAt||currentProfile.expiredAt||currentProfile.tanggalBerakhir);
   attachStockListener();attachSalesListeners();
  }catch(e){console.error("FIXZY STOCK ACCESS:",e);document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f4f6;padding:20px;font-family:Arial"><div style="width:min(430px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:25px;text-align:center;box-shadow:0 10px 30px #0002"><div style="font-size:42px">🔒</div><h2 style="margin:10px 0">Akses Terbatas</h2><p style="color:#64748b;line-height:1.6">${esc(e.message||"Akses ditolak.")}</p></div></div>`}
 }
