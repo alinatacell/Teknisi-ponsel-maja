@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#111111">
-<title>Fixzy | Stok Firebase</title>
+<title>FIXZY | Stok Produk</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -711,6 +711,7 @@ let csvRows=[];
 let editingId=null;
 try{const u=localStorage.getItem("FIXZY_MEMBER_SHEET_URL");if(u&&document.getElementById("csvUrl"))document.getElementById("csvUrl").value=u}catch(e){}
 
+const FIXZY_DEFAULT_SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vSpCIO_9kEnIX4IjSfD7EGcB_lT_LAl7H7JTz904hhII7h6-CyMCYQ6oVTShFvJlS4QHzjuzIwCdAg7/pub?gid=1960398218&single=true&output=csv";
 const $=id=>document.getElementById(id);
 const money=n=>"Rp "+Number(n||0).toLocaleString("id-ID");
 /* =========================
@@ -1229,7 +1230,8 @@ async function getSharedSheetUrl(){
     currentProfile?.googleSheetUrl ||
     currentProfile?.stokSheetUrl ||
     currentProfile?.csvUrl ||
-    ""
+    FIXZY_DEFAULT_SHEET_URL ||
+     ""
   ).trim();
 
   // 2. Owner: URL milik Owner disimpan sebagai konfigurasi akun.
