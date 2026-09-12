@@ -1119,8 +1119,16 @@ function renderPreview(){
 
 function activeOwnerUid(){
   const role=String(currentProfile?.role||"").toLowerCase();
+  // ROLE YANG DIPAKAI: owner, karyawan/employee, everyone.
+  // Tidak ada role "member". Semua akun bawahan memakai Owner yang tercantum di profil.
   if(role==="owner") return String(uid||"").trim();
-  return String(currentProfile?.ownerUid||currentProfile?.ownerId||uid||"").trim();
+  return String(
+    currentProfile?.ownerUid ||
+    currentProfile?.ownerId ||
+    currentProfile?.ownerUID ||
+    currentProfile?.pemilikUid ||
+    ""
+  ).trim();
 }
 
 function identityFields(){
@@ -1162,30 +1170,43 @@ async function resolveOwnerSheetUrl(){
   let owner=activeOwnerUid();
   let ownerProfile=currentProfile||{};
 
-  if(role!=="owner" && owner && owner!==uid){
+  // OWNER: Sheet milik akun sendiri.
+  if(role==="owner"){
+    let url=findSheetUrl(ownerProfile);
+    if(!url){
+      try{ url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim(); }catch(e){}
+    }
+    if(url){
+      try{
+        url=normalizeSheetUrl(url);
+        await setDoc(doc(db,"users",uid),{googleSheetUrl:url},{merge:true});
+      }catch(e){ console.warn("Link Google Sheet Owner belum dapat disimpan:",e); }
+    }
+    activeOwnerProfile=ownerProfile;
+    return url;
+  }
+
+  // KARYAWAN / EMPLOYEE / EVERYONE: selalu ambil Sheet dari Owner.
+  // Jangan pernah memakai UID karyawan sebagai Owner.
+  if(owner && owner!==uid){
     try{
       const snap=await getDoc(doc(db,"users",owner));
       if(snap.exists()) ownerProfile=snap.data()||{};
     }catch(e){ console.warn("Gagal membaca profil Owner:",e); }
   }
+
   activeOwnerProfile=ownerProfile;
-
   let url=findSheetUrl(ownerProfile);
-  if(!url && role!=="owner"){
-    url=findSheetUrl(currentProfile);
-  }
-  if(!url){
-    try{ url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim(); }catch(e){}
-  }
 
-  if(url && role==="owner"){
-    try{
-      const normalized=normalizeSheetUrl(url);
-      if(normalized!==url) url=normalized;
-      await setDoc(doc(db,"users",uid),{googleSheetUrl:url},{merge:true});
-    }catch(e){
-      console.warn("Link Google Sheet Owner belum dapat disimpan ke profil:",e);
-    }
+  // Fallback bila URL sudah ikut tersimpan di profil karyawan.
+  if(!url) url=findSheetUrl(currentProfile);
+
+  if(!url){
+    throw new Error(
+      owner
+        ? "Link Google Sheet Owner belum tersedia. Buka halaman stok dari akun Owner terlebih dahulu."
+        : "ownerUid akun Karyawan/Everyone belum ditemukan."
+    );
   }
   return url;
 }
@@ -1267,12 +1288,13 @@ async function loadProducts(){
  if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
  try{
    const input=$("csvUrl");
-   let url=String(input?.value||"").trim();
+   const role=String(currentProfile?.role||"").toLowerCase();
+   let url="";
 
-   // OWNER: ambil link dari browser bila ada, lalu simpan ke profil Owner.
-   // KARYAWAN/EMPLOYEE/EVERYONE: ambil link dari profil Owner yang sama.
+   // Owner boleh memakai URL yang sedang tersimpan di browser.
+   // Karyawan/Employee/Everyone WAJIB mengambil URL dari profil Owner.
+   if(role==="owner") url=String(input?.value||"").trim();
    if(!url) url=await resolveOwnerSheetUrl();
-   if(!url) url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim();
 
    if(!url){
      $("listMsg").textContent="Link Google Sheet Owner belum tersedia.";
