@@ -1165,6 +1165,24 @@ function findSheetUrl(obj){
   return "";
 }
 
+async function syncOwnerSheetToBawahan(url){
+  if(!url || !uid) return;
+  try{
+    const targets=new Map();
+    for(const field of ["ownerUid","ownerId"]){
+      try{
+        const qs=await getDocs(query(collection(db,"users"),where(field,"==",uid)));
+        qs.forEach(d=>targets.set(d.id,d));
+      }catch(e){ console.warn("Sync Sheet via "+field+" gagal:",e); }
+    }
+    for(const [id] of targets){
+      try{
+        await setDoc(doc(db,"users",id),{googleSheetUrl:url,sheetUrl:url},{merge:true});
+      }catch(e){ console.warn("Tidak bisa menyimpan Sheet ke akun bawahan "+id,e); }
+    }
+  }catch(e){ console.warn("Sync Sheet Owner ke bawahan gagal:",e); }
+}
+
 async function resolveOwnerSheetUrl(){
   const role=String(currentProfile?.role||"").toLowerCase();
   let owner=activeOwnerUid();
@@ -1179,8 +1197,12 @@ async function resolveOwnerSheetUrl(){
     if(url){
       try{
         url=normalizeSheetUrl(url);
+        // Simpan di profil Owner dan sebarkan ke akun Karyawan/Employee/Everyone
+        // yang terhubung ke Owner. Dengan begitu akun bawahan tidak perlu
+        // membaca dokumen profil Owner (yang bisa dibatasi Firestore Rules).
         await setDoc(doc(db,"users",uid),{googleSheetUrl:url,sheetUrl:url},{merge:true});
-      }catch(e){ console.warn("Link Google Sheet Owner belum dapat disimpan:",e); }
+        await syncOwnerSheetToBawahan(url);
+      }catch(e){ console.warn("Link Google Sheet Owner belum dapat disimpan/sinkron:",e); }
     }
     activeOwnerProfile=ownerProfile;
     return url;
@@ -1197,10 +1219,10 @@ async function resolveOwnerSheetUrl(){
   }
 
   activeOwnerProfile=ownerProfile;
-  let url=findSheetUrl(ownerProfile);
-
-  // Fallback 1: URL mungkin sudah ikut tersimpan di profil Karyawan/Everyone.
-  if(!url) url=findSheetUrl(currentProfile);
+  // Prioritas pertama: URL yang sudah disinkronkan ke profil Karyawan/Employee/Everyone.
+  // Ini memungkinkan akses tanpa membaca profil Owner.
+  let url=findSheetUrl(currentProfile);
+  if(!url) url=findSheetUrl(ownerProfile);
 
   // Fallback 2: cari profil akun dalam kelompok Owner yang sama.
   // Ini dipakai bila dokumen Owner tidak dapat dibaca langsung oleh akun bawahan.
