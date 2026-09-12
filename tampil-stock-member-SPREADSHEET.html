@@ -575,7 +575,7 @@ function tutupHalaman(){
     <div class="note">
       Google Sheets harus dipublikasikan sebagai <b>CSV</b>. Google menjelaskan bahwa spreadsheet dapat dipublish ke web dan memilih format CSV; perubahan pada spreadsheet yang dipublish dapat diperbarui otomatis.
       <br><br>
-      Data stok hanya dibaca dari Google Sheet/CSV. Data stok tidak disimpan ke Firebase.
+      Setelah CSV/Excel terbaca, data akan ditampilkan sebagai preview. Klik <b>SIMPAN KE FIREBASE</b> untuk memasukkannya ke koleksi stok.
       <br><br><b>Anti produk ganda:</b> produk dengan kode yang sama atau nama + kategori yang sama tidak akan di-upload lagi.
     </div>
     <div id="csvMsg" class="msg"></div>
@@ -685,7 +685,7 @@ function refreshHalaman(){
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,serverTimestamp,getDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,query,where,serverTimestamp,getDoc,setDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig={
   apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
@@ -705,6 +705,7 @@ applyDarkMode();
 let uid=null;
 let currentUser=null;
 let currentProfile=null;
+let activeOwnerProfile=null;
 let isSuperAdmin=false;
 let products=[];
 let csvRows=[];
@@ -1116,29 +1117,77 @@ function renderPreview(){
   if(csvRows.length>30)msg(`CSV terbaca ${csvRows.length} produk. Preview menampilkan 30 pertama.`,"info");
 }
 
+function activeOwnerUid(){
+  const role=String(currentProfile?.role||"").toLowerCase();
+  if(role==="owner") return String(uid||"").trim();
+  return String(currentProfile?.ownerUid||currentProfile?.ownerId||uid||"").trim();
+}
+
 function identityFields(){
   const email=String(currentUser?.email||"").toLowerCase();
   const konterId=String(currentProfile?.konterId||"").trim();
-
-  /*
-   * Owner memakai UID dirinya sendiri.
-   * Superadmin memakai ownerUid/ownerId yang tersimpan di profil;
-   * bila belum ada, gunakan UID Superadmin sendiri.
-   * Jangan pernah mengosongkan ownerUid saat menyimpan stok.
-   */
-  const ownerUid=String(
-    currentProfile?.role==="owner"
-      ? uid
-      : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
-  ).trim();
-
+  const ownerUid=activeOwnerUid();
   const ownerEmail=String(
-    currentProfile?.role==="owner"
+    String(currentProfile?.role||"").toLowerCase()==="owner"
       ? email
-      : (currentProfile?.ownerEmail||email)
+      : (currentProfile?.ownerEmail||activeOwnerProfile?.ownerEmail||email)
   ).toLowerCase();
-
   return {uid,akun:email,ownerEmail,konterId,ownerUid};
+}
+
+function findSheetUrl(obj){
+  if(!obj||typeof obj!=="object") return "";
+  const keys=[
+    "googleSheetUrl","googleSheetsUrl","googleSheet","sheetUrl","sheetURL",
+    "spreadsheetUrl","spreadsheetURL","linkGoogleSheet","linkGoogleSheets",
+    "linkSheet","linkSpreadsheet","stokSheetUrl","stokSpreadsheetUrl",
+    "urlGoogleSheet","urlSheet","csvUrl","csvURL"
+  ];
+  for(const k of keys){
+    const v=obj[k];
+    if(typeof v==="string" && /^https?:\/\//i.test(v.trim()) && /google|csv/i.test(v)) return v.trim();
+  }
+  for(const k of ["sheet","googleSheet","spreadsheet","stok","settings","konter","pengaturan"]){
+    const v=obj[k];
+    if(v&&typeof v==="object"){
+      const hit=findSheetUrl(v);
+      if(hit)return hit;
+    }
+  }
+  return "";
+}
+
+async function resolveOwnerSheetUrl(){
+  const role=String(currentProfile?.role||"").toLowerCase();
+  let owner=activeOwnerUid();
+  let ownerProfile=currentProfile||{};
+
+  if(role!=="owner" && owner && owner!==uid){
+    try{
+      const snap=await getDoc(doc(db,"users",owner));
+      if(snap.exists()) ownerProfile=snap.data()||{};
+    }catch(e){ console.warn("Gagal membaca profil Owner:",e); }
+  }
+  activeOwnerProfile=ownerProfile;
+
+  let url=findSheetUrl(ownerProfile);
+  if(!url && role!=="owner"){
+    url=findSheetUrl(currentProfile);
+  }
+  if(!url){
+    try{ url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim(); }catch(e){}
+  }
+
+  if(url && role==="owner"){
+    try{
+      const normalized=normalizeSheetUrl(url);
+      if(normalized!==url) url=normalized;
+      await setDoc(doc(db,"users",uid),{googleSheetUrl:url},{merge:true});
+    }catch(e){
+      console.warn("Link Google Sheet Owner belum dapat disimpan ke profil:",e);
+    }
+  }
+  return url;
 }
 function formatExp(v){
   if(!v)return "-";
@@ -1214,60 +1263,37 @@ function sheetProductId(p,i){const base=String(p.kode||`${p.nama||"produk"}_${p.
 async function getApprovedOrderQty(){const map={},role=String(currentProfile?.role||"").toLowerCase(),owner=(role==="owner"||isSuperAdmin)?uid:String(currentProfile?.ownerUid||currentProfile?.ownerId||uid||"").trim();if(!owner)return map;const seen=new Map();for(const f of ["ownerUid","ownerId"]){try{const snap=await getDocs(query(collection(db,"order_member"),where(f,"==",owner)));snap.forEach(d=>seen.set(d.id,d.data()||{}));}catch(e){}}seen.forEach(o=>{const st=String(o.status||o.approvalStatus||"").toLowerCase();if(["batal","dibatalkan","cancel","cancelled","rejected","ditolak","pending","menunggu_approval"].includes(st))return;const items=Array.isArray(o.items)?o.items:(Array.isArray(o.produkList)?o.produkList:[]);items.forEach(it=>{const q=num(it.qty);if(!q)return;const c=String(it.kode||it.kodeProduk||it.sku||"").trim().toUpperCase(),n=String(it.nama||it.namaProduk||it.produk||"").trim().toLowerCase();if(c)map["code:"+c]=(map["code:"+c]||0)+q;if(n)map["name:"+n]=(map["name:"+n]||0)+q;});});return map;}
 function reservedForProduct(p,map){const c=String(p.kode||"").trim().toUpperCase(),n=String(p.nama||"").trim().toLowerCase();return Math.max(map["code:"+c]||0,map["name:"+n]||0);}
 
-async function getOwnerSheetUrl(){
-  const role=String(currentProfile?.role||"").toLowerCase();
-  const isOwner=role==="owner" || isSuperAdmin;
-  const candidates=[
-    "sheetUrl","googleSheetUrl","stockSheetUrl","csvUrl",
-    "linkGoogleSheet","linkCsv","stokSheetUrl","spreadsheetUrl"
-  ];
-  for(const key of candidates){
-    const v=String(currentProfile?.[key]||"").trim();
-    if(v) return v;
-  }
-  // Karyawan memakai konfigurasi milik Owner. Hanya mengambil URL konfigurasi,
-  // bukan data stok.
-  if(!isOwner){
-    const ownerUid=String(currentProfile?.ownerUid||currentProfile?.ownerId||"").trim();
-    if(ownerUid){
-      try{
-        const ownerSnap=await getDoc(doc(db,"users",ownerUid));
-        if(ownerSnap.exists()){
-          const op=ownerSnap.data()||{};
-          for(const key of candidates){
-            const v=String(op?.[key]||"").trim();
-            if(v) return v;
-          }
-        }
-      }catch(e){console.warn("Gagal membaca konfigurasi Sheet Owner:",e);}
-    }
-  }
-  try{return String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim();}catch(e){return ""}
-}
-
 async function loadProducts(){
  if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
  try{
    const input=$("csvUrl");
-   let url=await getOwnerSheetUrl();
+   let url=String(input?.value||"").trim();
+
+   // OWNER: ambil link dari browser bila ada, lalu simpan ke profil Owner.
+   // KARYAWAN/EMPLOYEE/EVERYONE: ambil link dari profil Owner yang sama.
+   if(!url) url=await resolveOwnerSheetUrl();
+   if(!url) url=String(localStorage.getItem("FIXZY_MEMBER_SHEET_URL")||"").trim();
+
    if(!url){
-     $("listMsg").textContent="Link Google Sheet stok belum diatur oleh Owner.";
-     products=[];fillCategories();render();updateMemberCartBadge();return;
+     $("listMsg").textContent="Link Google Sheet Owner belum tersedia.";
+     products=[];fillCategories();render();return;
    }
+
    url=normalizeSheetUrl(url);
    if(input) input.value=url;
-   try{localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url)}catch(e){}
+   localStorage.setItem("FIXZY_MEMBER_SHEET_URL",url);
+
    const r=await fetch(url,{cache:"no-store"});
    if(!r.ok)throw Error("HTTP "+r.status);
    const text=await r.text(),rows=normalizeCSV(parseCSV(text));
    products=rows.map((p,i)=>({...p,id:sheetProductId(p,i)}));
    const reserved=await getApprovedOrderQty();
    products=products.map(p=>({...p,sisa:Math.max(0,num(p.sisa)-reservedForProduct(p,reserved))}));
-   $("listMsg").textContent=`${products.length} produk dimuat dari Google Sheet.`;
+   $("listMsg").textContent=`${products.length} produk dimuat dari Google Sheet Owner.`;
    fillCategories();render();updateMemberCartBadge();
  }catch(e){
    console.error(e);products=[];fillCategories();render();
-   $("listMsg").textContent="Gagal membaca Google Sheet: "+(e.message||e);
+   $("listMsg").textContent="Gagal membaca Google Sheet Owner: "+(e.message||e);
  }
 }
 function fillCategories(){
@@ -1729,8 +1755,7 @@ async function initFixzyStockSession(user){
     $("headerExp").textContent=formatExp(currentProfile.exp||currentProfile.expAt||currentProfile.expiredAt||currentProfile.tanggalBerakhir);
     document.body.dataset.stockAuthorized="true";
 
-    // Semua akun hanya memuat stok milik owner aktif.
-    // Superadmin memakai UID sendiri, sehingga tidak ikut melihat stok owner lain.
+    // Semua akun owner dan akun bawahan memuat stok dari Google Sheet Owner yang sama.
     await loadProducts();
   }catch(e){
     console.error("FIXZY STOCK ACCESS:",e);
