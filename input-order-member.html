@@ -44,7 +44,69 @@ body.dark .modal-box{background:#111827!important;color:#f8fafc!important;border
 body.dark .modal-msg{color:#d1d5db!important}
 body.dark .modal-close{border-color:#475569!important}
 body.dark .dark{background:#facc15!important;color:#111827!important;border-color:#facc15!important}
-</style></head>
+</style>
+<style id="dark-mode-final-visibility-fix">
+/* FINAL DARK MODE VISIBILITY FIX — visual only */
+html body.dark {
+  background:#0b1220 !important;
+  color:#e5e7eb !important;
+}
+html body.dark main {
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  background:#0b1220 !important;
+  color:#e5e7eb !important;
+}
+html body.dark main > * {
+  visibility:visible !important;
+  opacity:1 !important;
+}
+html body.dark .card {
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  background:#111827 !important;
+  color:#e5e7eb !important;
+  border:2px solid #334155 !important;
+}
+html body.dark .card * {
+  visibility:visible !important;
+}
+html body.dark .info,
+html body.dark .cartbox {
+  background:#0f172a !important;
+  color:#e5e7eb !important;
+}
+html body.dark .row {
+  background:#0f172a !important;
+  color:#e5e7eb !important;
+}
+html body.dark .row span,
+html body.dark .notice,
+html body.dark .cart-meta,
+html body.dark .stockhint,
+html body.dark .money,
+html body.dark label {
+  color:#cbd5e1 !important;
+}
+html body.dark .row b,
+html body.dark .cart-name,
+html body.dark .cart-total,
+html body.dark .money b,
+html body.dark .title {
+  color:#f8fafc !important;
+}
+html body.dark input,
+html body.dark textarea,
+html body.dark select {
+  display:block !important;
+  visibility:visible !important;
+  background:#0f172a !important;
+  color:#f8fafc !important;
+}
+</style>
+</head>
 <body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
