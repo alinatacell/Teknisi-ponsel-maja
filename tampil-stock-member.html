@@ -400,100 +400,6 @@ html,body{overflow-x:hidden}
 }
 </style>
 
-
-<style id="cart-header-fixed-final">
-/* =========================================================
-   FIXZY — HEADER + KERANJANG BENAR-BENAR TETAP
-   Header dan keranjang tidak ikut scroll.
-   Semua isi di bawahnya tetap menjadi area scroll.
-   ========================================================= */
-:root{
-  --fixzy-header-h:68px;
-  --fixzy-cart-h:0px;
-}
-
-/* Header FIXZY tetap di viewport */
-.header{
-  position:fixed !important;
-  top:0 !important;
-  left:0 !important;
-  right:0 !important;
-  width:100% !important;
-  z-index:1000 !important;
-}
-
-/* Keranjang juga FIXED — bukan sticky */
-.member-cart-bar{
-  position:fixed !important;
-  top:var(--fixzy-header-h) !important;
-  left:50% !important;
-  right:auto !important;
-  transform:translateX(-50%) !important;
-  width:min(1180px,calc(100% - 20px)) !important;
-  z-index:999 !important;
-  margin:0 !important;
-  background:#fffbeb !important;
-  box-shadow:0 5px 18px #17203322 !important;
-}
-
-/* Konten dimulai setelah header + keranjang,
-   sehingga tidak tertutup keduanya. */
-.container{
-  padding-top:calc(var(--fixzy-header-h) + var(--fixzy-cart-h) + 24px) !important;
-}
-
-@media(max-width:600px){
-  .member-cart-bar{
-    width:calc(100% - 20px) !important;
-    border-radius:12px !important;
-    padding:10px !important;
-  }
-
-  .container{
-    padding-top:calc(var(--fixzy-header-h) + var(--fixzy-cart-h) + 20px) !important;
-  }
-}
-</style>
-<script>
-/* Hitung tinggi header + keranjang secara otomatis.
-   Ini penting karena tinggi keranjang berubah saat HP kecil/besar. */
-(function(){
-  function syncFixzyFixedBars(){
-    const header=document.querySelector('.header');
-    const cart=document.querySelector('.member-cart-bar');
-    const root=document.documentElement;
-
-    if(header){
-      const hh=Math.ceil(header.getBoundingClientRect().height);
-      root.style.setProperty('--fixzy-header-h',hh+'px');
-    }
-
-    if(cart){
-      const ch=Math.ceil(cart.getBoundingClientRect().height);
-      root.style.setProperty('--fixzy-cart-h',ch+'px');
-    }
-  }
-
-  function start(){
-    syncFixzyFixedBars();
-    const header=document.querySelector('.header');
-    const cart=document.querySelector('.member-cart-bar');
-    if(window.ResizeObserver){
-      const ro=new ResizeObserver(syncFixzyFixedBars);
-      if(header)ro.observe(header);
-      if(cart)ro.observe(cart);
-    }
-  }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',start,{once:true});
-  }else{
-    start();
-  }
-  window.addEventListener('resize',syncFixzyFixedBars,{passive:true});
-})();
-</script>
-
 </head>
 <body><script>
 /* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
@@ -539,14 +445,6 @@ function tutupHalaman(){
 </header>
 
 <main class="container">
-  <div class="member-cart-bar">
-    <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
-    <div class="member-cart-actions">
-      <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
-      <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
-    </div>
-  </div>
-
   <div class="top">
     <button class="btn primary" onclick="openManual()">＋ Tambah Stok Manual</button>
     <button class="btn dark" onclick="document.getElementById('csvUrl').focus()">🔗 Link Google Sheet</button>
@@ -601,6 +499,14 @@ function tutupHalaman(){
       </div>
     </div>
   </section>
+
+  <div class="member-cart-bar">
+    <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
+    <div class="member-cart-actions">
+      <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
+      <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
+    </div>
+  </div>
 
   <section class="card">
     <div class="title">🔎 Cari Stok</div>
@@ -710,7 +616,7 @@ let csvRows=[];
 let editingId=null;
 
 const $=id=>document.getElementById(id);
-const money=n=>{let v=Number(n||0);if(Number.isFinite(v)&&!Number.isInteger(v)&&Math.abs(v)<1000)v=Math.round(v*1000);return"Rp "+v.toLocaleString("id-ID")};
+const money=n=>"Rp "+Number(n||0).toLocaleString("id-ID");
 /* =========================
    FIXZY DARK MODE
    ========================= */

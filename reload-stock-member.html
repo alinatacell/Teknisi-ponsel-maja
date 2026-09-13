@@ -610,7 +610,7 @@ const firebaseConfig={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomai
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 let uid=null,currentUser=null,currentProfile=null,isSuperAdmin=false,products=[],sales=[],csvRows=[],editingId=null,stockUnsubs=[],salesUnsubs=[],manualSalesFallback=false;
 const selectedProductIds=new Set();
-const $=id=>document.getElementById(id),money=n=>{let v=Number(n||0);if(Number.isFinite(v)&&!Number.isInteger(v)&&Math.abs(v)<1000)v=Math.round(v*1000);return"Rp "+v.toLocaleString("id-ID")};
+const $=id=>document.getElementById(id),money=n=>"Rp "+Number(n||0).toLocaleString("id-ID");
 function showLoading(v,text="Memproses..."){$("loadingText").textContent=text;$("loading").classList.toggle("show",v)}
 function toast(text){$("toast").textContent=text;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2600)}
 function msg(text,type="info"){const el=$("csvMsg");el.className="msg show "+type;el.textContent=text}
