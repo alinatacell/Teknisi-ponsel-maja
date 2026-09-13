@@ -624,7 +624,8 @@ const num=v=>{
   const n=Number(s);
   return Number.isFinite(n)?n:0;
 };
-const money=n=>"Rp "+Math.round(num(n)).toLocaleString("id-ID");
+const money=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
+const nominalSheet=n=>{const v=num(n);return (v>0&&v<10000)?v*1000:v};
 
 let uid="",role="",profile={},ownerUid="",ownerProfile={},products=[],sheetUrl="";
 
@@ -675,9 +676,9 @@ function normalizeCSV(rows){
     const kode=pick(o,["kode","kode produk","sku","code","id"]);
     if(!nama&&!kode) continue;
 
-    const modal=num(pick(o,["harga modal","modal","harga beli","cost","buy price","modal per pcs","harga"]));
-    const tempo=num(pick(o,["harga tempo","tempo","harga jual","jual","selling price","price"]));
-    const cash=num(pick(o,["harga cash","cash","tunai","harga tunai"]));
+    const modal=nominalSheet(pick(o,["harga modal","modal","harga beli","cost","buy price","modal per pcs","harga"]));
+    const tempo=nominalSheet(pick(o,["harga tempo","tempo","harga jual","jual","selling price","price"]));
+    const cash=nominalSheet(pick(o,["harga cash","cash","tunai","harga tunai"]));
     const sisa=Math.max(0,num(pick(o,["sisa","sisa stock","sisa stok","stok","stock","qty","jumlah","jumlah stok","stock akhir","saldo"])));
 
     data.push({
