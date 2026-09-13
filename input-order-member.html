@@ -10,6 +10,40 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .cart-item{
 body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 .modal{display:none;position:fixed;inset:0;z-index:10000;background:#0008;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.modal-box{width:min(420px,100%);background:#fff;border:2px solid #111827;border-radius:14px;box-shadow:6px 6px 0 #111827;padding:18px}.modal-title{font-size:18px;font-weight:900;margin-bottom:9px;color:#dc2626}.modal-msg{font-size:13px;line-height:1.6;color:#374151;margin-bottom:15px}.modal-close{width:100%;border:2px solid #111827;border-radius:9px;padding:10px;background:#ffc107;color:#111827;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}body.dark .modal-box{background:#111827;color:#fff;border-color:#475569}body.dark .modal-msg{color:#d1d5db}body.dark .modal-close{border-color:#475569}
 @media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.quick{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style id="dark-mode-fix-only">
+/* DARK MODE DISPLAY ONLY — tidak mengubah data, Firebase, stok, harga, atau logika transaksi */
+body.dark{background:#0b1220!important;color:#e5e7eb!important}
+body.dark header{background:#020617!important;color:#f8fafc!important;border-bottom-color:#facc15!important}
+body.dark main{color:#e5e7eb!important}
+body.dark .card{background:#111827!important;color:#e5e7eb!important;border-color:#334155!important;box-shadow:0 4px 16px #0008!important}
+body.dark .title{color:#f8fafc!important;border-bottom-color:#475569!important}
+body.dark .info{border-color:#475569!important}
+body.dark .row{border-bottom-color:#334155!important}
+body.dark .row span,body.dark .notice,body.dark .cart-meta,body.dark .stockhint,body.dark .money{color:#94a3b8!important}
+body.dark .row b,body.dark .cart-name,body.dark .cart-total,body.dark .money b{color:#f8fafc!important}
+body.dark label{color:#cbd5e1!important}
+body.dark input,body.dark textarea,body.dark select{background:#0f172a!important;color:#f8fafc!important;border-color:#475569!important;box-shadow:none!important}
+body.dark input::placeholder,body.dark textarea::placeholder{color:#64748b!important}
+body.dark .cartbox{background:#0f172a!important;border-color:#475569!important;box-shadow:none!important}
+body.dark .cart-empty{color:#94a3b8!important}
+body.dark .cart-item{background:#111827!important;color:#e5e7eb!important;border-bottom-color:#334155!important}
+body.dark .cart-controls button,body.dark .qtyvalue{background:#1e293b!important;color:#f8fafc!important;border-color:#475569!important;box-shadow:none!important}
+body.dark .cart-remove{background:#3f1d1d!important;color:#fca5a5!important;border-color:#7f1d1d!important}
+body.dark .tempo{background:#1c1917!important;border-color:#475569!important}
+body.dark .quick button{background:#1e293b!important;color:#f8fafc!important;border-color:#475569!important;box-shadow:none!important}
+body.dark .quick button.active{background:#facc15!important;color:#111827!important;border-color:#facc15!important}
+body.dark .secondary{background:#334155!important;color:#f8fafc!important}
+body.dark .primary{background:#facc15!important;color:#111827!important}
+body.dark .selected{background:#052e16!important;color:#dcfce7!important;border-color:#16a34a!important}
+body.dark .empty{background:#1e293b!important;color:#94a3b8!important;border-color:#475569!important}
+body.dark .results,body.dark .result{background:#111827!important;color:#f8fafc!important;border-color:#334155!important}
+body.dark .meta{color:#94a3b8!important}
+body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171!important}
+body.dark .modal-box{background:#111827!important;color:#f8fafc!important;border-color:#475569!important;box-shadow:0 20px 60px #0008!important}
+body.dark .modal-msg{color:#d1d5db!important}
+body.dark .modal-close{border-color:#475569!important}
+body.dark .dark{background:#facc15!important;color:#111827!important;border-color:#facc15!important}
 </style></head>
 <body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Keranjang Order</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div></div></header>
@@ -255,7 +289,8 @@ window.resetForm=()=>{
  calc();if(selectedMember)isiMemberDariAkun(selectedMember);
 };
 
-$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+$("dark").onclick=()=>{document.body.classList.toggle("dark");const isDark=document.body.classList.contains("dark");localStorage.setItem("fixzy_dark_mode",isDark?"1":"0");$("dark").textContent=isDark?"☀️":"🌙"};
+if(localStorage.getItem("fixzy_dark_mode")==="1"){document.body.classList.add("dark");$("dark").textContent="☀️";}
 
 function isiMemberDariAkun(d){
  selectedMember={id:uid,...d};const namaAkun=d.nama||d.namaKaryawan||d.name||window._loginDisplayName||d.displayName||d.email||"",wa=d.noWA||d.wa||d.noWa||d.noHp||d.noHP||d.nomorWA||d.nomorWhatsapp||d.phone||d.phoneNumber||"";
