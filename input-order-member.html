@@ -24,7 +24,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 </div><div id="memberAutoInfo" class="notice ok" style="margin-top:9px">Nama dan No. WA otomatis mengikuti akun yang sedang login.</div></div>
 
 <div class="card"><div class="title">🛒 Keranjang Order</div>
-<div class="notice">Produk dimasukkan langsung dari <b>Stok Produk</b>. Tambah produk dari halaman stok, lalu keranjang ini digunakan untuk mengatur qty sebelum order diajukan.</div>
+<div class="notice">Produk diambil langsung dari <b>Stok Produk Member</b>. Keranjang menggunakan penyimpanan yang sama dengan halaman stok, sehingga produk yang sudah ditambahkan akan otomatis tampil di sini. Stok dan harga tetap dibaca dari Google Sheet.</div>
 <div class="actions" style="margin-bottom:10px"><button type="button" class="btn primary" onclick="kembaliKeStok()">＋ Tambah Produk dari Stok</button><button type="button" class="btn secondary" onclick="refreshCartFromStock()">↻ Cek Stok Terbaru</button></div>
 <div id="stockSyncMsg" class="notice"></div><div id="cartBox" class="cartbox"><div class="cart-empty">Keranjang masih kosong.</div></div>
 <div class="money" style="margin-top:10px">Subtotal: <b id="sub">Rp 0</b><br>Diskon item: <b id="disItem">Rp 0</b><br>Total pesanan: <b id="total">Rp 0</b></div>
@@ -68,9 +68,46 @@ window.closeErrorModal=()=>{$("errorModal").classList.remove("show");$("errorMod
 function showSuccessModal(t){$("modalTitle").textContent="✅ Pesanan Berhasil Disimpan";$("modalTitle").style.color="#15803d";$("errorModalMsg").textContent=String(t||"Pesanan berhasil disimpan dan menunggu approval.");$("errorModal").classList.add("show");$("errorModal").setAttribute("aria-hidden","false")}
 
 function business(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||uid).trim()}
-function cartKey(){return businessUid?"fixzy_member_cart_"+businessUid+"_"+uid:"fixzy_member_cart_"+uid}
-function loadCartStorage(){try{const raw=localStorage.getItem(cartKey()),data=raw?JSON.parse(raw):[];cart=Array.isArray(data)?data:[]}catch(e){console.warn("Cart storage:",e);cart=[]}}
-function saveCartStorage(){try{if(cart.length)localStorage.setItem(cartKey(),JSON.stringify(cart));else localStorage.removeItem(cartKey())}catch(e){console.error("Cart storage:",e)}}
+function cartKey(){
+  // HARUS sama dengan halaman Stok Produk Member:
+  // satu keranjang berdasarkan OWNER, bukan berdasarkan UID halaman login.
+  return businessUid ? "fixzy_member_cart_"+businessUid : "fixzy_member_cart_"+uid;
+}
+function oldCartKey(){
+  // kompatibilitas dengan keranjang versi lama yang memakai ownerUid + uid.
+  return businessUid ? "fixzy_member_cart_"+businessUid+"_"+uid : "fixzy_member_cart_"+uid;
+}
+function loadCartStorage(){
+  try{
+    let raw=localStorage.getItem(cartKey());
+    // Jika ada keranjang lama, pindahkan otomatis ke key baru.
+    if(!raw){
+      const oldKey=oldCartKey();
+      if(oldKey!==cartKey()){
+        const oldRaw=localStorage.getItem(oldKey);
+        if(oldRaw){
+          raw=oldRaw;
+          localStorage.setItem(cartKey(),oldRaw);
+          localStorage.removeItem(oldKey);
+        }
+      }
+    }
+    const data=raw?JSON.parse(raw):[];
+    cart=Array.isArray(data)?data:[];
+  }catch(e){
+    console.warn("Cart storage:",e);
+    cart=[];
+  }
+}
+function saveCartStorage(){
+  try{
+    if(cart.length)localStorage.setItem(cartKey(),JSON.stringify(cart));
+    else localStorage.removeItem(cartKey());
+    // Bersihkan key lama agar tidak terjadi dua keranjang berbeda.
+    const oldKey=oldCartKey();
+    if(oldKey!==cartKey())localStorage.removeItem(oldKey);
+  }catch(e){console.error("Cart storage:",e)}
+}
 
 function activeBasePrice(p){const tempo=Number(p.hargaJual??p.hargaTempo??p.harga??0)||0,cash=Number(p.hargaModal??p.modal??0)||0;return $("paymentType")?.value==="cash"?cash:tempo}
 function getTabunganMember(){const v=selectedMember?.tabunganPerPcs??selectedMember?.tabunganMember??selectedMember?.tabunganMemberPerPcs;return Number(v??0)||0}
@@ -84,7 +121,40 @@ function pick(o,keys){for(const k of keys){const v=o[cleanKey(k)];if(String(v??"
 function parseCSV(text){const rows=[];let row=[],cell="",q=false;for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')q=false;else cell+=c}else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=""}else if(c==='\r'){}else cell+=c}}row.push(cell);if(row.length>1||String(row[0]||"").trim())rows.push(row);return rows}
 function numSheet(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??"").trim().replace(/[^0-9,.-]/g,"");if(s.includes(",")&&s.includes(".")){if(s.lastIndexOf(",")>s.lastIndexOf("."))s=s.replace(/\./g,"").replace(",",".");else s=s.replace(/,/g,"")}else if(s.includes(","))s=s.replace(",",".");const n=Number(s);return Number.isFinite(n)?n:0}
 function normalizeSheetRows(rows){if(!rows.length)throw Error("CSV kosong.");const h=rows[0].map(cleanKey),out=[];for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.every(x=>String(x).trim()===""))continue;const o={};h.forEach((k,j)=>o[k]=r[j]??"");const nama=pick(o,["nama","nama produk","produk","product","barang","nama barang","namaproduk"]),kode=pick(o,["kode","kode produk","sku","code","id"]);if(!nama&&!kode)continue;const modal=numSheet(pick(o,["harga modal","modal","harga beli","cost","buy price","harga"]));const jual=numSheet(pick(o,["harga jual","jual","selling price","price"]));out.push({kode:String(kode||"").trim(),nama:String(nama||"").trim(),kategori:String(pick(o,["kategori","category","jenis"])||"LAINNYA").trim().toUpperCase(),hargaModal:modal,hargaJual:jual||modal,sisa:Math.max(0,numSheet(pick(o,["sisa","sisa stock","sisa stok","stok","stock","qty","jumlah","jumlah stok","stock akhir","saldo"]))),merk:String(pick(o,["merk","brand","supplier"])||"").trim()})}if(!out.length)throw Error("Tidak ada produk yang dikenali dari Google Sheet.");return out}
-function syncCartWithStock(){const map=new Map(products.map(p=>[productIdentity(p),p]));const next=[];for(const x of cart){const p=map.get(productIdentity(x));if(!p)continue;x.nama=p.nama;x.kode=p.kode;x.kategori=p.kategori;x.hargaDasar=Number(p.hargaJual)||0;x.hargaTempo=Number(p.hargaJual)||0;x.hargaCash=Number(p.hargaModal)||0;x.tabunganPerPcs=getTabunganMember();x.upPengelolaPerPcs=getUpPengelola();x.harga=x.hargaDasar+x.tabunganPerPcs+x.upPengelolaPerPcs;x.modalSatuan=Number(p.hargaModal)||0;x.stok=numSheet(p.sisa);next.push(x)}cart=next;saveCartStorage();const masalah=cart.filter(x=>Number(x.qty)>Number(x.stok||0));$("stockSyncMsg").textContent=masalah.length?"⚠️ Ada qty di keranjang yang melebihi stok terbaru.":(cart.length?"✓ Stok terbaru sudah dicocokkan dengan Google Sheet.":"");$("stockSyncMsg").className="notice "+(masalah.length?"err":"ok")}
+function syncCartWithStock(){
+  const map=new Map(products.map(p=>[productIdentity(p),p]));
+  const next=[];
+  for(const x of cart){
+    const p=map.get(productIdentity(x));
+    if(!p)continue;
+
+    // Pertahankan identitas produk dari Sheet agar konsisten dengan halaman stok.
+    x.produkId=p.id||productIdentity(p);
+    x.nama=p.nama;
+    x.kode=p.kode;
+    x.kategori=p.kategori;
+    x.hargaDasar=Number(p.hargaJual)||0;
+    x.hargaTempo=Number(p.hargaJual)||0;
+    x.hargaCash=Number(p.hargaModal)||0;
+    x.tabunganPerPcs=getTabunganMember();
+    x.upPengelolaPerPcs=getUpPengelola();
+    x.harga=activeBasePrice(p)+x.tabunganPerPcs+x.upPengelolaPerPcs;
+    x.modalSatuan=Number(p.hargaModal)||0;
+    x.stok=numSheet(p.sisa);
+    next.push(x);
+  }
+  cart=next;
+  saveCartStorage();
+
+  const masalah=cart.filter(x=>Number(x.qty)>Number(x.stok||0));
+  $("stockSyncMsg").textContent=
+    masalah.length
+      ?"⚠️ Ada qty di keranjang yang melebihi stok terbaru."
+      :(cart.length
+        ?`✓ ${cart.length} produk • ${totalQtyCart()} pcs terbaca dari keranjang Stok Member.`
+        :"Keranjang masih kosong. Tambahkan produk dari halaman Stok Produk Member.");
+  $("stockSyncMsg").className="notice "+(masalah.length?"err":"ok");
+}
 
 function calc(){
  const sub=cart.reduce((a,x)=>a+(Number(x.lineTotal)||0),0),di=cart.reduce((a,x)=>a+(Number(x.diskon)||0),0),cash=$("paymentType")?.value==="cash";
