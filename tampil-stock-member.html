@@ -495,38 +495,12 @@ html,body{overflow-x:hidden}
 </script>
 
 </head>
-<body><script>
-/* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
-function tutupHalaman(){
-  try{
-    if(window.frameElement){
-      window.frameElement.remove();
-      return;
-    }
-  }catch(e){}
-
-  try{
-    if(window.parent && window.parent !== window){
-      window.parent.postMessage({type:"FIXZY_CLOSE_STOK"}, "*");
-      return;
-    }
-  }catch(e){}
-
-  try{
-    window.close();
-  }catch(e){}
-
-  // Fallback untuk halaman yang tidak boleh ditutup browser.
-  history.replaceState(null,"",location.href);
-  document.body.innerHTML="";
-}
-</script>
-
+<body>
 <header class="header">
   <div class="header-in">
     <div class="brand">
       <img src="logo.png" class="logo" onerror="this.style.display='none'">
-      <div><h1>FIXZY</h1><p>Stok Produk • <span id="headerRole">Memuat...</span></p></div>
+      <div><h1>FIXZY</h1><p>Stok Produk Member • <span id="headerRole">Memuat...</span></p></div>
     </div>
     <div class="header-account">
       <div class="account-name" id="headerAccount">Memuat...</div>
@@ -534,99 +508,73 @@ function tutupHalaman(){
     </div>
     <div class="head-actions">
       <button class="head-btn refresh" id="refreshBtn" onclick="refreshHalaman()">↻</button>
-   <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" title="Mode Gelap">🌙</button>
+      <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" title="Mode Gelap">🌙</button>
+    </div>
   </div>
 </header>
 
 <main class="container">
   <div class="member-cart-bar">
-    <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
+    <div class="member-cart-info">🛒 Keranjang Order Member:
+      <span id="memberCartCount">0 produk • 0 pcs</span>
+    </div>
     <div class="member-cart-actions">
-      <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
+      <button type="button" class="member-cart-btn" onclick="clearMemberCart()">Kosongkan</button>
       <button type="button" class="member-cart-btn primary" onclick="bukaKeranjangMember()">🛒 Buka Keranjang</button>
     </div>
   </div>
 
-  <div class="top">
-    <button class="btn primary" onclick="openManual()">＋ Tambah Stok Manual</button>
-    <button class="btn dark" onclick="document.getElementById('csvUrl').focus()">🔗 Link Google Sheet</button>
-  </div>
-
   <section class="stats">
-    <div class="stat"><small>Total Produk</small><strong id="total">0</strong><span>SKU Firebase</span></div>
+    <div class="stat"><small>Total Produk</small><strong id="total">0</strong><span>SKU dari Google Sheet</span></div>
     <div class="stat"><small>Ready Stock</small><strong id="ready">0</strong><span>sisa &gt; 0</span></div>
     <div class="stat"><small>Stok Kosong</small><strong id="empty">0</strong><span>perlu restock</span></div>
     <div class="stat"><small>Nilai Modal</small><strong id="value">Rp 0</strong><span>modal × sisa</span></div>
   </section>
 
   <section class="card">
-    <div class="title">🔗 Sumber Stok Google Spreadsheet</div>
-    <div class="import-box">
-      <input id="csvUrl" placeholder="Paste link CSV di sini... https://docs.google.com/...output=csv">
-      <button id="csvLoadBtn" class="btn primary" onclick="previewCSV()">MUAT SHEET</button>
+    <div class="title">📊 Stok Produk Member</div>
+    <div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">
+      🔒 Data stok dibaca langsung dari Google Spreadsheet Owner. Halaman ini <b>tidak menyimpan stok master ke Firebase</b>.
     </div>
-    <div class="import-actions">
-      <button type="button" class="btn green" onclick="document.getElementById('excelFile').click()">📊 Upload Excel (bukan sumber master)</button>
-      <input id="excelFile" class="excel-file" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelUpload(this.files[0])">
-    </div>
-    <div id="excelMsg" class="msg"></div>
-    <div id="duplicateInfo" class="dup-info"></div>
-    <div class="note">
-      Google Sheets harus dipublikasikan sebagai <b>CSV</b>. Google menjelaskan bahwa spreadsheet dapat dipublish ke web dan memilih format CSV; perubahan pada spreadsheet yang dipublish dapat diperbarui otomatis.
-      <br><br>
-      Data produk hanya dibaca dari Google Spreadsheet. Produk stok master <b>tidak disimpan ke Firebase</b>.
-      <br><br><b>Anti produk ganda:</b> produk dengan kode yang sama atau nama + kategori yang sama tidak akan di-upload lagi.
-    </div>
-    <div id="csvMsg" class="msg"></div>
-    <div id="preview" class="preview">
-      <table><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table>
-    </div>
-    <button id="saveCsvBtn" class="btn primary" style="display:none;width:100%;margin-top:10px" onclick="saveCSVToFirebase()">Stok master berasal dari Google Spreadsheet</button>
-
-    <div class="price-rule-box">
-      <div class="field">
-        <label>TAMBAHAN HARGA JUAL (%)</label>
-        <input id="pricePercent" type="number" min="0" step="0.01" value="15" placeholder="15">
-      </div>
-      <div class="field">
-        <label>TAMBAHAN DARI MODAL (Rp)</label>
-        <input id="priceNominal" type="number" min="0" step="1" value="0" placeholder="10000">
-      </div>
-      <button type="button" class="btn primary apply-price-btn" onclick="applyGlobalSellingPrice()">
-        💰 TERAPKAN KE SELURUH STOK
-      </button>
-      <div class="price-rule-preview" id="priceRulePreview">
-        Rumus: <b>Harga Jual = Modal + (% × Modal) + Nominal Tambahan</b>.
-        Contoh modal Rp100.000 + 15% + Rp10.000 = <b>Rp125.000</b>.
-      </div>
-    </div>
+    <div id="listMsg" class="sub">Memuat Google Sheet...</div>
   </section>
 
   <section class="card">
     <div class="title">🔎 Cari Stok</div>
     <div class="grid4">
-      <div class="field search"><label>CARI PRODUK</label><input id="search" placeholder="Kode / nama / merk..."></div>
-      <div class="field"><label>KATEGORI</label><select id="cat"><option value="">Semua kategori</option></select></div>
-      <div class="field"><label>STATUS</label><select id="status"><option value="">Semua</option><option value="ready">Ready</option><option value="empty">Kosong</option></select></div>
+      <div class="field search">
+        <label>CARI PRODUK</label>
+        <input id="search" placeholder="Kode / nama / merk...">
+      </div>
+      <div class="field">
+        <label>KATEGORI</label>
+        <select id="cat"><option value="">Semua kategori</option></select>
+      </div>
+      <div class="field">
+        <label>STATUS</label>
+        <select id="status">
+          <option value="">Semua</option>
+          <option value="ready">Ready</option>
+          <option value="empty">Kosong</option>
+        </select>
+      </div>
       <button class="btn dark" onclick="resetFilter()">Reset</button>
     </div>
   </section>
 
   <section class="card">
-    <div class="title">📦 Stok Firebase</div><div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">🔒 Stok hanya menampilkan data milik owner akun aktif — stok owner/konter lain tidak ditampilkan.</div>
-    <div id="listMsg" class="sub">Memuat data...</div>
-    <div class="stockBulkBar">
-  <label style="display:flex;align-items:center;gap:7px;font-weight:800;cursor:pointer">
-    <input id="stockSelectAll" class="stockCheck" type="checkbox" onchange="toggleAllStock(this.checked)">
-    Ceklis Semua
-  </label>
-  <span id="stockSelectedInfo" style="font-size:12px;color:#64748b">0 dipilih</span>
-  <button type="button" class="stockBulkDelete" onclick="hapusStockTerpilih()">🗑 Hapus Terpilih</button>
-</div>
-
+    <div class="title">📦 Produk dari Google Spreadsheet</div>
+    <div class="sub" style="margin:-4px 0 10px">
+      Harga dan jumlah stok mengikuti Sheet. Tombol <b>+ Order</b> hanya memasukkan barang ke keranjang lokal untuk diteruskan ke halaman Order Member.
+    </div>
     <div class="table-wrap" style="margin-top:11px">
       <table>
-        <thead><tr><th class="stockSelectCol">☑</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Modal</th><th>Jual</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+        <thead>
+          <tr>
+            <th>No</th><th>Kode</th><th>Nama</th><th>Kategori</th>
+            <th>Modal</th><th>Harga Tempo</th><th>Sisa</th><th>Merk</th><th>Aksi</th>
+          </tr>
+        </thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -634,90 +582,362 @@ function tutupHalaman(){
   </section>
 </main>
 
-<!-- MODAL MANUAL -->
-<div class="overlay" id="manualModal">
-<div class="modal">
-  <div class="modal-head"><h2 id="modalTitle">Tambah Stok Baru</h2><button class="close" onclick="closeManual()">×</button></div>
-  <div class="form">
-    <div class="field"><label>KODE</label><input id="fKode" placeholder="LCD001"></div>
-    <div class="field"><label>KATEGORI</label><select id="fCat"><option>LCD</option><option>BATTERY</option><option>FLEXI</option><option>SPAREPART</option><option>ACCESSORIES</option><option>LAINNYA</option></select></div>
-    <div class="field full"><label>NAMA PRODUK *</label><input id="fNama" placeholder="Nama barang"></div>
-    <div class="field"><label>HARGA MODAL *</label><input id="fModal" type="number" min="0"></div>
-    <div class="field"><label>HARGA TEMPO *</label><input id="fTempo" type="number" min="0" placeholder="Harga tempo"></div>
-<div class="field"><label>HARGA CASH</label><input id="fCash" type="number" min="0" placeholder="Otomatis = tempo - 2%"></div>
-<div class="field"><label>HARGA JUAL LAMA (DATA LAMA)</label><input id="fJual" type="number" min="0" placeholder="Fallback data lama"></div>
-    <div class="field"><label>JUMLAH STOK *</label><input id="fSisa" type="number" min="0" step="1" value="1"></div>
-    <div class="field"><label>MERK / SUPPLIER</label><input id="fMerk" placeholder="Zevan"></div>
-    <div class="field full"><label>CATATAN</label><input id="fNote" placeholder="Opsional"></div>
-  </div>
-  <div class="sub" style="margin-top:8px">Jika harga jual kosong: harga modal + 15%.</div>
-  <div class="modal-actions"><button class="btn dark" onclick="closeManual()">Batal</button><button class="btn primary" id="manualSave" onclick="saveManual()">SIMPAN STOK</button></div>
-</div>
-</div>
-
-<div class="confirm-ui" id="confirmUi"><div class="confirm-box"><h3 id="confirmTitle">Konfirmasi</h3><p id="confirmText"></p><div class="confirm-actions"><button class="confirm-no" id="confirmNo">Batal</button><button class="confirm-yes" id="confirmYes">Ya, lanjutkan</button></div></div></div>
-<div class="loading" id="loading"><div class="loader"><div class="spin"></div><b id="loadingText">Memproses...</b></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
-function uiConfirm(text,title="Konfirmasi",yesText="Ya, lanjutkan"){
-  return new Promise(resolve=>{
-    const ui=document.getElementById("confirmUi"),t=document.getElementById("confirmTitle"),p=document.getElementById("confirmText"),no=document.getElementById("confirmNo"),yes=document.getElementById("confirmYes");
-    t.textContent=title;p.textContent=text;yes.textContent=yesText;ui.classList.add("show");
-    const finish=v=>{ui.classList.remove("show");no.onclick=null;yes.onclick=null;resolve(v)};
-    no.onclick=()=>finish(false);yes.onclick=()=>finish(true);
-  });
-}
-
 function refreshHalaman(){
   const b=document.getElementById("refreshBtn");
-  if(b){
-    b.disabled=true;
-    b.textContent="↻ Memuat...";
-  }
-  // Hard reload: ensures HTML + module + Firebase query are initialized again.
+  if(b){b.disabled=true;b.textContent="↻";}
   const u=new URL(window.location.href);
   u.searchParams.set("_refresh",Date.now());
   window.location.replace(u.toString());
 }
 </script>
+
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,collection,query,where,getDocs} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-const firebaseConfig={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const num=v=>{if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??"").trim().replace(/[^0-9,.-]/g,"");if(s.includes(",")&&s.includes(".")){if(s.lastIndexOf(",")>s.lastIndexOf("."))s=s.replace(/\./g,"").replace(",",".");else s=s.replace(/,/g,"")}else if(s.includes(","))s=s.replace(",",".");const n=Number(s);return Number.isFinite(n)?n:0};
-const money=n=>"Rp "+Math.round(num(n)).toLocaleString("id-ID");
-let uid="",role="",profile={},ownerUid="",ownerProfile={},products=[],sheetUrl="";
-function normRole(v){return String(v||"").trim().toLowerCase()}
-function activeOwnerUid(d){const r=normRole(d?.role);return (r==="owner"?uid:String(d?.ownerUid||d?.ownerId||uid)).trim()}
-function cleanKey(v){return String(v??"").trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
-function pick(o,keys){for(const k of keys){const v=o[cleanKey(k)];if(String(v??"").trim()!=="")return v}return ""}
-function parseCSV(text){const rows=[];let row=[],cell="",q=false;for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')q=false;else cell+=c}else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=""}else if(c==='\r'){}else cell+=c}}row.push(cell);if(row.length>1||String(row[0]||"").trim())rows.push(row);return rows}
-function normalizeCSV(rows){if(!rows.length)throw Error("CSV kosong.");const h=rows[0].map(cleanKey),data=[];for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||r.every(x=>String(x).trim()===""))continue;const o={};h.forEach((k,j)=>o[k]=r[j]??"");const nama=pick(o,["nama","nama produk","produk","product","barang","nama barang","namaproduk"]);const kode=pick(o,["kode","kode produk","sku","code","id"]);if(!nama&&!kode)continue;const modal=num(pick(o,["harga modal","modal","harga beli","cost","buy price","harga"]));const jual=num(pick(o,["harga jual","jual","selling price","price"]));const sisa=Math.max(0,num(pick(o,["sisa","sisa stock","sisa stok","stok","stock","qty","jumlah","jumlah stok","stock akhir","saldo"])));data.push({kode:String(kode||"").trim(),nama:String(nama||"").trim(),kategori:String(pick(o,["kategori","category","jenis"])||"LAINNYA").trim().toUpperCase(),hargaModal:modal,hargaJual:jual||modal,sisa,merk:String(pick(o,["merk","brand","supplier"])||"").trim(),catatan:String(pick(o,["catatan","keterangan","note"])||"").trim()})}if(!data.length)throw Error("Tidak ada produk yang dikenali. Pastikan ada kolom Nama/Produk atau Kode/SKU.");return data}
-function normalizeSheetUrl(v){let u=String(v||"").trim();if(!u)return "";if(u.includes("output=csv"))return u;if(u.includes("/pubhtml"))u=u.replace("/pubhtml","/pub");if(u.includes("/edit"))u=u.replace(/\/edit.*$/,"/pub");if(!/[?&]output=csv/.test(u))u+=(u.includes("?")?"&":"?")+"output=csv";return u}
-function profileSheetUrl(p){return String(p?.sheetUrl||p?.googleSheetUrl||p?.stokSheetUrl||p?.sheetStockUrl||"").trim()}
-async function resolveSheet(){const p=await getDoc(doc(db,"users",uid));if(!p.exists())throw Error("Profil akun tidak ditemukan.");profile=p.data()||{};role=normRole(profile.role);ownerUid=activeOwnerUid(profile);ownerProfile=profile;if(ownerUid!==uid){const o=await getDoc(doc(db,"users",ownerUid));if(o.exists())ownerProfile=o.data()||{};}sheetUrl=profileSheetUrl(profile)||profileSheetUrl(ownerProfile);if(!sheetUrl)throw Error(role==="owner"?"Link Google Sheet belum diatur. Masukkan link Sheet lalu simpan.":"Link Google Sheet Owner belum disinkronkan ke akun karyawan.");sheetUrl=normalizeSheetUrl(sheetUrl);if($("csvUrl"))$("csvUrl").value=sheetUrl;if($("headerAccount"))$("headerAccount").textContent=profile.nama||profile.name||auth.currentUser?.email||"-";return profile}
-async function syncSheetToEmployees(url){if(role!=="owner")return;const qs=[query(collection(db,"users"),where("ownerUid","==",uid)),query(collection(db,"users"),where("ownerId","==",uid))];const seen=new Set();for(const q of qs){try{const s=await getDocs(q);for(const d of s.docs){if(seen.has(d.id))continue;seen.add(d.id);const x=d.data()||{};await setDoc(doc(db,"users",d.id),{...x,sheetUrl:url,googleSheetUrl:url,stokSheetUrl:url},{merge:true})}}catch(e){console.warn("Sync Sheet ke karyawan:",e)}}}
-async function saveSheet(){const raw=$("csvUrl")?.value.trim();if(!raw){msg("Masukkan link Google Sheet terlebih dahulu.","err");return}if(role!=="owner"){msg("Hanya Owner yang dapat mengatur link Google Sheet.","err");return}const u=normalizeSheetUrl(raw);try{await setDoc(doc(db,"users",uid),{sheetUrl:u,googleSheetUrl:u,stokSheetUrl:u},{merge:true});sheetUrl=u;await syncSheetToEmployees(u);msg("Link Google Sheet Owner tersimpan dan disinkronkan ke karyawan.","ok");await loadProducts()}catch(e){console.error(e);msg("Gagal menyimpan link Sheet: "+(e.message||e),"err")}}
-function msg(t,c=""){$("csvMsg").textContent=t;$('csvMsg').className="msg "+c;$('listMsg').textContent=t}
-function productIdentity(p){const c=String(p?.kode||"").trim().toLowerCase();if(c)return "kode:"+c;return "nama:"+String(p?.nama||"").trim().toLowerCase().replace(/\s+/g," ")+"|kat:"+String(p?.kategori||"").trim().toLowerCase()}
-function rowHTML(p,i){return `<tr><td>${i+1}</td><td><b>${esc(p.kode||"-")}</b></td><td>${esc(p.nama||"-")}</td><td>${esc(p.kategori||"LAINNYA")}</td><td>${money(p.hargaModal)}</td><td>${money(p.hargaJual)}</td><td><b>${num(p.sisa)}</b></td><td>${esc(p.merk||"-")}</td><td><button class="btn primary" type="button" onclick="tambahKeKeranjang(${i})">+ Order</button></td></tr>`}
-function mobileHTML(p,i){return `<div class="card" style="margin:8px 0;padding:12px"><b>${esc(p.nama||"-")}</b><div class="sub">${esc(p.kode||"-")} • ${esc(p.kategori||"LAINNYA")} • ${esc(p.merk||"")}</div><div style="display:flex;justify-content:space-between;margin-top:8px"><span>Stok: <b>${num(p.sisa)}</b></span><span>${money(p.hargaJual)}</span></div><button class="btn primary" style="width:100%;margin-top:8px" type="button" onclick="tambahKeKeranjang(${i})">+ Tambah ke Order</button></div>`}
-function render(){const q=String($("search")?.value||"").toLowerCase().trim(),cat=$("cat")?.value||"",status=$("status")?.value||"";const arr=products.filter(p=>{const text=[p.kode,p.nama,p.merk,p.kategori].join(" ").toLowerCase();if(q&&!text.includes(q))return false;if(cat&&String(p.kategori||"").toUpperCase()!==cat)return false;const s=num(p.sisa);if(status==="ready"&&s<=0)return false;if(status==="empty"&&s>0)return false;return true});let ready=0,empty=0,value=0;for(const p of products){const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++}$('total').textContent=products.length;$('ready').textContent=ready;$('empty').textContent=empty;$('value').textContent=money(value);$('tbody').innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="9" style="text-align:center;padding:25px">Tidak ada data</td></tr>';if($('mobileList'))$('mobileList').innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>'}
-function fillCategories(){const old=$("cat")?.value||"",cats=[...new Set(products.map(p=>String(p.kategori||"LAINNYA").toUpperCase()))].sort();$("cat").innerHTML='<option value="">Semua kategori</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");if(cats.includes(old))$("cat").value=old}
-async function loadProducts(){try{if(!sheetUrl)await resolveSheet();const r=await fetch(sheetUrl,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);products=normalizeCSV(parseCSV(await r.text()));fillCategories();render();msg(`✓ ${products.length} produk dimuat langsung dari Google Sheet.` ,"ok")}catch(e){console.error(e);products=[];fillCategories();render();msg("Gagal membaca Google Sheet: "+(e.message||e),"err")}}
-window.tambahKeKeranjang=i=>{const p=products[i];if(!p)return;if(num(p.sisa)<=0){msg(`Stok ${p.nama} sedang kosong.`,"err");return}const key=productIdentity(p);let cart=[];try{cart=JSON.parse(localStorage.getItem(cartKey())||"[]")}catch{}const hit=cart.find(x=>productIdentity(x)===key);if(hit)hit.qty=Math.min(num(p.sisa),num(hit.qty)+1);else cart.push({produkId:key,produkKey:key,kode:p.kode,nama:p.nama,kategori:p.kategori,hargaDasar:num(p.hargaJual),hargaTempo:num(p.hargaJual),hargaCash:num(p.hargaModal),harga:num(p.hargaJual),stok:num(p.sisa),qty:1,merk:p.merk});localStorage.setItem(cartKey(),JSON.stringify(cart));msg(`✓ ${p.nama} ditambahkan ke keranjang.` ,"ok")}
-function cartKey(){return "fixzy_member_cart_"+ownerUid+"_"+uid}
-window.kembaliKeOrder=()=>location.href="input-order-member.html";
-window.previewCSV=async()=>loadProducts();window.saveCSVToFirebase=()=>msg("Stok master berasal dari Google Sheet dan tidak disimpan ke Firebase.","info");window.handleExcelUpload=()=>msg("Untuk stok master gunakan Google Sheet. Upload Excel (bukan sumber master) tidak mengubah stok Firebase.","info");window.refreshStock=()=>loadProducts();
-$("search")?.addEventListener("input",render);$("cat")?.addEventListener("change",render);$("status")?.addEventListener("change",render);
-$("csvLoadBtn")?.addEventListener("click",async()=>{if(role==="owner")await saveSheet();else await loadProducts()});
-if($('saveCsvBtn'))$('saveCsvBtn').style.display='none';
-onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;await resolveSheet();if(role==="owner")$('csvLoadBtn').textContent="💾 SIMPAN & MUAT SHEET";else $('csvLoadBtn').textContent="🔄 MUAT SHEET OWNER";await loadProducts()}catch(e){console.error(e);msg(e.message||String(e),"err")}});
+import {getFirestore,doc,getDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-</script></body>
+const firebaseConfig={
+  apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+  authDomain:"fixzy-update.firebaseapp.com",
+  projectId:"fixzy-update",
+  storageBucket:"fixzy-update.firebasestorage.app",
+  messagingSenderId:"995892519622",
+  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+const $=id=>document.getElementById(id);
+
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>{
+  if(typeof v==="number") return Number.isFinite(v)?v:0;
+  let s=String(v??"").trim().replace(/[^0-9,.-]/g,"");
+  if(s.includes(",")&&s.includes(".")){
+    if(s.lastIndexOf(",")>s.lastIndexOf(".")) s=s.replace(/\./g,"").replace(",",".");
+    else s=s.replace(/,/g,"");
+  }else if(s.includes(",")) s=s.replace(",",".");
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+};
+const money=n=>"Rp "+Math.round(num(n)).toLocaleString("id-ID");
+
+let uid="",role="",profile={},ownerUid="",ownerProfile={},products=[],sheetUrl="";
+
+function normRole(v){return String(v||"").trim().toLowerCase();}
+function activeOwnerUid(d){
+  const r=normRole(d?.role);
+  return r==="owner" ? uid : String(d?.ownerUid||d?.ownerId||uid).trim();
+}
+function cleanKey(v){
+  return String(v??"").trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+function pick(o,keys){
+  for(const k of keys){
+    const v=o[cleanKey(k)];
+    if(String(v??"").trim()!=="") return v;
+  }
+  return "";
+}
+function parseCSV(text){
+  const rows=[]; let row=[],cell="",q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}
+      else if(c==='"') q=false;
+      else cell+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){row.push(cell);cell="";}
+      else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell="";}
+      else if(c==='\r'){}
+      else cell+=c;
+    }
+  }
+  row.push(cell);
+  if(row.length>1||String(row[0]||"").trim()) rows.push(row);
+  return rows;
+}
+function normalizeCSV(rows){
+  if(!rows.length) throw Error("CSV Google Sheet kosong.");
+  const h=rows[0].map(cleanKey),data=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    if(!r||r.every(x=>String(x).trim()==="")) continue;
+    const o={}; h.forEach((k,j)=>o[k]=r[j]??"");
+
+    const nama=pick(o,["nama","nama produk","produk","product","barang","nama barang","namaproduk"]);
+    const kode=pick(o,["kode","kode produk","sku","code","id"]);
+    if(!nama&&!kode) continue;
+
+    const modal=num(pick(o,["harga modal","modal","harga beli","cost","buy price","modal per pcs","harga"]));
+    const tempo=num(pick(o,["harga tempo","tempo","harga jual","jual","selling price","price"]));
+    const cash=num(pick(o,["harga cash","cash","tunai","harga tunai"]));
+    const sisa=Math.max(0,num(pick(o,["sisa","sisa stock","sisa stok","stok","stock","qty","jumlah","jumlah stok","stock akhir","saldo"])));
+
+    data.push({
+      kode:String(kode||"").trim(),
+      nama:String(nama||"").trim(),
+      kategori:String(pick(o,["kategori","category","jenis"])||"LAINNYA").trim().toUpperCase(),
+      hargaModal:modal,
+      hargaJual:tempo||cash||modal,
+      hargaTempo:tempo||cash||modal,
+      hargaCash:cash||modal,
+      sisa,
+      merk:String(pick(o,["merk","brand","supplier"])||"").trim(),
+      catatan:String(pick(o,["catatan","keterangan","note"])||"").trim()
+    });
+  }
+  if(!data.length) throw Error("Tidak ada produk yang dikenali. Pastikan Sheet memiliki kolom Nama/Produk atau Kode/SKU.");
+  return data;
+}
+function normalizeSheetUrl(v){
+  let u=String(v||"").trim();
+  if(!u) return "";
+  if(u.includes("output=csv")) return u;
+  if(u.includes("/pubhtml")) u=u.replace("/pubhtml","/pub");
+  if(u.includes("/edit")) u=u.replace(/\/edit.*$/,"/pub");
+  if(!/[?&]output=csv/.test(u)) u+=(u.includes("?")?"&":"?")+"output=csv";
+  return u;
+}
+function profileSheetUrl(p){
+  return String(p?.sheetUrl||p?.googleSheetUrl||p?.stokSheetUrl||p?.sheetStockUrl||"").trim();
+}
+async function resolveSheet(){
+  const snap=await getDoc(doc(db,"users",uid));
+  if(!snap.exists()) throw Error("Profil akun tidak ditemukan.");
+  profile=snap.data()||{};
+  role=normRole(profile.role);
+  ownerUid=activeOwnerUid(profile);
+  ownerProfile=profile;
+
+  if(ownerUid!==uid){
+    const ownerSnap=await getDoc(doc(db,"users",ownerUid));
+    if(ownerSnap.exists()) ownerProfile=ownerSnap.data()||{};
+  }
+
+  sheetUrl=normalizeSheetUrl(profileSheetUrl(profile)||profileSheetUrl(ownerProfile));
+  if(!sheetUrl){
+    throw Error(role==="owner"
+      ?"Link Google Sheet Owner belum diatur di akun."
+      :"Link Google Sheet Owner belum tersinkron ke akun ini.");
+  }
+
+  $("headerAccount").textContent=profile.nama||profile.name||auth.currentUser?.email||"-";
+  $("headerRole").textContent=profile.role||"-";
+  $("csvUrl") && ($("csvUrl").value=sheetUrl);
+}
+function cartKey(){
+  // HARUS sama dengan input-order-member.html:
+  // fixzy_member_cart_<ownerUid>
+  return "fixzy_member_cart_"+ownerUid;
+}
+function readCart(){
+  try{
+    const raw=localStorage.getItem(cartKey());
+    return raw?JSON.parse(raw):[];
+  }catch{return [];}
+}
+function writeCart(cart){
+  if(cart.length) localStorage.setItem(cartKey(),JSON.stringify(cart));
+  else localStorage.removeItem(cartKey());
+  updateCartCount();
+}
+function productIdentity(p){
+  const c=String(p?.kode||"").trim().toLowerCase();
+  if(c) return "kode:"+c;
+  return "nama:"+String(p?.nama||"").trim().toLowerCase().replace(/\s+/g," ")
+    +"|kat:"+String(p?.kategori||"").trim().toLowerCase();
+}
+function updateCartCount(){
+  const cart=readCart();
+  const pcs=cart.reduce((a,x)=>a+(num(x.qty)||0),0);
+  $("memberCartCount").textContent=`${cart.length} produk • ${pcs} pcs`;
+}
+function toast(t){
+  const el=$("toast"); if(!el)return;
+  el.textContent=t; el.classList.add("show");
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>el.classList.remove("show"),2200);
+}
+function msg(t,kind="info"){
+  $("listMsg").textContent=t;
+  $("listMsg").style.color=kind==="err"?"#b91c1c":kind==="ok"?"#15803d":"";
+}
+function rowHTML(p,i){
+  const disabled=num(p.sisa)<=0?"disabled":"";
+  return `<tr>
+    <td>${i+1}</td>
+    <td><b>${esc(p.kode||"-")}</b></td>
+    <td>${esc(p.nama||"-")}</td>
+    <td>${esc(p.kategori||"LAINNYA")}</td>
+    <td>${money(p.hargaModal)}</td>
+    <td>${money(p.hargaTempo)}</td>
+    <td><b>${num(p.sisa)}</b></td>
+    <td>${esc(p.merk||"-")}</td>
+    <td><button class="btn primary" type="button" ${disabled} onclick="tambahKeKeranjang(${i})">+ Order</button></td>
+  </tr>`;
+}
+function mobileHTML(p,i){
+  const disabled=num(p.sisa)<=0?"disabled":"";
+  return `<div class="m-card">
+    <div class="m-head">
+      <div><div class="m-name">${esc(p.nama||"-")}</div><div class="m-code">${esc(p.kode||"-")} • ${esc(p.kategori||"LAINNYA")}</div></div>
+      <span class="badge ${num(p.sisa)>0?"ready":"empty"}">${num(p.sisa)>0?"READY":"KOSONG"}</span>
+    </div>
+    <div class="m-grid">
+      <div><b>MODAL</b>${money(p.hargaModal)}</div>
+      <div><b>HARGA TEMPO</b>${money(p.hargaTempo)}</div>
+      <div><b>STOK</b>${num(p.sisa)} pcs</div>
+      <div><b>MERK</b>${esc(p.merk||"-")}</div>
+    </div>
+    <button class="btn primary" style="width:100%;margin-top:8px" type="button" ${disabled} onclick="tambahKeKeranjang(${i})">+ Tambah ke Order</button>
+  </div>`;
+}
+function render(){
+  const q=String($("search")?.value||"").toLowerCase().trim();
+  const cat=$("cat")?.value||"";
+  const status=$("status")?.value||"";
+
+  const arr=products.filter(p=>{
+    const text=[p.kode,p.nama,p.merk,p.kategori].join(" ").toLowerCase();
+    if(q&&!text.includes(q)) return false;
+    if(cat&&String(p.kategori||"").toUpperCase()!==cat) return false;
+    const s=num(p.sisa);
+    if(status==="ready"&&s<=0) return false;
+    if(status==="empty"&&s>0) return false;
+    return true;
+  });
+
+  let ready=0,empty=0,value=0;
+  for(const p of products){
+    const s=num(p.sisa);
+    if(s>0){ready++;value+=s*num(p.hargaModal);}
+    else empty++;
+  }
+
+  $("total").textContent=products.length;
+  $("ready").textContent=ready;
+  $("empty").textContent=empty;
+  $("value").textContent=money(value);
+
+  $("tbody").innerHTML=arr.map(rowHTML).join("") ||
+    '<tr><td colspan="9" style="text-align:center;padding:25px">Tidak ada data</td></tr>';
+  $("mobileList").innerHTML=arr.map(mobileHTML).join("") ||
+    '<div class="sub">Tidak ada data.</div>';
+
+  updateCartCount();
+}
+function fillCategories(){
+  const old=$("cat").value||"";
+  const cats=[...new Set(products.map(p=>String(p.kategori||"LAINNYA").toUpperCase()))].sort();
+  $("cat").innerHTML='<option value="">Semua kategori</option>'+
+    cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  if(cats.includes(old)) $("cat").value=old;
+}
+async function loadProducts(){
+  try{
+    msg("Membaca stok dari Google Spreadsheet...");
+    const r=await fetch(sheetUrl,{cache:"no-store"});
+    if(!r.ok) throw Error("HTTP "+r.status);
+    products=normalizeCSV(parseCSV(await r.text()));
+    fillCategories();
+    render();
+    msg(`✓ ${products.length} produk dimuat langsung dari Google Sheet. Tidak ada stok master yang ditulis ke Firebase.`,"ok");
+  }catch(e){
+    console.error(e);
+    products=[]; fillCategories(); render();
+    msg("Gagal membaca Google Sheet: "+(e.message||e),"err");
+  }
+}
+window.tambahKeKeranjang=i=>{
+  const p=products[i];
+  if(!p) return;
+  const stok=num(p.sisa);
+  if(stok<=0){toast("Stok produk sedang kosong.");return;}
+
+  const key=productIdentity(p);
+  const cart=readCart();
+  const hit=cart.find(x=>String(x.produkId||x.produkKey||"")===key);
+
+  if(hit){
+    hit.qty=Math.min(stok,num(hit.qty)+1);
+    hit.stok=stok;
+    hit.hargaDasar=num(p.hargaTempo);
+    hit.hargaTempo=num(p.hargaTempo);
+    hit.hargaCash=num(p.hargaCash);
+    hit.harga=num(p.hargaTempo);
+    hit.modalSatuan=num(p.hargaModal);
+  }else{
+    cart.push({
+      // Identitas produk berasal dari Sheet; tidak membuat dokumen stok Firebase.
+      produkId:key,
+      produkKey:key,
+      kode:p.kode,
+      nama:p.nama,
+      kategori:p.kategori,
+      hargaDasar:num(p.hargaTempo),
+      hargaTempo:num(p.hargaTempo),
+      hargaCash:num(p.hargaCash),
+      harga:num(p.hargaTempo),
+      modalSatuan:num(p.hargaModal),
+      stok:stok,
+      qty:1,
+      merk:p.merk,
+      catatan:p.catatan
+    });
+  }
+  writeCart(cart);
+  toast(`✓ ${p.nama} ditambahkan ke keranjang.`);
+};
+window.clearMemberCart=()=>{
+  const cart=readCart();
+  if(!cart.length){toast("Keranjang sudah kosong.");return;}
+  if(confirm("Kosongkan seluruh keranjang order Member?")){
+    writeCart([]);
+    toast("Keranjang dikosongkan.");
+  }
+};
+window.bukaKeranjangMember=()=>{ location.href="input-order-member.html"; };
+window.resetFilter=()=>{
+  $("search").value="";
+  $("cat").value="";
+  $("status").value="";
+  render();
+};
+window.refreshStock=()=>loadProducts();
+
+window.toggleDark=()=>{
+  document.body.classList.toggle("dark");
+  localStorage.setItem("fixzy_dark_mode",document.body.classList.contains("dark")?"1":"0");
+  $("darkToggle").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
+};
+if(localStorage.getItem("fixzy_dark_mode")==="1"){
+  document.body.classList.add("dark");
+  $("darkToggle").textContent="☀️";
+}
+
+$("search").addEventListener("input",render);
+$("cat").addEventListener("change",render);
+$("status").addEventListener("change",render);
+
+onAuthStateChanged(auth,async u=>{
+  if(!u){msg("Belum login.","err");return;}
+  try{
+    uid=u.uid;
+    await resolveSheet();
+    updateCartCount();
+    await loadProducts();
+  }catch(e){
+    console.error(e);
+    msg(e.message||String(e),"err");
+  }
+});
+</script>
+</body>
 </html>
