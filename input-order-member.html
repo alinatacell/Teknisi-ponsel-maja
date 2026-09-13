@@ -209,6 +209,10 @@ async function loadProducts(){
   }
   products=[...map.values()];
   syncCartWithStock();
+  // Setelah stok Firebase selesai dimuat, wajib render ulang.
+  // Sebelumnya renderCart() terjadi lebih dulu saat stok masih 0,
+  // sehingga muncul peringatan palsu "qty melebihi stok".
+  renderCart();
 }
 
 function renderCart(){
