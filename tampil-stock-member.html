@@ -710,7 +710,7 @@ let csvRows=[];
 let editingId=null;
 
 const $=id=>document.getElementById(id);
-const money=n=>"Rp "+Number(n||0).toLocaleString("id-ID");
+const money=n=>{let v=Number(n||0);if(Number.isFinite(v)&&!Number.isInteger(v)&&Math.abs(v)<1000)v=Math.round(v*1000);return"Rp "+v.toLocaleString("id-ID")};
 /* =========================
    FIXZY DARK MODE
    ========================= */
