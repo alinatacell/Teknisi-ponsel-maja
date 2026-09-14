@@ -532,7 +532,7 @@ function tutupHalaman(){
 
     <div class="table-wrap" style="margin-top:11px">
       <table>
-        <thead><tr><th class="stockSelectCol">☑</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Modal</th><th>Jual</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+        <thead><tr><th class="stockSelectCol">☑</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Supplier</th><th>Modal</th><th>Jual</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -1195,7 +1195,7 @@ function render(){
   let ready=0,empty=0,value=0;
   products.forEach(p=>{const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++});
   $("total").textContent=products.length;$("ready").textContent=ready;$("empty").textContent=empty;$("value").textContent=money(value);
-  $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="9" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
+  $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="10" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
   $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>';
   const sa=document.getElementById("stockSelectAll");if(sa)sa.checked=false;updateSelectedStockCount();updatePriceRulePreview();
 }
@@ -1320,6 +1320,7 @@ function rowHTML(p){
     <td class="code">${esc(p.kode||"-")}</td>
     <td><b>${esc(p.nama||"-")}</b></td>
     <td>${esc(p.kategori||"LAINNYA")}</td>
+    <td>${esc(p.merk||"-")}</td>
     <td>${money(p.hargaModal)}</td>
     <td class="price">${money(jual)}</td>
     <td>${st}</td>
@@ -1355,7 +1356,7 @@ function mobileHTML(p){
     </div>
     <div class="m-grid">
       <div><b>Kategori</b>${esc(p.kategori||"-")}</div>
-      <div><b>Merk</b>${esc(p.merk||"-")}</div>
+      <div><b>Supplier</b>${esc(p.merk||"-")}</div>
       <div><b>Modal</b>${money(p.hargaModal)}</div>
       <div><b>Harga Jual</b><span class="price">${money(jual)}</span></div>
       <div><b>Sisa</b>${st} pcs</div>
