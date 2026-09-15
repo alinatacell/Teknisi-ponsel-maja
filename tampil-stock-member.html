@@ -634,6 +634,8 @@ let uid=null;
 let currentUser=null;
 let currentProfile=null;
 let isSuperAdmin=false;
+let memberTabunganPerPcs=0;
+let memberUpPengelolaPerPcs=0;
 let products=[];
 let csvRows=[];
 let editingId=null;
@@ -1365,7 +1367,14 @@ window.addToMemberCart=function(id){
   const hargaCash=num(p.modal);
   const hargaTempo=num(p.jual);
   const hargaDasar=hargaTempo; // Halaman 2 default: TEMPO.
-  const harga=hargaDasar;
+
+  // WAJIB sama dengan input-order-member.html:
+  // harga = harga dasar + tabungan + up pengelola.
+  // Nilai ini sudah diambil dari profil karyawan + profil Owner
+  // saat sesi halaman stok diinisialisasi.
+  const tabunganPerPcs=Number(memberTabunganPerPcs)||0;
+  const upPengelolaPerPcs=Number(memberUpPengelolaPerPcs)||0;
+  const harga=hargaDasar+tabunganPerPcs+upPengelolaPerPcs;
 
   if(ex){
     const qtyLama=Number(ex.qty)||0;
@@ -1381,6 +1390,8 @@ window.addToMemberCart=function(id){
     ex.hargaCash=hargaCash;
     ex.hargaTempo=hargaTempo;
     ex.hargaDasar=hargaDasar;
+    ex.tabunganPerPcs=tabunganPerPcs;
+    ex.upPengelolaPerPcs=upPengelolaPerPcs;
     ex.harga=harga;
     ex.modalSatuan=hargaCash;
     ex.sourceIndex=p.sourceIndex;
@@ -1399,8 +1410,8 @@ window.addToMemberCart=function(id){
       harga,
       diskon:0,
       modalSatuan:hargaCash,
-      tabunganPerPcs:0,
-      upPengelolaPerPcs:0,
+      tabunganPerPcs,
+      upPengelolaPerPcs,
       sourceIndex:p.sourceIndex,
       sourceSpreadsheet:p.sourceSpreadsheet
     });
@@ -1732,6 +1743,33 @@ async function initFixzyStockSession(user){
     const email=String(user.email||"").toLowerCase();
 
     isSuperAdmin=role==="superadmin" || email==="servicehpmaja@gmail.com";
+
+    // Samakan sumber biaya tambahan dengan input-order-member.html:
+    // Tabungan mengikuti akun karyawan yang login.
+    memberTabunganPerPcs=Number(
+      currentProfile.tabunganPerPcs ??
+      currentProfile.tabunganMember ??
+      currentProfile.tabunganMemberPerPcs ??
+      currentProfile.tabungan ?? 0
+    )||0;
+
+    // Up Pengelola mengikuti Owner usaha.
+    const ownerUidForSettings=String(
+      (role==="owner" || role==="superadmin" || isSuperAdmin)
+        ? uid
+        : (currentProfile.ownerUid || currentProfile.ownerId || uid)
+    ).trim();
+
+    let ownerProfile=currentProfile;
+    if(ownerUidForSettings && ownerUidForSettings!==uid){
+      const ownerSnap=await getDoc(doc(db,"users",ownerUidForSettings));
+      if(ownerSnap.exists()) ownerProfile=ownerSnap.data()||currentProfile;
+    }
+
+    memberUpPengelolaPerPcs=Number(
+      ownerProfile.upPengelolaPerPcs ??
+      ownerProfile.upPengelola ?? 0
+    )||0;
 
     // Owner, Superadmin, dan akun bawahan/karyawan boleh membuka halaman.
     // Isolasi data ditentukan oleh ownerUid/ownerId seperti Data Servis.
