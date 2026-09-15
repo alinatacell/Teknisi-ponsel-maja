@@ -408,7 +408,17 @@ onAuthStateChanged(auth,async u=>{
     let ownerDoc=profile;
     if(businessUid!==uid){const os=await getDoc(doc(db,"users",businessUid));if(os.exists())ownerDoc=os.data()||{}}
     ownerSettings={up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??0)||0,kas:Number(ownerDoc.kasBulananDefault??ownerDoc.kasBulanan??ownerDoc.uangKasBulanan??0)||0};
-    $("email").textContent=u.email||"-";isiAkun(profile,u);loadCartStorage();resetForm();
+    $("email").textContent=u.email||"-";
+    isiAkun(profile,u);
+    loadCartStorage();
+
+    // Migrasi otomatis keranjang lama:
+    // jika produk sebelumnya ditambahkan dari tampil-stock-member.html
+    // dengan tabungan/pengelola 0, hitung ulang menggunakan pengaturan akun
+    // yang sedang login + Owner.
+    syncCartPrices();
+
+    resetForm();
     sheetLinks=await getSavedLinks();
     ready=true;
     $("save").textContent=`Siap • ${sheetLinks.length} Spreadsheet supplier tersimpan`;
