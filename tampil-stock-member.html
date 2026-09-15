@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#111111">
-<title>Fixzy | Stok Firebase</title>
+<title>Fixzy | Halaman 4 • Stok Member Spreadsheet</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -15,8 +15,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:Aria
 body{background:linear-gradient(180deg,#fff 0,#f5f7fb 250px)}
 button,input,select{font:inherit}button{cursor:pointer}
 .header{
-  position:sticky;top:0;z-index:20;background:#111111;color:#fff;
-  border-bottom:1px solid #262626;box-shadow:0 2px 14px #0005
+  position:fixed;top:0;left:0;right:0;z-index:1000;background:#111111;color:#fff;
+  border-bottom:1px solid #262626;box-shadow:0 2px 14px #0005;
+  --header-h:66px;
 }
 .header-in{max-width:1180px;margin:auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
@@ -37,10 +38,6 @@ button,input,select{font:inherit}button{cursor:pointer}
 .green{background:#16a34a;color:#fff}
 .card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px;box-shadow:0 5px 18px #17203308}
 .title{font-size:15px;font-weight:900;margin-bottom:11px;color:#111827}.sub{font-size:11px;color:var(--muted);line-height:1.5}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.stat{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 4px 14px #17203308}
-.stat small{font-size:10px;color:var(--muted);font-weight:800}.stat strong{display:block;color:#111827;font-size:23px;margin-top:6px}.stat span{font-size:10px;color:#94a3b8}
-.stat:nth-child(2) strong{color:var(--green)}.stat:nth-child(3) strong{color:var(--red)}.stat:nth-child(4) strong{color:#d97706}
 .grid4{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:9px}
 .field label{display:block;color:#475569;font-size:10px;font-weight:900;margin:0 0 5px 2px}
 .field input,.field select{width:100%;height:42px;background:#fff;color:#111827;border:1px solid #cbd5e1;border-radius:10px;padding:0 11px;outline:none}
@@ -81,10 +78,10 @@ tr:hover td{background:#fffdf5}
 .confirm-no,.confirm-yes{border:0;border-radius:10px;padding:11px;font-weight:900;cursor:pointer}
 .confirm-no{background:#f1f5f9;color:#334155}.confirm-yes{background:#dc2626;color:#fff}
 
-@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.grid4{grid-template-columns:1fr 1fr}.grid4 .search{grid-column:1/-1}}
+@media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}.grid4 .search{grid-column:1/-1}}
 @media(max-width:600px){
   .container{padding:10px}.header-in{padding:10px}.brand h1{font-size:16px}.brand p{font-size:9px}
-  .head-btn{height:39px;padding:0 10px}.stats{gap:7px}.stat{padding:11px}.stat strong{font-size:20px}
+  .head-btn{height:39px;padding:0 10px}
   .grid4{grid-template-columns:1fr}.grid4 .search{grid-column:auto}.import-box{grid-template-columns:1fr}
   .table-wrap{display:none}.mobile-list{display:grid}.form{grid-template-columns:1fr}.full{grid-column:auto}.top .btn{flex:1}
 }
@@ -98,10 +95,16 @@ tr:hover td{background:#fffdf5}
 
 /* ===== ORDER MEMBER DARI STOK ===== */
 .member-cart-bar{
+  position:fixed;
+  top:var(--header-h,66px);
+  left:max(10px,calc((100vw - 1180px)/2 + 14px));
+  right:max(10px,calc((100vw - 1180px)/2 + 14px));
+  z-index:999;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  flex-wrap:wrap;margin:0 0 14px;padding:12px 14px;
+  flex-wrap:wrap;margin:0;padding:12px 14px;
   border:2px solid #111827;border-radius:14px;background:#fffbeb;
   box-shadow:0 4px 12px #17203308;
+  box-sizing:border-box;
 }
 .member-cart-info{font-size:12px;font-weight:900;color:#172033}
 .member-cart-info span{color:#b45309}
@@ -120,11 +123,25 @@ tr:hover td{background:#fffdf5}
 .order-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 @media(max-width:600px){.order-actions{width:100%}.order-actions .order-add-btn{width:100%}}
 @media(max-width:600px){
-  .member-cart-bar{align-items:stretch}
+  .header{--header-h:56px}
+  .member-cart-bar{align-items:stretch;left:10px;right:10px}
   .member-cart-actions{width:100%}
   .member-cart-actions button{flex:1}
   .order-add-btn{width:100%;margin-top:7px}
 }
+
+/* HEADER + KERANJANG DIAM: ruang konten mengikuti tinggi elemen yang dikunci */
+.container{
+  /* Header + keranjang fixed harus diberi ruang penuh agar pencarian tidak tertutup. */
+  padding-top:calc(var(--header-h,66px) + var(--member-cart-h,150px) + 72px);
+}
+#memberCartBar{position:fixed}
+
+/* Tinggi keranjang mengikuti isi sebenarnya, bukan angka perkiraan. */
+@media(max-width:600px){
+  .container{padding-top:calc(var(--header-h,56px) + var(--member-cart-h,175px) + 72px)}
+}
+
 
 </style>
 <style id="price-rule-style">
@@ -400,6 +417,19 @@ html,body{overflow-x:hidden}
 }
 </style>
 
+
+<style id="final-fixed-layout-correction">
+/* FINAL: ruang konten WAJIB berada di bawah header hitam + panel keranjang.
+   Jangan biarkan aturan mobile sebelumnya mereset padding-top. */
+.container{
+  padding-top:calc(var(--header-h,66px) + var(--member-cart-h,150px) + 24px) !important;
+}
+@media(max-width:600px){
+  .container{
+    padding-top:calc(var(--header-h,56px) + var(--member-cart-h,175px) + 24px) !important;
+  }
+}
+</style>
 </head>
 <body><script>
 /* FIX TUTUP: hapus iframe yang sedang menampilkan halaman ini. */
@@ -432,7 +462,7 @@ function tutupHalaman(){
   <div class="header-in">
     <div class="brand">
       <img src="logo.png" class="logo" onerror="this.style.display='none'">
-      <div><h1>FIXZY</h1><p>Stok Produk • <span id="headerRole">Memuat...</span></p></div>
+      <div><h1>FIXZY</h1><p>Stok Member • <span id="headerRole">Memuat...</span></p></div>
     </div>
     <div class="header-account">
       <div class="account-name" id="headerAccount">Memuat...</div>
@@ -449,13 +479,6 @@ function tutupHalaman(){
     <button class="btn primary" onclick="openManual()">＋ Tambah Stok Manual</button>
     <button class="btn dark" onclick="document.getElementById('csvUrl').focus()">🔗 Link Google Sheet</button>
   </div>
-
-  <section class="stats">
-    <div class="stat"><small>Total Produk</small><strong id="total">0</strong><span>SKU Firebase</span></div>
-    <div class="stat"><small>Ready Stock</small><strong id="ready">0</strong><span>sisa &gt; 0</span></div>
-    <div class="stat"><small>Stok Kosong</small><strong id="empty">0</strong><span>perlu restock</span></div>
-    <div class="stat"><small>Nilai Modal</small><strong id="value">Rp 0</strong><span>modal × sisa</span></div>
-  </section>
 
   <section class="card">
     <div class="title">🔗 Import Stok dari Link CSV</div>
@@ -500,7 +523,7 @@ function tutupHalaman(){
     </div>
   </section>
 
-  <div class="member-cart-bar">
+  <div class="member-cart-bar" id="memberCartBar">
     <div class="member-cart-info">🛒 Keranjang Order Member: <span id="memberCartCount">0 produk • 0 pcs</span></div>
     <div class="member-cart-actions">
       <button type="button" class="member-cart-btn" onclick="window.clearMemberCart()">Kosongkan</button>
@@ -509,7 +532,7 @@ function tutupHalaman(){
   </div>
 
   <section class="card">
-    <div class="title">🔎 Cari Stok</div>
+    <div class="title">🔎 Cari Stok Member</div>
     <div class="grid4">
       <div class="field search"><label>CARI PRODUK</label><input id="search" placeholder="Kode / nama / merk..."></div>
       <div class="field"><label>KATEGORI</label><select id="cat"><option value="">Semua kategori</option></select></div>
@@ -519,7 +542,7 @@ function tutupHalaman(){
   </section>
 
   <section class="card">
-    <div class="title">📦 Stok Firebase</div><div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">🔒 Stok hanya menampilkan data milik owner akun aktif — stok owner/konter lain tidak ditampilkan.</div>
+    <div class="title">📦 Stok Member dari Spreadsheet</div><div class="sub" style="margin:-4px 0 10px;color:#15803d;font-weight:800">🔗 Sumber data: Spreadsheet supplier milik Owner akun aktif. Tunai = Modal, Tempo = Jual.</div>
     <div id="listMsg" class="sub">Memuat data...</div>
     <div class="stockBulkBar">
   <label style="display:flex;align-items:center;gap:7px;font-weight:800;cursor:pointer">
@@ -1105,6 +1128,7 @@ async function saveCSVToFirebase(){
     $("saveCsvBtn").style.display="none";
     $("preview").style.display="none";
     await loadProducts();
+    syncFixedBars();
   }catch(e){
     console.error(e);
     msg("Gagal menyimpan ke Firebase:\n"+(e.message||e),"err");
@@ -1112,66 +1136,123 @@ async function saveCSVToFirebase(){
     showLoading(false);
   }
 }
+/* =========================================================
+   HALAMAN 4 — SUMBER DATA UTAMA: GOOGLE SPREADSHEET OWNER
+   Mengikuti pola load Halaman 2 Keranjang Order Spreadsheet.
+   Tidak membaca koleksi stok sebagai sumber katalog.
+   ========================================================= */
+function sheetNum(v){
+  if(typeof v==="number")return v;
+  let x=String(v??"").trim().replace(/[^\d,.-]/g,"");
+  if(!x)return 0;
+  const dots=(x.match(/\./g)||[]).length,commas=(x.match(/,/g)||[]).length;
+  if(dots&&commas){
+    const ld=x.lastIndexOf("."),lc=x.lastIndexOf(",");
+    if(lc>ld){const dec=x.length-lc-1;x=dec<=2?x.replace(/\./g,"").replace(",","."):x.replace(/,/g,"").replace(/\./g,"")}
+    else{const dec=x.length-ld-1;x=dec<=2?x.replace(/,/g,""):x.replace(/,/g,"").replace(/\./g,"")}
+  }else if(commas){const a=x.split(",");x=a.length===2&&a[1].length<=2?x.replace(",","."):x.replace(/,/g,"")}
+  else if(dots){const a=x.split(".");x=a.length===2&&a[1].length<=2?x:x.replace(/\./g,"")}
+  const n=parseFloat(x);return Number.isFinite(n)?n:0;
+}
+function sheetClean(s){return String(s??"").trim().toLowerCase().replace(/[\s_\-()./]+/g,"")}
+function sheetPick(o,keys){for(const k of keys){const v=o[sheetClean(k)];if(v!==undefined&&String(v).trim()!=="")return v}return ""}
+function parseSheetCSV(text){
+  const out=[];let row=[],cell="",q=false;text=text.replace(/^\uFEFF/,"");
+  for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
+    if(c==='"'){if(q&&n==='"'){cell+='"';i++}else q=!q}
+    else if(c===','&&!q){row.push(cell);cell=""}
+    else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&n==='\n')i++;row.push(cell);cell="";if(row.some(v=>String(v).trim()!==""))out.push(row);row=[]}
+    else cell+=c;
+  }
+  if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()!==""))out.push(row)}
+  return out;
+}
+function csvUrlFromSheet4(url){
+  const u=new URL(url),host=u.hostname.toLowerCase();
+  if(!host.includes("docs.google.com")||!u.pathname.includes("/spreadsheets/"))return url;
+  const gid=u.searchParams.get("gid")||(url.match(/[?#&]gid=([^&#]+)/i)||[])[1]||"0";
+  const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)\/pub(?:html)?/i);
+  if(pub)return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+  const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);
+  if(id)return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;
+  return url;
+}
+function normalizeSpreadsheet4(rows,sourceIndex,sourceUrl){
+  if(!rows.length)throw Error("Spreadsheet kosong.");
+  const h=rows[0].map(sheetClean),data=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i],o={};h.forEach((k,j)=>o[k]=r[j]??"");
+    const nama=sheetPick(o,["nama barang","nama produk","nama","produk","product","barang"]);
+    if(!nama)continue;
+    const modalValue=sheetPick(o,["modal","harga modal","harga beli","harga modal produk","hpp","harga pokok"]);
+    const jualValue=sheetPick(o,["jual","harga jual","harga jual produk","harga penjualan"]);
+    const supplier=sheetPick(o,["supplier","suplier","nama supplier","nama suplier","vendor"]);
+    const stokValue=sheetPick(o,["stock","stok","sisa stok","sisa","jumlah stok"]);
+    const kode=sheetPick(o,["kode","sku","kode produk","id"])||String(r[0]??"").trim();
+    const kategori=sheetPick(o,["kategori","category","jenis"]);
+    const merk=sheetPick(o,["merk","brand"]);
+    const modal=sheetNum(modalValue!==""?modalValue:(r[3]??""));
+    const jual=sheetNum(jualValue!==""?jualValue:(r[4]??""));
+    const stok=Math.max(0,sheetNum(stokValue!==""?stokValue:(r[6]??"")));
+    data.push({
+      id:`sheet${sourceIndex}_${i}_${btoa(unescape(encodeURIComponent(String(sourceUrl)))).replace(/[^a-zA-Z0-9]/g,"").slice(0,10)}`,
+      kode:String(kode||"").trim(),nama:String(nama).trim(),
+      kategori:String(kategori||"").trim().toUpperCase(),merk:String(merk||"").trim(),
+      supplier:String(supplier||`Supplier ${sourceIndex}`).trim(),
+      hargaModal:modal,hargaJual:jual,sisa:stok,
+      modal,jual,stok,sourceIndex,sourceSpreadsheet:sourceUrl,
+      sumber:"spreadsheet"
+    });
+  }
+  return data;
+}
+async function getSpreadsheetLinks4(){
+  const role=String(currentProfile?.role||"").toLowerCase();
+  const ownerUid=String((role==="owner"||role==="superadmin"||isSuperAdmin)?uid:(currentProfile?.ownerUid||currentProfile?.ownerId||uid)).trim();
+  if(!ownerUid)throw Error("Owner akun aktif tidak ditemukan.");
+  const snap=await getDoc(doc(db,"pengaturan_spreadsheet",ownerUid));
+  if(!snap.exists())return [];
+  const d=snap.data()||{};
+  let links=Array.isArray(d.spreadsheetLinks)?d.spreadsheetLinks.map(x=>String(x||"").trim()).filter(Boolean):[];
+  if(!links.length&&d.spreadsheetUrl)links=[String(d.spreadsheetUrl).trim()];
+  return [...new Set(links)];
+}
+async function readSpreadsheet4(url,index){
+  const res=await fetch(csvUrlFromSheet4(url),{cache:"no-store"});
+  if(!res.ok)throw Error("HTTP "+res.status);
+  const text=await res.text();
+  if(!text||text.trim().length<2)throw Error("Data spreadsheet kosong.");
+  if(/<html|<!doctype/i.test(text.slice(0,500)))throw Error("Bukan CSV. Pastikan Spreadsheet sudah Publish to web.");
+  return normalizeSpreadsheet4(parseSheetCSV(text),index,url);
+}
+
 async function loadProducts(){
   if(!uid){$("listMsg").textContent="Sesi Firebase belum siap.";return}
-  $("listMsg").textContent="Memuat data stok...";
+  $("listMsg").textContent="Memuat data dari Spreadsheet...";
   try{
-    const ref=collection(db,"stok");
+    const links=await getSpreadsheetLinks4();
+    if(!links.length){
+      products=[];fillCategories();render();updateMemberCartBadge();
+      $("listMsg").textContent="Belum ada link Spreadsheet supplier tersimpan.";
+      return;
+    }
+    const all=[],errors=[];
+    for(let i=0;i<links.length;i++){
+      try{all.push(...await readSpreadsheet4(links[i],i+1))}
+      catch(e){errors.push(`Spreadsheet ${i+1}: ${e.message}`)}
+    }
     const map=new Map();
-
-    /*
-     * FIX ISOLASI PER KONTER
-     * Superadmin tidak lagi membaca seluruh koleksi "stok".
-     * Semua akun hanya membaca dokumen yang ownerUid/ownerId-nya
-     * sama dengan ownerUid akun aktif.
-     */
-    const role=String(currentProfile?.role||"").toLowerCase();
-    // Sama seperti Data Servis: owner dan superadmin memakai UID sendiri.
-    // Karyawan/teknisi/akun bawahan memakai ownerUid/ownerId milik profilnya.
-    const activeOwnerUid=String(
-      (role==="owner" || role==="superadmin" || isSuperAdmin)
-        ? uid
-        : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
-    ).trim();
-
-    if(!activeOwnerUid){
-      throw new Error("ownerUid akun aktif tidak ditemukan.");
-    }
-
-    const queries=[
-      query(ref,where("ownerUid","==",activeOwnerUid)),
-      query(ref,where("ownerId","==",activeOwnerUid))
-    ];
-
-    for(const q of queries){
-      try{
-        const snap=await getDocs(q);
-        snap.forEach(d=>{
-          const p={id:d.id,...d.data()};
-          map.set(d.id,p);
-        });
-      }catch(e){
-        console.warn("Query stok isolasi:",e);
-      }
-    }
-
-    /*
-     * Filter kedua di sisi aplikasi sebagai pengaman tambahan.
-     * Jadi walaupun ada dokumen dengan field lain, stok owner lain
-     * tidak akan masuk ke array products.
-     */
-    products=[...map.values()].filter(p=>{
-      const pOwner=String(p.ownerUid||p.ownerId||"").trim();
-      return pOwner===activeOwnerUid;
-    });
-
-    $("listMsg").textContent=products.length
-      ? `${products.length} produk tersimpan di Firebase.`
-      : "Belum ada data stok.";
+    all.forEach(p=>map.set(`${p.supplier}|${p.kode}|${p.nama}`.toLowerCase(),p));
+    products=[...map.values()];
+    if(errors.length)console.warn("Spreadsheet load:",errors.join(" | "));
     fillCategories();render();updateMemberCartBadge();
+    $("listMsg").textContent=products.length
+      ? `${products.length} produk dimuat dari ${links.length} Spreadsheet supplier.`
+      : (errors.length?"Gagal memuat data Spreadsheet. Cek console.":"Spreadsheet terbaca tetapi belum ada produk.");
   }catch(e){
-    console.error(e);
-    $("listMsg").textContent="Gagal membaca stok: "+e.message;
+    console.error("SPREADSHEET STOCK ERROR:",e);
+    products=[];fillCategories();render();updateMemberCartBadge();
+    $("listMsg").textContent="Gagal membaca Spreadsheet: "+(e.message||e);
   }
 }
 function fillCategories(){
@@ -1192,9 +1273,6 @@ function render(){
     if(status==="empty"&&s>0)return false;
     return true;
   }).sort((a,b)=>String(a.nama||"").localeCompare(String(b.nama||"")));
-  let ready=0,empty=0,value=0;
-  products.forEach(p=>{const s=num(p.sisa);if(s>0){ready++;value+=s*num(p.hargaModal)}else empty++});
-  $("total").textContent=products.length;$("ready").textContent=ready;$("empty").textContent=empty;$("value").textContent=money(value);
   $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="10" style="text-align:center;color:#777;padding:25px">Tidak ada data</td></tr>';
   $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada data.</div>';
   const sa=document.getElementById("stockSelectAll");if(sa)sa.checked=false;updateSelectedStockCount();updatePriceRulePreview();
@@ -1206,7 +1284,7 @@ function getMemberCartKey(){
     (currentProfile?.role||"").toLowerCase()==="superadmin" ||
     isSuperAdmin ? uid : (currentProfile?.ownerUid||currentProfile?.ownerId||uid)
   ).trim();
-  return owner ? "fixzy_member_cart_"+owner : "fixzy_member_cart";
+  return owner ? "fixzy_spreadsheet_cart_"+owner : "fixzy_spreadsheet_cart";
 }
 
 function readMemberCart(){
@@ -1229,6 +1307,21 @@ function updateMemberCartBadge(){
   const pcs=cart.reduce((a,x)=>a+(Number(x.qty)||0),0);
   const el=$("memberCartCount");
   if(el)el.textContent=`${cart.length} produk • ${pcs} pcs`;
+}
+
+function syncFixedBars(){
+  const header=document.querySelector(".header");
+  const cart=document.getElementById("memberCartBar");
+  if(header){document.documentElement.style.setProperty("--header-h",`${header.offsetHeight}px`);}
+  if(cart){document.documentElement.style.setProperty("--member-cart-h",`${cart.offsetHeight}px`);}
+}
+window.addEventListener("resize",syncFixedBars);
+window.addEventListener("load",syncFixedBars);
+if(window.ResizeObserver){
+  const ro=new ResizeObserver(syncFixedBars);
+  const h=document.querySelector(".header"),c=document.getElementById("memberCartBar");
+  if(h)ro.observe(h);
+  if(c)ro.observe(c);
 }
 
 window.bukaKeranjangMember=function(){
@@ -1266,31 +1359,53 @@ window.addToMemberCart=function(id){
 
   const cart=readMemberCart();
   const ex=cart.find(x=>x.produkId===p.id);
-  const harga=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
-  const modalSatuan=num(p.hargaModal);
+
+  // Struktur keranjang disamakan 1:1 dengan Halaman 2.
+  // hargaCash = modal Spreadsheet, hargaTempo = jual Spreadsheet.
+  const hargaCash=num(p.modal);
+  const hargaTempo=num(p.jual);
+  const hargaDasar=hargaTempo; // Halaman 2 default: TEMPO.
+  const harga=hargaDasar;
 
   if(ex){
-    if((Number(ex.qty)||0)+1>stok){
+    const qtyLama=Number(ex.qty)||0;
+    if(qtyLama+1>stok){
       toast(`Qty ${p.nama||"produk"} maksimal ${stok} pcs.`);
       return;
     }
-    ex.qty=(Number(ex.qty)||0)+1;
-    ex.harga=harga;
-    ex.modalSatuan=modalSatuan;
+    ex.qty=qtyLama+1;
+    ex.nama=String(p.nama||"-");
+    ex.kode=String(p.kode||"");
+    ex.supplier=String(p.supplier||"");
     ex.stok=stok;
+    ex.hargaCash=hargaCash;
+    ex.hargaTempo=hargaTempo;
+    ex.hargaDasar=hargaDasar;
+    ex.harga=harga;
+    ex.modalSatuan=hargaCash;
+    ex.sourceIndex=p.sourceIndex;
+    ex.sourceSpreadsheet=p.sourceSpreadsheet;
   }else{
     cart.push({
       produkId:p.id,
       nama:String(p.nama||"-"),
       kode:String(p.kode||""),
-      kategori:String(p.kategori||""),
+      supplier:String(p.supplier||""),
       qty:1,
+      stok,
+      hargaCash,
+      hargaTempo,
+      hargaDasar,
       harga,
       diskon:0,
-      modalSatuan,
-      stok
+      modalSatuan:hargaCash,
+      tabunganPerPcs:0,
+      upPengelolaPerPcs:0,
+      sourceIndex:p.sourceIndex,
+      sourceSpreadsheet:p.sourceSpreadsheet
     });
   }
+
   writeMemberCart(cart);
   render();
   toast(`${p.nama||"Produk"} masuk ke keranjang.`);
@@ -1310,7 +1425,7 @@ function rowHTML(p){
   const stat=st>0
     ? `<span class="badge ready">READY • ${st}</span>`
     : `<span class="badge empty">KOSONG</span>`;
-  const jual=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
+  const jual=num(p.jual);
 
   return `<tr>
     <td class="stockSelectCol">
@@ -1338,7 +1453,7 @@ function mobileHTML(p){
   const stat=st>0
     ? `<span class="badge ready">READY • ${st}</span>`
     : `<span class="badge empty">KOSONG</span>`;
-  const jual=num(p.hargaJual)||defaultSellingPrice(p.hargaModal);
+  const jual=num(p.jual);
 
   return `<div class="m-card">
     <div class="m-head">
@@ -1647,8 +1762,27 @@ async function initFixzyStockSession(user){
     </div>`;
   }
 }
-window.addEventListener("storage",e=>{ if(e.key===getMemberCartKey()){ updateMemberCartBadge(); render(); } });
+window.addEventListener("storage",e=>{ if(e.key===getMemberCartKey()){ updateMemberCartBadge(); render(); syncFixedBars(); } });
+syncFixedBars();
 onAuthStateChanged(auth,initFixzyStockSession);
+
+// Keranjang fixed: ukur tinggi aktual supaya area pencarian selalu berada
+// di bawah panel dan tidak tertutup, termasuk saat tombol/teks membungkus di HP.
+function syncFixedLayout(){
+  const header=document.querySelector(".header");
+  const cart=document.getElementById("memberCartBar");
+  if(!header||!cart)return;
+  document.documentElement.style.setProperty("--header-h", Math.ceil(header.getBoundingClientRect().height)+"px");
+  document.documentElement.style.setProperty("--member-cart-h", Math.ceil(cart.getBoundingClientRect().height)+"px");
+}
+window.addEventListener("load",syncFixedLayout);
+window.addEventListener("resize",syncFixedLayout);
+if("ResizeObserver" in window){
+  const ro=new ResizeObserver(syncFixedLayout);
+  const h=document.querySelector(".header"),c=document.getElementById("memberCartBar");
+  if(h)ro.observe(h);
+  if(c)ro.observe(c);
+}
 
 </script></body>
 </html>

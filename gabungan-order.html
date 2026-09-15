@@ -19,22 +19,293 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
 const firebaseConfig={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);let uid="",ownerUid="",profile={},rows=[],products=[];
-const $=id=>document.getElementById(id);const norm=v=>String(v??"").trim();
-function notice(t,c=""){ $("notice").textContent=t;$("notice").className="notice "+c }
-function ownerOf(p){const r=norm(p.role).toLowerCase();if(r==="owner")return uid;if(r==="superadmin")return norm(p.ownerUid||p.ownerId)||uid;return norm(p.ownerUid||p.ownerId)||uid}
-function isPending(r){const s=norm(r.status||r.approvalStatus).toLowerCase().replace(/[\s-]+/g,"_");return s==="menunggu_approval"||s==="pending"||s==="menungguapproval"}
-function isMember(r){const tipe=norm(r.tipeTransaksi||r.tipeOrder).toLowerCase(),sumber=norm(r.sumber||r.source).toLowerCase(),jenis=norm(r.jenisTransaksi).toLowerCase();return tipe.includes("member")||sumber.includes("member")||jenis==="member"||norm(r.memberUid)!==""}
-function itemList(r){const a=Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]);return a.map(x=>({produkId:norm(x.produkId||x.id),nama:norm(x.nama||x.namaProduk||x.productName),kode:norm(x.kode||x.code),brand:norm(x.brand||x.namaBrand||x.brands),tipe:norm(x.tipe||x.type||x.model||x.namaTipe),merk:norm(x.merk||x.merek),supplier:norm(x.supplier||x.pemasok||x.vendor),qty:Math.max(0,Number(x.qty??x.jumlah??1)||0)})).filter(x=>x.qty>0)}
-async function enrich(){const ids=[...new Set(rows.flatMap(itemList).map(x=>x.produkId).filter(Boolean))];const map=new Map();await Promise.all(ids.map(async id=>{try{const s=await getDoc(doc(db,"stok",id));if(s.exists())map.set(id,s.data()||{})}catch(e){console.warn("stok",id,e)}}));return map}
-function makeProducts(stock){const m=new Map();for(const r of rows)for(const x of itemList(r)){const st=stock.get(x.produkId)||{};const brand=x.brand||norm(st.brand||st.namaBrand||st.brands);const tipe=x.tipe||norm(st.tipe||st.type||st.model||st.namaTipe);const merk=x.merk||norm(st.merk||st.merek);const supplier=x.supplier||norm(st.supplier||st.pemasok||st.vendor)||"BELUM ADA SUPPLIER";const nama=x.nama||norm(st.nama||st.namaProduk||st.productName)||"Produk";const display=[brand,tipe,merk].filter(Boolean).join(" / ")||nama;const key=[supplier,brand,tipe,merk,nama,x.kode].map(v=>norm(v).toLowerCase()).join("|");if(!m.has(key))m.set(key,{supplier,brand,tipe,merk,nama,kode:x.kode,display,qty:0});m.get(key).qty+=x.qty}return [...m.values()]}
-function supplierPhone(s){const k=norm(s).toLowerCase().replace(/[^a-z0-9]/g,"");if(k.includes("zevan"))return"6281362292115";if(k.includes("deris"))return"6281917697481";return""}
-function render(){let p=[...products];const q=norm($("search").value).toLowerCase();if(q)p=p.filter(x=>(x.display+" "+x.kode+" "+x.supplier).toLowerCase().includes(q));if($("sort").value==="qty")p.sort((a,b)=>b.qty-a.qty);else p.sort((a,b)=>a.display.localeCompare(b.display,"id"));const total=products.reduce((a,x)=>a+x.qty,0);const suppliers=[...new Set(products.map(x=>norm(x.supplier)||"BELUM ADA SUPPLIER"))];$("stats").innerHTML=`<div class="stat"><small>ORDER BELUM APPROVAL</small><b>${rows.length}</b></div><div class="stat"><small>SUPPLIER</small><b>${suppliers.length}</b></div><div class="stat"><small>TOTAL QTY</small><b>${total.toLocaleString("id-ID")} pcs</b></div>`;if(!p.length){$("list").innerHTML="<div class=\"empty\">Tidak ada produk yang menunggu approval.</div>";return}const groups={};p.forEach(x=>{const s=norm(x.supplier)||"BELUM ADA SUPPLIER";(groups[s]??=[]).push(x)});let out="";Object.keys(groups).sort((a,b)=>a.localeCompare(b,"id")).forEach(s=>{const arr=groups[s];const totalS=arr.reduce((a,x)=>a+x.qty,0);const phone=supplierPhone(s);const lines=arr.map((x,i)=>`<div class="product"><div><div class="name">${i+1}. ${esc(x.display)}</div><div class="meta">${x.brand?"Brand: "+esc(x.brand)+" • ":""}${x.tipe?"Tipe: "+esc(x.tipe)+" • ":""}${x.merk?"Merk: "+esc(x.merk)+" • ":""}Kode: ${esc(x.kode||"-")}</div></div><div class="qty">${x.qty.toLocaleString("id-ID")} pcs</div></div>`).join("");const action=phone?`<button class="wa" onclick='sendWA(${JSON.stringify(s)})'>📲 Kirim Order ke WhatsApp ${esc(s)}</button><div style="margin-top:10px;text-align:center;font-weight:900;color:#64748b;font-size:13px">Supplier ${esc(s)} • ${phone.replace(/^62/,"0")}</div>`:`<div style="margin-top:15px;text-align:center;font-weight:900;color:#b45309;font-size:13px">Nomor WhatsApp supplier ${esc(s)} belum diatur.</div>`;out+=`<section class="card"><h2>SUPPLIER: ${esc(s)} <span style="float:right;font-size:13px;color:#64748b">${totalS.toLocaleString("id-ID")} pcs</span></h2>${lines}${action}</section>`});$("list").innerHTML=out}
-function esc(s){return String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function waMessage(supplier){const p=[...products].filter(x=>norm(x.supplier).toLowerCase()===norm(supplier).toLowerCase()).sort((a,b)=>a.display.localeCompare(b.display,"id"));let t="*Order produk komunitas TEKNISI PONSEL MAJA*\n\n";p.forEach((x,i)=>t+=`${i+1}. ${x.display}${x.kode?" ("+x.kode+")":""} — *${x.qty} pcs*\n`);t+=`\n*TOTAL: ${p.reduce((a,x)=>a+x.qty,0)} pcs*\n\nMohon diproses sesuai orderan.\nTerima kasih.`;return t}
-window.sendWA=(supplier)=>{const phone=supplierPhone(supplier);const p=[...products].filter(x=>norm(x.supplier).toLowerCase()===norm(supplier).toLowerCase());if(!p.length)return notice("Belum ada produk untuk supplier "+supplier+".","err");if(!phone)return notice("Nomor WhatsApp supplier "+supplier+" belum diatur.","err");window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(waMessage(supplier)),"_blank")};
-window.loadOrders=async()=>{window.scrollTo(0,0);document.documentElement.scrollLeft=0;document.body.scrollLeft=0;if(!ownerUid)return notice("Owner belum ditemukan.","err");notice("Memuat order member belum approval...");const map=new Map();for(const field of ["ownerUid","ownerId"]){try{const s=await getDocs(query(collection(db,"penjualan"),where(field,"==",ownerUid)));s.forEach(d=>{const r={id:d.id,...d.data()};if(isMember(r)&&isPending(r))map.set(d.id,r)})}catch(e){console.warn(field,e)}}rows=[...map.values()];const stock=await enrich();products=makeProducts(stock);render();notice(`Akun aktif • ${rows.length} order menunggu approval.`,"ok")};
-$("search").addEventListener("input",render);$("sort").addEventListener("change",render);$("dark").onclick=()=>{document.body.classList.toggle("darkmode");$("dark").textContent=document.body.classList.contains("darkmode")?"☀️":"🌙"};
-onAuthStateChanged(auth,async u=>{if(!u)return notice("Belum login.","err");try{uid=u.uid;$("email").textContent=u.email||"-";const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan di Firebase.");profile=s.data()||{};ownerUid=ownerOf(profile);if(!ownerUid)throw Error("Owner akun tidak ditemukan.");await loadOrders()}catch(e){console.error(e);notice("Gagal memuat data: "+(e.message||e),"err")}});
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let uid="",ownerUid="",profile={},rows=[],products=[],authReady=false,authProcessing=false;
+
+const $=id=>document.getElementById(id);
+const norm=v=>String(v??"").trim();
+
+function notice(t,c=""){
+  $("notice").textContent=t;
+  $("notice").className="notice "+c;
+}
+
+function ownerOf(p){
+  const r=norm(p.role).toLowerCase();
+  // Akun Owner selalu menggunakan UID akun login sebagai Owner UID.
+  // ownerUid/ownerId hanya dipakai untuk akun yang terhubung ke Owner.
+  if(r==="owner")return uid;
+  return norm(p.ownerUid||p.ownerId||p.ownerUidFirebase||"");
+}
+
+/* Hanya order dari Halaman 2 Spreadsheet yang sedang menunggu approval. */
+function isPending(r){
+  const s=norm(r.status||r.approvalStatus).toLowerCase().replace(/[\s-]+/g,"_");
+  return s==="menunggu_approval"||s==="pending"||s==="menungguapproval";
+}
+
+function isSpreadsheetOrder(r){
+  const sumber=norm(r.sumber||r.source).toLowerCase();
+  const tipe=norm(r.tipeTransaksi||"").toLowerCase();
+  return sumber==="order_spreadsheet"||tipe==="order_cash"||tipe==="order_tempo"||r.sumberSpreadsheet===true;
+}
+
+/*
+  Sumber produk mengikuti data yang tersimpan di penjualan.
+  Ini penting agar produk pengganti yang sudah disimpan di Halaman 3
+  ikut terbaca setelah Refresh.
+*/
+function itemList(r){
+  const a=Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]);
+  return a.map(x=>({
+    produkId:norm(x.produkId||x.id),
+    nama:norm(x.nama||x.namaProduk||x.productName||x.namaBarang),
+    kode:norm(x.kode||x.kodeProduk||x.code),
+    brand:norm(x.brand||x.namaBrand||x.brands),
+    tipe:norm(x.tipe||x.type||x.model||x.namaTipe),
+    merk:norm(x.merk||x.merek),
+    supplier:norm(x.supplier||x.pemasok||x.vendor||x.namaSupplier||x.namaSuplier),
+    qty:Math.max(0,Number(x.qty??x.jumlah??1)||0)
+  })).filter(x=>x.qty>0);
+}
+
+/*
+  Produk yang sama dijumlahkan di supplier yang sama.
+  Jika ada kode, kode menjadi identitas utama produk.
+  Jika tidak ada kode, nama produk menjadi identitas.
+*/
+function makeProducts(){
+  const m=new Map();
+  for(const r of rows){
+    for(const x of itemList(r)){
+      const supplier=x.supplier||"BELUM ADA SUPPLIER";
+      const nama=x.nama||"Produk";
+      const ident=x.kode?("KODE:"+x.kode.toLowerCase()):("NAMA:"+nama.toLowerCase());
+      const key=[supplier.toLowerCase(),ident].join("|");
+      if(!m.has(key)){
+        m.set(key,{
+          supplier,
+          brand:x.brand,
+          tipe:x.tipe,
+          merk:x.merk,
+          nama,
+          kode:x.kode,
+          display:[x.brand,x.tipe,x.merk].filter(Boolean).join(" / ")||nama,
+          qty:0
+        });
+      }
+      const p=m.get(key);
+      p.qty+=x.qty;
+      /* Lengkapi metadata bila order berikutnya memilikinya. */
+      if(!p.brand&&x.brand)p.brand=x.brand;
+      if(!p.tipe&&x.tipe)p.tipe=x.tipe;
+      if(!p.merk&&x.merk)p.merk=x.merk;
+      if(!p.nama&&x.nama)p.nama=x.nama;
+      if(!p.kode&&x.kode)p.kode=x.kode;
+      p.display=[p.brand,p.tipe,p.merk].filter(Boolean).join(" / ")||p.nama;
+    }
+  }
+  return [...m.values()];
+}
+
+function supplierPhone(s){
+  const k=norm(s).toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(k.includes("zevan"))return"6281362292115";
+  if(k.includes("deris"))return"6281917697481";
+  return"";
+}
+
+function render(){
+  let p=[...products];
+  const q=norm($("search").value).toLowerCase();
+
+  if(q){
+    p=p.filter(x=>
+      (x.display+" "+x.nama+" "+x.kode+" "+x.supplier+" "+x.brand+" "+x.tipe+" "+x.merk)
+      .toLowerCase().includes(q)
+    );
+  }
+
+  if($("sort").value==="qty")p.sort((a,b)=>b.qty-a.qty);
+  else p.sort((a,b)=>{
+    const sa=(a.supplier+" "+a.display).toLowerCase();
+    const sb=(b.supplier+" "+b.display).toLowerCase();
+    return sa.localeCompare(sb,"id");
+  });
+
+  const total=products.reduce((a,x)=>a+x.qty,0);
+  const suppliers=[...new Set(products.map(x=>norm(x.supplier)||"BELUM ADA SUPPLIER"))];
+
+  $("stats").innerHTML=
+    `<div class="stat"><small>ORDER BELUM APPROVAL</small><b>${rows.length}</b></div>`+
+    `<div class="stat"><small>SUPPLIER</small><b>${suppliers.length}</b></div>`+
+    `<div class="stat"><small>TOTAL QTY</small><b>${total.toLocaleString("id-ID")} pcs</b></div>`;
+
+  if(!p.length){
+    $("list").innerHTML="<div class=\"empty\">Tidak ada produk yang menunggu approval.</div>";
+    return;
+  }
+
+  const groups={};
+  p.forEach(x=>{
+    const s=norm(x.supplier)||"BELUM ADA SUPPLIER";
+    (groups[s]??=[]).push(x);
+  });
+
+  let out="";
+  Object.keys(groups).sort((a,b)=>a.localeCompare(b,"id")).forEach(s=>{
+    const arr=groups[s];
+    const totalS=arr.reduce((a,x)=>a+x.qty,0);
+    const phone=supplierPhone(s);
+
+    const lines=arr.map((x,i)=>
+      `<div class="product">`+
+        `<div>`+
+          `<div class="name">${i+1}. ${esc(x.display||x.nama)}</div>`+
+          `<div class="meta">`+
+            `${x.brand?"Brand: "+esc(x.brand)+" • ":""}`+
+            `${x.tipe?"Tipe: "+esc(x.tipe)+" • ":""}`+
+            `${x.merk?"Merk: "+esc(x.merk)+" • ":""}`+
+            `Kode: ${esc(x.kode||"-")}`+
+          `</div>`+
+        `</div>`+
+        `<div class="qty">${x.qty.toLocaleString("id-ID")} pcs</div>`+
+      `</div>`
+    ).join("");
+
+    const action=phone
+      ?`<button class="wa" onclick='sendWA(${JSON.stringify(s)})'>📲 Kirim Order ke WhatsApp ${esc(s)}</button>`+
+       `<div style="margin-top:10px;text-align:center;font-weight:900;color:#64748b;font-size:13px">Supplier ${esc(s)} • ${phone.replace(/^62/,"0")}</div>`
+      :`<div style="margin-top:15px;text-align:center;font-weight:900;color:#b45309;font-size:13px">Nomor WhatsApp supplier ${esc(s)} belum diatur.</div>`;
+
+    out+=
+      `<section class="card">`+
+        `<h2>SUPPLIER: ${esc(s)} <span style="float:right;font-size:13px;color:#64748b">${totalS.toLocaleString("id-ID")} pcs</span></h2>`+
+        `${lines}${action}`+
+      `</section>`;
+  });
+
+  $("list").innerHTML=out;
+}
+
+function esc(s){
+  return String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
+function waMessage(supplier){
+  const p=[...products]
+    .filter(x=>norm(x.supplier).toLowerCase()===norm(supplier).toLowerCase())
+    .sort((a,b)=>a.display.localeCompare(b.display,"id"));
+
+  let t="*Order produk komunitas TEKNISI PONSEL MAJA*\n\n";
+  p.forEach((x,i)=>{
+    t+=`${i+1}. ${x.display}${x.kode?" ("+x.kode+")":""} — *${x.qty} pcs*\n`;
+  });
+  t+=`\n*TOTAL: ${p.reduce((a,x)=>a+x.qty,0)} pcs*\n\nMohon diproses sesuai orderan.\nTerima kasih.`;
+  return t;
+}
+
+window.sendWA=(supplier)=>{
+  const phone=supplierPhone(supplier);
+  const p=[...products].filter(x=>norm(x.supplier).toLowerCase()===norm(supplier).toLowerCase());
+
+  if(!p.length)return notice("Belum ada produk untuk supplier "+supplier+".","err");
+  if(!phone)return notice("Nomor WhatsApp supplier "+supplier+" belum diatur.","err");
+
+  window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(waMessage(supplier)),"_blank");
+};
+
+window.loadOrders=async()=>{
+  window.scrollTo(0,0);
+  document.documentElement.scrollLeft=0;
+  document.body.scrollLeft=0;
+
+  // Jangan pernah membaca order sebelum Firebase Auth + profil Owner selesai.
+  if(!authReady || authProcessing){
+    return notice("Menunggu akun FIXZY...","err");
+  }
+  if(!uid || !ownerUid){
+    return notice("Owner belum ditemukan. Pastikan akun Firebase ini memiliki role Owner.","err");
+  }
+
+  notice("Memuat order Spreadsheet yang belum approval...");
+  const map=new Map();
+
+  for(const field of ["ownerUid","ownerId"]){
+    try{
+      const s=await getDocs(
+        query(collection(db,"penjualan"),where(field,"==",ownerUid))
+      );
+
+      s.forEach(d=>{
+        const r={id:d.id,...d.data()};
+        if(isSpreadsheetOrder(r)&&isPending(r)&&!map.has(d.id)){
+          map.set(d.id,r);
+        }
+      });
+    }catch(e){
+      console.warn("Query "+field,e);
+    }
+  }
+
+  rows=[...map.values()];
+  products=makeProducts();
+  render();
+  notice(`Akun Owner aktif • ${rows.length} order menunggu approval • ${products.length} produk gabungan.`,"ok");
+};
+
+$("search").addEventListener("input",render);
+$("sort").addEventListener("change",render);
+$("dark").onclick=()=>{
+  document.body.classList.toggle("darkmode");
+  $("dark").textContent=document.body.classList.contains("darkmode")?"☀️":"🌙";
+};
+
+onAuthStateChanged(auth,async u=>{
+  authReady=true;
+  authProcessing=true;
+  ownerUid="";
+  rows=[];
+  products=[];
+
+  if(!u){
+    authProcessing=false;
+    return notice("Belum login.","err");
+  }
+
+  try{
+    uid=u.uid;
+    $("email").textContent=u.email||"-";
+
+    // WAJIB memakai doc() yang diimpor dari firebase-firestore.js.
+    // Profil akun adalah sumber role dan UID Owner.
+    const userRef=doc(db,"users",uid);
+    const s=await getDoc(userRef);
+
+    if(!s.exists()){
+      throw Error("Profil akun tidak ditemukan di Firebase.");
+    }
+
+    profile=s.data()||{};
+    const role=norm(profile.role).toLowerCase();
+
+    if(role!=="owner"){
+      $("list").innerHTML='<div class="empty">Akses halaman Gabungan Order hanya untuk akun Owner.</div>';
+      return notice("Akses ditolak. Halaman ini hanya untuk akun Owner.","err");
+    }
+
+    // Untuk Owner, UID login = ownerUid. Ini sama dengan pola Halaman 3.
+    ownerUid=uid;
+
+    authProcessing=false;
+    await loadOrders();
+  }catch(e){
+    console.error("Gabungan Order:",e);
+    authProcessing=false;
+    ownerUid="";
+    notice("Gagal memuat data: "+(e.message||e),"err");
+  }
+});
 </script></body></html>
