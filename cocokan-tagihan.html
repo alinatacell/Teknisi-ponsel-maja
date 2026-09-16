@@ -186,7 +186,8 @@ onAuthStateChanged(auth,u=>{
   if(!u){$("email").textContent="Sesi belum terbaca";return;}
   current.uid=u.uid; current.profile={email:u.email||"",name:u.displayName||""};
   $("email").textContent=u.email||"-";
-  loadData();
+  // Jangan otomatis mencocokkan saat halaman baru login.
+  // Pencocokan hanya dijalankan setelah nominal dan jatuh tempo diisi lalu tombol ditekan.
 });
 </script>
 </body>
