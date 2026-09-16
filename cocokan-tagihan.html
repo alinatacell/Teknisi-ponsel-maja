@@ -1,4 +1,4 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FIXZY | Cocokkan Tagihan Supplier V4</title>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FIXZY | Cocokkan Tagihan Supplier V5</title>
 <style>
 *{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626;--blue:#2563eb;--orange:#f59e0b}
 html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
@@ -14,8 +14,8 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card{background:#111827;co
 </style></head><body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>🔎 Cocokkan Tagihan Supplier</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
-<div class="card"><div class="title">Input Tagihan Supplier</div><div class="desc">Masukkan nominal invoice supplier dan pilih jatuh tempo. Sistem mengambil data dari <b>Rekap Order Member</b> dan hanya mencocokkan <b>Nilai Barang / harga normal</b>. Tabungan, UP pengelola, dan kas tidak masuk pencocokan.</div>
-<div class="grid"><div><label>NOMINAL TAGIHAN SUPPLIER</label><input id="supplierNominal" inputmode="numeric" placeholder="Contoh: 6845730"></div><div><label>JATUH TEMPO</label><input id="dueInput" type="date"></div></div><button id="matchBtn" class="btn primary" type="button">🔎 Cocokkan Data</button></div>
+<div class="card"><div class="title">Input Tagihan Supplier</div><div class="desc">Masukkan nominal invoice supplier dan pilih jatuh tempo. Sistem hanya dapat dibuka oleh <b>Owner</b>. Data diambil dari <b>Rekap Order Member</b> dan hanya mencocokkan <b>Nilai Barang / harga normal</b>. Tabungan, UP pengelola, dan kas tidak masuk pencocokan.</div>
+<div class="grid"><div><label>NOMINAL TAGIHAN SUPPLIER</label><input id="supplierNominal" inputmode="numeric" placeholder="Contoh: 6845730"></div><div><label>JATUH TEMPO</label><select id="dueInput"><option value="">Pilih jatuh tempo...</option></select></div></div><button id="matchBtn" class="btn primary" type="button">🔎 Cocokkan Data</button></div>
 <div class="card"><div class="title">Hasil Pencocokan</div><div id="result"><div class="empty">Masukkan nominal supplier dan jatuh tempo, lalu tekan Cocokkan Data.</div></div></div>
 <div class="card"><div class="title">Rincian Seluruh Employee</div><div class="desc">Data mengikuti rumus asli <b>Rekap Order Member</b>. Nilai barang dipakai untuk pencocokan supplier; pembayaran dan sisa tagihan ditampilkan terpisah.</div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Nota</th><th>Jatuh Tempo</th><th>Status</th><th class="num">Qty</th><th class="num">Nilai Barang</th><th class="num">Sudah Dibayar</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="detailTable"><tr><td colspan="8" class="empty">Belum ada data.</td></tr></tbody></table></div></div>
 </main>
@@ -40,11 +40,9 @@ const num=v=>Number(v)||0;
 
 function notice(t,c=""){document.getElementById("notice").textContent=t;document.getElementById("notice").className="notice "+c;}
 
-function ownerOf(d){
- const role=String(d.role||"").toLowerCase();
- if(role==="owner")return uid;
- if(role==="superadmin"||role==="super_admin")return "";
- return String(d.ownerUid||d.ownerId||"").trim()||uid;
+function isOwnerProfile(d){
+ const role=String(d.role||"").trim().toLowerCase();
+ return role==="owner";
 }
 
 
@@ -162,6 +160,20 @@ function dateKey(r){const d=dueDate(r);if(!d)return "";return `${d.getFullYear()
 function moneyInput(v){return Math.max(0,Number(String(v??"").replace(/[^0-9-]/g,""))||0);}
 function employeeName(r){const m=r.member||r.pelanggan||{};return String(m.nama||r.memberName||r.namaMember||r.employeeName||r.namaKaryawan||r.nama||"-").trim()||"-";}
 function calcForSupplier(r){const c=calculateOrder(r);const paid=c.paid;const sisa=c.cash?0:Math.max(0,c.totalTagihan-paid);return {...c,sisaSupplierReference:sisa};}
+function populateDueDates(){
+ const sel=$("dueInput");
+ const keys=new Map();
+ orders.forEach(r=>{
+  if(isCashOrder(r))return;
+  const d=dueDate(r);
+  if(!d)return;
+  const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  if(!keys.has(k))keys.set(k,d);
+ });
+ const arr=[...keys.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+ sel.innerHTML='<option value="">Pilih jatuh tempo...</option>'+arr.map(([k,d])=>`<option value="${k}">${d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"})}</option>`).join("");
+}
+
 function renderMatch(){
  const nominal=moneyInput(document.getElementById("supplierNominal").value), dk=dateKeyFromInput(document.getElementById("dueInput").value);
  if(!nominal||!dk){document.getElementById("result").innerHTML='<div class="empty">Isi nominal supplier dan jatuh tempo terlebih dahulu.</div>';document.getElementById("detailTable").innerHTML='<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';return;}
@@ -175,5 +187,29 @@ function renderMatch(){
 }
 document.getElementById("matchBtn").onclick=renderMatch;
 document.getElementById("dark").onclick=()=>{document.body.classList.toggle("dark");document.getElementById("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙";};
-onAuthStateChanged(auth,async u=>{if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};ownerUid=ownerOf(profile);if(!ownerUid)throw Error("Owner akun tidak ditemukan.");document.getElementById("email").textContent=u.email||"-";await loadOrders();ready=true;notice(`Akun siap • Data Rekap Order Member milik Owner ini: ${orders.length} order. Tekan Cocokkan Data untuk menghitung.`,"ok");}catch(e){console.error(e);notice("Gagal memuat data: "+e.message,"err");}});
+onAuthStateChanged(auth,async u=>{
+ if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}
+ try{
+  uid=u.uid;
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+  profile=s.data()||{};
+  if(!isOwnerProfile(profile)){
+   document.getElementById("email").textContent=u.email||"-";
+   document.getElementById("matchBtn").disabled=true;
+   document.getElementById("matchBtn").style.opacity=".55";
+   throw Error("Akses ditolak. Halaman Cocokkan Tagihan Supplier hanya untuk Owner.");
+  }
+  ownerUid=uid;
+  document.getElementById("email").textContent=u.email||"-";
+  notice("Owner terverifikasi • Memuat seluruh Rekap Order Member...","");
+  await loadOrders();
+  populateDueDates();
+  ready=true;
+  notice(`Owner aktif • ${orders.length} order dari Rekap Order Member siap dicocokkan.`,"ok");
+ }catch(e){
+  console.error(e);
+  notice(e.message,"err");
+ }
+});
 </script></body></html>
