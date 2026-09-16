@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#FFC107">
+<title>FIXZY | Cocokkan Tagihan Supplier</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f4f6;color:#111827;font-family:Arial,Helvetica,sans-serif}
+header{position:sticky;top:0;z-index:10;background:#111827;color:#fff;border-bottom:3px solid #FFC107}
+.head{min-height:62px;padding:10px 13px;display:flex;align-items:center;gap:10px}
+.logo{width:44px;height:44px;background:#fff;border-radius:9px;object-fit:contain}
+.hi{flex:1}.hi h1{margin:0;font-size:17px}.email{font-size:11px;color:#cbd5e1;margin-top:3px;word-break:break-all}
+.wrap{max-width:900px;margin:auto;padding:14px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 4px 14px #0000000a}
+.title{font-size:17px;font-weight:900;margin-bottom:6px}.sub{font-size:12px;color:#667085;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-size:12px;font-weight:900;display:block;margin-bottom:5px}
+input,select{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:15px;background:#fff}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:900;cursor:pointer}.primary{background:#FFC107;color:#111827}.secondary{background:#e5e7eb}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:10px}.box span{display:block;font-size:10px;color:#64748b;font-weight:800}.box b{display:block;margin-top:4px;font-size:16px}
+.status{margin-top:12px;padding:13px;border-radius:12px;font-weight:900;text-align:center;border:1px solid #e5e7eb}.sesuai{background:#ecfdf3;color:#166534;border-color:#a7f3d0}.kurang{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.lebih{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.employee{border-top:1px solid #eef2f6;padding:13px 0}.employee:first-child{border-top:0}.emphead{display:flex;justify-content:space-between;gap:10px}.empname{font-weight:900}.small{font-size:11px;color:#667085;margin-top:3px}.money{font-weight:900}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.mini{background:#f8fafc;border-radius:9px;padding:8px}.mini span{font-size:10px;color:#64748b;display:block}.mini b{font-size:13px;display:block;margin-top:3px}
+.notice{padding:10px 12px;border-radius:10px;background:#fff7d6;border:1px solid #f1d36a;font-size:12px;margin-bottom:12px}.err{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+.empty{text-align:center;padding:20px;color:#667085;font-size:12px}
+@media(max-width:650px){.grid,.summary{grid-template-columns:1fr}.detail{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<img class="logo" src="logo.png" onerror="this.style.display='none'">
+<div class="hi"><h1>🔎 Cocokkan Tagihan Supplier</h1><div id="email" class="email">Memuat akun...</div></div>
+<button onclick="loadData()" class="primary">↻ Refresh</button>
+</div></header>
+
+<main class="wrap">
+<div id="notice" class="notice">Memuat data...</div>
+
+<section class="card">
+<div class="title">Input Tagihan Supplier</div>
+<div class="sub">Masukkan nominal tagihan supplier, lalu pilih jatuh tempo. Sistem mencocokkan dengan seluruh tagihan employee pada jatuh tempo tersebut.</div>
+<div class="grid" style="margin-top:12px">
+<div><label>Nominal Tagihan Supplier</label><input id="supplierNominal" type="number" min="0" step="1000" placeholder="Contoh: 4000000"></div>
+<div><label>Jatuh Tempo</label><input id="dueDate" type="date"></div>
+</div>
+<div style="margin-top:10px"><button class="primary" onclick="loadData()">🔎 Cocokkan Data</button></div>
+</section>
+
+<section class="card">
+<div class="title">Hasil Pencocokan</div>
+<div id="result" class="empty">Masukkan nominal supplier dan jatuh tempo.</div>
+</section>
+
+<section class="card">
+<div class="title">Rincian Seluruh Employee</div>
+<div class="sub">Yang dihitung hanya <b>harga normal / nilai barang</b>. Tabungan, UP pengelola, kas, dan komponen lain tidak dihitung.</div>
+<div id="employeeList" class="empty">Belum ada data.</div>
+</section>
+</main>
+
+<script type="module">
+import{initializeApp,getApps,getApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,getDocs}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=getApps().length?getApp():initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+const norm=v=>String(v??"").trim().toLowerCase();
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+let current={uid:"",role:"",ownerUid:"",profile:{}};
+
+function dueKey(v){
+  if(!v)return "";
+  if(v?.toDate)v=v.toDate();
+  if(v?.seconds)v=new Date(Number(v.seconds)*1000);
+  const d=new Date(v);
+  if(Number.isNaN(d.getTime()))return String(v).slice(0,10);
+  return d.toISOString().slice(0,10);
+}
+function getName(r){
+  const m=r.member||r.pelanggan||r.karyawan||{};
+  return String(m.nama||m.name||r.memberNama||r.namaMember||r.karyawanNama||r.namaKaryawan||r.nama||"Tanpa Nama").trim();
+}
+function getEmployee(r){
+  const m=r.member||r.pelanggan||r.karyawan||{};
+  return String(m.nama||m.name||r.memberNama||r.namaMember||r.karyawanNama||r.namaKaryawan||"Tanpa Nama").trim();
+}
+function normalItemValue(r){
+  // Prioritaskan field nilai barang/harga normal yang memang sudah ada.
+  // Tidak memasukkan tabungan, UP pengelola, kas, atau uang muka.
+  const candidates=[
+    r.nilaiBarang,r.totalNilaiBarang,r.subtotalBarang,r.nilaiProduk,
+    r.totalProduk,r.totalHargaNormal,r.hargaNormalTotal,r.subtotal,
+    r.totalBayar,r.total
+  ];
+  for(const v of candidates)if(v!==undefined&&v!==null&&v!==""&&Number(v)>0)return Number(v)||0;
+  return 0;
+}
+function paidValue(r){
+  return Number(r.totalDibayar??r.pembayaran??r.dp??r.uangMuka??0)||0;
+}
+function remainingValue(r){
+  const s=r.sisaBayar??r.sisa;
+  if(s!==undefined&&s!==null&&s!=="")return Math.max(0,Number(s)||0);
+  return Math.max(0,normalItemValue(r)-paidValue(r));
+}
+function isCash(r){
+  const x=norm(r.jenisHarga||r.tipeOrder||r.tipeTransaksi||r.metodePembayaran);
+  return ["cash","member_cash","tunai","cash/tunai","cash_tunai","member_cash_tunai"].includes(x);
+}
+function approved(r){
+  const a=norm(r.approvalStatus),s=norm(r.status);
+  return a==="approved"||s==="approved"||s==="order_member"||s==="tagihan"||s==="lunas";
+}
+function dueOf(r){return dueKey(r.jatuhTempo||r.tanggalJatuhTempo||r.tempo||r.jatuh_tempo);}
+function ownerOf(r){return String(r.ownerUid||r.ownerId||"").trim();}
+
+async function loadData(){
+  const nominal=Number($("supplierNominal").value)||0;
+  const wanted=$("dueDate").value;
+  if(!nominal||!wanted){$("result").innerHTML='<div class="notice err">Isi nominal supplier dan jatuh tempo terlebih dahulu.</div>';return;}
+  $("notice").textContent="Mengambil data order...";
+  try{
+    const snap=await getDocs(collection(db,"order_member"));
+    const rows=[];
+    snap.forEach(d=>{
+      const r={id:d.id,...d.data()};
+      if(!approved(r)||isCash(r))return;
+      if(current.ownerUid&&ownerOf(r)&&ownerOf(r)!==current.ownerUid)return;
+      if(dueOf(r)!==wanted)return;
+      rows.push(r);
+    });
+
+    const byEmp=new Map();
+    for(const r of rows){
+      const name=getEmployee(r);
+      if(!byEmp.has(name))byEmp.set(name,{name,total:0,paid:0,sisa:0,orders:0});
+      const e=byEmp.get(name);
+      const nilai=normalItemValue(r);
+      e.total+=nilai;
+      e.paid+=Math.min(nilai,Math.max(0,paidValue(r)));
+      e.sisa+=remainingValue(r);
+      e.orders++;
+    }
+    const employees=[...byEmp.values()].sort((a,b)=>a.name.localeCompare(b.name,"id"));
+    const total=employees.reduce((n,e)=>n+e.total,0);
+    const paid=employees.reduce((n,e)=>n+e.paid,0);
+    const sisa=employees.reduce((n,e)=>n+e.sisa,0);
+    const diff=total-nominal;
+    const abs=Math.abs(diff);
+
+    let cls="sesuai", label="SESUAI";
+    if(diff<0){cls="kurang";label="SELISIH KURANG";}
+    if(diff>0){cls="lebih";label="SELISIH LEBIH";}
+
+    $("result").innerHTML=`
+      <div class="summary">
+        <div class="box"><span>TAGIHAN SUPPLIER</span><b>${rp(nominal)}</b></div>
+        <div class="box"><span>TOTAL HARGA NORMAL EMPLOYEE</span><b>${rp(total)}</b></div>
+        <div class="box"><span>SUDAH DIBAYAR</span><b>${rp(paid)}</b></div>
+        <div class="box"><span>SISA TAGIHAN</span><b>${rp(sisa)}</b></div>
+      </div>
+      <div class="status ${cls}">${label}<br><span style="font-size:20px">${rp(abs)}</span></div>
+      <div class="sub" style="margin-top:9px">Jatuh tempo: <b>${esc(wanted)}</b> • ${employees.length} employee</div>`;
+
+    $("employeeList").innerHTML=employees.length?employees.map(e=>`
+      <div class="employee">
+        <div class="emphead"><div><div class="empname">${esc(e.name)}</div><div class="small">${e.orders} nota</div></div><div class="money">${rp(e.total)}</div></div>
+        <div class="detail">
+          <div class="mini"><span>HARGA NORMAL</span><b>${rp(e.total)}</b></div>
+          <div class="mini"><span>SUDAH DIBAYAR</span><b>${rp(e.paid)}</b></div>
+          <div class="mini"><span>SISA TAGIHAN</span><b>${rp(e.sisa)}</b></div>
+        </div>
+      </div>`).join(""):'<div class="empty">Tidak ada tagihan employee pada jatuh tempo tersebut.</div>';
+    $("notice").textContent="Pencocokan selesai.";
+    $("notice").className="notice";
+  }catch(e){
+    console.error(e);
+    $("notice").textContent="Gagal mengambil data: "+(e?.message||e);
+    $("notice").className="notice err";
+  }
+}
+
+onAuthStateChanged(auth,u=>{
+  if(!u){$("email").textContent="Sesi belum terbaca";return;}
+  current.uid=u.uid; current.profile={email:u.email||"",name:u.displayName||""};
+  $("email").textContent=u.email||"-";
+  loadData();
+});
+</script>
+</body>
+</html>
