@@ -32,7 +32,7 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:900;cursor:poin
 </div></header>
 
 <main class="wrap">
-<div id="notice" class="notice">Memuat data...</div>
+<div id="notice" class="notice">Menunggu pencocokan. Silakan isi nominal supplier dan jatuh tempo.</div>
 
 <section class="card">
 <div class="title">Input Tagihan Supplier</div>
@@ -186,8 +186,9 @@ onAuthStateChanged(auth,u=>{
   if(!u){$("email").textContent="Sesi belum terbaca";return;}
   current.uid=u.uid; current.profile={email:u.email||"",name:u.displayName||""};
   $("email").textContent=u.email||"-";
-  // Jangan otomatis mencocokkan saat halaman baru login.
-  // Pencocokan hanya dijalankan setelah nominal dan jatuh tempo diisi lalu tombol ditekan.
+  // Halaman sudah siap. Jangan mengambil data Firebase otomatis.
+  $("notice").textContent="Siap. Isi nominal supplier dan jatuh tempo, lalu tekan 🔎 Cocokkan Data.";
+  $("notice").className="notice";
 });
 </script>
 </body>
