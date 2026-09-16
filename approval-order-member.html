@@ -49,6 +49,11 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <div><label>STATUS</label><div style="font-size:11px;font-weight:900;color:#15803d;padding:11px 0">Menunggu Approval</div></div>
 <div><label>CATATAN</label><div style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Periksa stok aktual. Hanya qty yang disetujui yang dipindahkan ke <b>order_member</b>.</div></div>
 </div></div>
+<div class="card" id="cicilanCard">
+ <div class="title">💳 Approval Cicilan / Transfer Member</div>
+ <div class="notice">Request cicilan yang dikirim dari halaman <b>Cicilan Tagihan</b> akan muncul di sini. Tagihan baru berubah setelah Owner menyetujui.</div>
+ <div id="cicilanList"><div class="empty">Memuat request cicilan...</div></div>
+</div>
 <div id="list"></div>
 </main>
 <script type="module">
@@ -57,7 +62,7 @@ import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc,increment}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-let uid="",ownerUid="",profile={},role="",rows=[],ready=false,stockCatalog=[],sheetLinks=[],sheetCache=null;
+let uid="",ownerUid="",profile={},role="",rows=[],ready=false,stockCatalog=[],sheetLinks=[],sheetCache=null,cicilanRequests=[];
 const $=id=>document.getElementById(id),rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
 const today=()=>new Date().toISOString().slice(0,10);
@@ -153,6 +158,84 @@ async function load(){
   for(const q of qs){const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()},source=String(x.sumber||"").toLowerCase(),tipe=String(x.tipeTransaksi||"").toLowerCase();if(source==="order_spreadsheet"||tipe==="order_cash"||tipe==="order_tempo"||x.sumberSpreadsheet===true)if(!map.has(d.id))map.set(d.id,x)})}
   rows=[...map.values()];render();rows.forEach(r=>recalcOrder(r.id));
 }
+
+
+async function loadCicilanRequests(){
+  cicilanRequests=[];
+  if(!ownerUid)return;
+  const map=new Map();
+  for(const field of ["ownerUid","ownerId"]){
+    try{
+      const ss=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",ownerUid)));
+      ss.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+    }catch(e){console.warn("Query request cicilan "+field+" dilewati:",e?.message||e);}
+  }
+  cicilanRequests=[...map.values()]
+    .filter(r=>String(r.jenis||r.tipe||"").toLowerCase()==="cicilan_tagihan")
+    .filter(r=>String(r.ownerUid||r.ownerId||"").trim()===ownerUid)
+    .filter(r=>String(r.status||"pending").toLowerCase()==="pending")
+    .sort((a,b)=>{
+      const ta=a.requestedAt?.toMillis?a.requestedAt.toMillis():new Date(a.requestedAt||a.createdAt||0).getTime();
+      const tb=b.requestedAt?.toMillis?b.requestedAt.toMillis():new Date(b.requestedAt||b.createdAt||0).getTime();
+      return tb-ta;
+    });
+  renderCicilanRequests();
+}
+function renderCicilanRequests(){
+  const box=$("cicilanList");if(!box)return;
+  if(!cicilanRequests.length){box.innerHTML='<div class="empty">Tidak ada cicilan / transfer yang menunggu persetujuan.</div>';return;}
+  box.innerHTML=cicilanRequests.map(r=>{
+    const m=r.member||{},nota=r.nomorNota||r.orderMemberId||"-",nominal=Number(r.nominal)||0,sebelum=Number(r.tagihanSebelum)||0;
+    const jenis=(String(r.modePembayaran||r.jenisPembayaran||"").toLowerCase()==="lunas"||String(r.jenisPembayaran||"").toLowerCase()==="pelunasan")?"PELUNASAN":"CICILAN";
+    const waktu=r.requestedAt?.toDate?r.requestedAt.toDate().toLocaleString("id-ID"):(r.requestedAt?new Date(r.requestedAt).toLocaleString("id-ID"):"-");
+    return `<div class="order" data-cicilan-id="${esc(r.id)}" style="margin-top:10px">
+      <div class="order-head"><div><div class="order-title">${esc(nota)}</div><div style="font-size:11px;color:#64748b;margin-top:3px">${esc(m.nama||r.memberNama||"Member")} • ${jenis} • ${esc(waktu)}</div></div><span class="badge">MENUNGGU APPROVAL</span></div>
+      <div class="order-body"><div class="summary">💳 Pengajuan: <b>${rp(nominal)}</b><br>📌 Tagihan sebelum: <b>${rp(sebelum)}</b><br>📉 Perkiraan sisa setelah disetujui: <b>${rp(Math.max(0,sebelum-nominal))}</b></div>
+      <div class="meta" style="margin-top:10px"><b>Member:</b> ${esc(m.nama||r.memberNama||"-")}<br><b>WA:</b> ${esc(m.wa||r.memberWa||"-")}<br><b>Kode Member:</b> ${esc(m.kode||r.memberId||"-")}</div>
+      <div class="actions"><button class="btn approve" onclick="approveCicilan('${esc(r.id)}')">✅ Setujui Cicilan</button><button class="btn reject" onclick="rejectCicilan('${esc(r.id)}')">❌ Tolak</button></div></div></div>`;
+  }).join("");
+}
+window.approveCicilan=async requestId=>{
+  const req=cicilanRequests.find(x=>x.id===requestId);if(!req)return;
+  const nominal=Math.max(0,Number(req.nominal)||0);if(!nominal)return msg("Nominal cicilan tidak valid.","err");
+  const requestRef=doc(db,"tabungan_member",requestId),orderId=String(req.orderMemberId||"").trim();
+  if(!orderId)return msg("Request tidak memiliki orderMemberId.","err");
+  const orderRef=doc(db,"order_member",orderId);
+  try{
+    msg("Memproses approval cicilan...");
+    await runTransaction(db,async tx=>{
+      const rs=await tx.get(requestRef),os=await tx.get(orderRef);
+      if(!rs.exists())throw Error("Request cicilan tidak ditemukan.");
+      if(!os.exists())throw Error("Order member tidak ditemukan.");
+      const d=rs.data()||{},o=os.data()||{};
+      if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Request bukan milik Owner ini.");
+      if(String(d.status||"pending").toLowerCase()!=="pending")throw Error("Request sudah diproses.");
+      if(String(o.ownerUid||o.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
+      const total=Number(o.totalBayar??o.total??o.subtotal??0)||0;
+      const dibayarLama=Number(o.totalDibayar??o.dp??o.uangMuka??0)||0;
+      const sisaLama=Math.max(0,Number(o.sisaBayar??o.sisa??(total-dibayarLama))||0);
+      if(nominal>sisaLama)throw Error(`Nominal ${rp(nominal)} melebihi sisa tagihan ${rp(sisaLama)}.`);
+      const dibayarBaru=dibayarLama+nominal,sisaBaru=Math.max(0,sisaLama-nominal),lunas=sisaBaru<=0;
+      tx.update(orderRef,{totalDibayar:dibayarBaru,sudahDibayar:dibayarBaru,sisa:sisaBaru,sisaBayar:sisaBaru,piutang:sisaBaru,status:lunas?"lunas":"tagihan",lastPaymentAt:serverTimestamp(),lastPaymentAmount:nominal,updatedAt:serverTimestamp()});
+      tx.update(requestRef,{status:"approved",approvedAt:serverTimestamp(),approvedBy:uid,tagihanSebelum:sisaLama,tagihanSesudah:sisaBaru});
+    });
+    msg("Cicilan berhasil disetujui. Sisa tagihan sudah diperbarui.","ok");await loadCicilanRequests();
+  }catch(e){console.error(e);msg("Gagal approval cicilan: "+(e?.message||e),"err");}
+};
+window.rejectCicilan=async requestId=>{
+  const req=cicilanRequests.find(x=>x.id===requestId);if(!req)return;
+  const alasan=prompt("Alasan penolakan transfer/cicilan:","Bukti transfer belum sesuai");if(alasan===null)return;
+  try{
+    const ref=doc(db,"tabungan_member",requestId);
+    await runTransaction(db,async tx=>{
+      const ss=await tx.get(ref);if(!ss.exists())throw Error("Request tidak ditemukan.");
+      const d=ss.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Request bukan milik Owner ini.");
+      if(String(d.status||"pending").toLowerCase()!=="pending")throw Error("Request sudah diproses.");
+      tx.update(ref,{status:"rejected",rejectedAt:serverTimestamp(),rejectedBy:uid,alasanApproval:alasan});
+    });
+    msg("Request cicilan ditolak. Tagihan tidak berubah.","ok");await loadCicilanRequests();
+  }catch(e){console.error(e);msg("Gagal menolak cicilan: "+(e?.message||e),"err");}
+};
 
 function render(){
  const key=$("search").value.trim().toLowerCase();
@@ -500,7 +583,7 @@ $("list").addEventListener("change",e=>{
   
 });
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
-onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};role=String(profile.role||"").toLowerCase();if(role!=="owner"){ready=false;$("email").textContent=u.email||"-";msg("Akses ditolak. Halaman Approval hanya untuk akun Owner.","err");$("list").innerHTML='<div class="card empty">Akun ini bukan Owner. Gunakan akun Owner untuk Approval.</div>';return}ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;await load();msg("Akun Owner aktif • siap memproses approval order.","ok")}catch(e){console.error(e);msg(e.message,"err")}});
+onAuthStateChanged(auth,async u=>{if(!u){msg("Belum login.","err");return}try{uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");profile=s.data()||{};role=String(profile.role||"").toLowerCase();if(role!=="owner"){ready=false;$("email").textContent=u.email||"-";msg("Akses ditolak. Halaman Approval hanya untuk akun Owner.","err");$("list").innerHTML='<div class="card empty">Akun ini bukan Owner. Gunakan akun Owner untuk Approval.</div>';return}ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;await load();await loadCicilanRequests();msg("Akun Owner aktif • siap memproses approval order dan cicilan.","ok")}catch(e){console.error(e);msg(e.message,"err")}});
 </script>
 </body>
 </html>
