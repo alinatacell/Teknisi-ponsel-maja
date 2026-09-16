@@ -31,17 +31,50 @@ function tanggal(v){const t=time(v);return t?new Date(t).toLocaleString("id-ID")
 function isOwner(){return norm(role)==="owner";}
 function isWorker(){return ["employee","karyawan","everyone"].includes(norm(role));}
 function memberEmail(){return String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();}
+function normalizePersonName(v){
+  return String(v||"")
+    .trim()
+    .toLowerCase()
+    .replace(/\\s+/g," ");
+}
+
+function loggedInName(){
+  return normalizePersonName(
+    profile.nama ||
+    profile.name ||
+    profile.displayName ||
+    window.parent?.fixzySession?.profile?.nama ||
+    window.parent?.fixzySession?.profile?.name ||
+    window.parent?.fixzySession?.profile?.displayName ||
+    auth.currentUser?.displayName ||
+    ""
+  );
+}
+
+function orderMemberName(r){
+  const m=memberObj(r);
+  return normalizePersonName(
+    m.nama ||
+    r.memberNama ||
+    r.namaMember ||
+    r.nama ||
+    ""
+  );
+}
+
 function matchesMember(r){
-  // ISOLASI ANTAR KARYAWAN: hanya UID Firebase akun yang sedang login.
-  // Tidak memakai nama, email, memberId, kode, atau UID akun lain.
+  // EMPLOYEE/KARYAWAN:
+  // 1. Jika order punya UID karyawan, UID tetap menjadi pencocokan utama.
+  // 2. Jika UID order kosong, gunakan nama yang tersimpan pada tagihan
+  //    dan cocokkan dengan nama akun yang sedang login.
   const memberUid=orderMemberUid(r);
-  return !!uid && memberUid===uid;
+  if(uid && memberUid) return memberUid===uid;
+
+  const namaTagihan=orderMemberName(r);
+  const namaLogin=loggedInName();
+  return !!namaTagihan && !!namaLogin && namaTagihan===namaLogin;
 }
-function orderMemberUid(r){
-  const m=memberObj(r)||{};
-  const k=(r.karyawan&&typeof r.karyawan==="object")?r.karyawan:{};
-  return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||k.uid||k.userId||k.memberUid||"").trim();
-}
+function orderMemberUid(r){const m=memberObj(r);return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||r._employeeUid||"").trim();}
 function orderMemberId(r){const m=memberObj(r);return String(r.memberId||r.idMember||m.memberId||m.id||m.kode||m.kodeMember||"").trim();}
 function totalOrder(r){return Math.max(0,num(r.totalBayar??r.total??r.subtotal??0));}
 function totalDibayar(r){if(r.totalDibayar!=null)return Math.max(0,num(r.totalDibayar));if(r.pembayaran!=null)return Math.max(0,num(r.pembayaran));if(r.dp!=null)return Math.max(0,num(r.dp));if(r.uangMuka!=null)return Math.max(0,num(r.uangMuka));return 0;}
@@ -60,11 +93,20 @@ async function loadOrders(){
   catch(e){console.warn("Query order_member "+field+" dilewati:",e?.message||e);}
  }
  
- // Tambahan jalur pencarian langsung untuk data lama yang mempunyai
- // memberUid di level atas. Tetap akan difilter ulang dengan ownerUid.
- if(!isOwner() && uid){
-  try{const q=await getDocs(query(collection(db,"order_member"),where("memberUid","==",uid)));q.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));}
-  catch(e){console.warn("Query memberUid langsung dilewati:",e?.message||e);}
+ // KARYAWAN: beberapa order lama di order_member tidak menyimpan memberUid.
+ // Identitas aslinya tetap ada di dokumen penjualan melalui memberUid.
+ // Ambil hanya penjualan milik UID karyawan yang sedang login, lalu
+ // masukkan order_member berdasarkan sourcePenjualanId. OWNER TIDAK DISENTUH.
+ if(!isOwner() && isWorker() && uid){
+  try{
+   const q=await getDocs(query(collection(db,"penjualan"),where("memberUid","==",uid)));
+   for(const d of q.docs){
+    const sid=d.id;
+    for(const [oid,r] of map){
+     if(String(r.sourcePenjualanId||"").trim()===sid){map.set(oid,{...r,_employeeUid:uid});}
+    }
+   }
+  }catch(e){console.warn("Fallback penjualan employee dilewati:",e?.message||e);}
  }
  
  orders=[...map.values()].filter(r=>{
