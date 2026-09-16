@@ -44,7 +44,7 @@ function matchesMember(r){
   if(!uid)return false;
   const m=memberObj(r);
   const ids=[
-    r.memberUid,r.uidMember,r.createdByMemberUid,r.memberId,r.idMember,
+    r.memberUid,r.uidMember,r.createdByMemberUid,r.createdBy,r.memberId,r.idMember,
     m.uid,m.userId,m.memberUid,m.memberId,m.id,m.kode,m.kodeMember
   ].map(x=>String(x??"").trim()).filter(Boolean);
   if(ids.includes(uid))return true;
