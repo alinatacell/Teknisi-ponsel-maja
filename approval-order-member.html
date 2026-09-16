@@ -197,44 +197,107 @@ function renderCicilanRequests(){
 }
 window.approveCicilan=async requestId=>{
   const req=cicilanRequests.find(x=>x.id===requestId);if(!req)return;
-  const nominal=Math.max(0,Number(req.nominal)||0);if(!nominal)return msg("Nominal cicilan tidak valid.","err");
-  const requestRef=doc(db,"tabungan_member",requestId),orderId=String(req.orderMemberId||"").trim();
+  const nominal=Math.max(0,Number(req.nominal)||0);
+  if(!nominal)return msg("Nominal cicilan tidak valid.","err");
+
+  const requestRef=doc(db,"tabungan_member",requestId);
+  const orderId=String(req.orderMemberId||"").trim();
   if(!orderId)return msg("Request tidak memiliki orderMemberId.","err");
   const orderRef=doc(db,"order_member",orderId);
+
   try{
     msg("Memproses approval cicilan...");
     await runTransaction(db,async tx=>{
-      const rs=await tx.get(requestRef),os=await tx.get(orderRef);
+      // SEMUA READ dilakukan lebih dulu.
+      const rs=await tx.get(requestRef);
+      const os=await tx.get(orderRef);
+
       if(!rs.exists())throw Error("Request cicilan tidak ditemukan.");
       if(!os.exists())throw Error("Order member tidak ditemukan.");
-      const d=rs.data()||{},o=os.data()||{};
-      if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Request bukan milik Owner ini.");
-      if(String(d.status||"pending").toLowerCase()!=="pending")throw Error("Request sudah diproses.");
-      if(String(o.ownerUid||o.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
+
+      const d=rs.data()||{};
+      const o=os.data()||{};
+
+      if(String(d.ownerUid||d.ownerId||"")!==ownerUid)
+        throw Error("Request bukan milik Owner ini.");
+      if(String(d.status||"pending").toLowerCase()!=="pending")
+        throw Error("Request sudah diproses.");
+      if(String(o.ownerUid||o.ownerId||"")!==ownerUid)
+        throw Error("Order bukan milik Owner ini.");
+
+      // Sumber kebenaran tagihan: TOTAL - TOTAL DIBAYAR.
       const total=Number(o.totalBayar??o.total??o.subtotal??0)||0;
-      const dibayarLama=Number(o.totalDibayar??o.dp??o.uangMuka??0)||0;
-      const sisaLama=Math.max(0,Number(o.sisaBayar??o.sisa??(total-dibayarLama))||0);
-      if(nominal>sisaLama)throw Error(`Nominal ${rp(nominal)} melebihi sisa tagihan ${rp(sisaLama)}.`);
-      const dibayarBaru=dibayarLama+nominal,sisaBaru=Math.max(0,sisaLama-nominal),lunas=sisaBaru<=0;
-      tx.update(orderRef,{totalDibayar:dibayarBaru,sudahDibayar:dibayarBaru,sisa:sisaBaru,sisaBayar:sisaBaru,piutang:sisaBaru,status:lunas?"lunas":"tagihan",lastPaymentAt:serverTimestamp(),lastPaymentAmount:nominal,updatedAt:serverTimestamp()});
-      tx.update(requestRef,{status:"approved",approvedAt:serverTimestamp(),approvedBy:uid,tagihanSebelum:sisaLama,tagihanSesudah:sisaBaru});
+      const dibayarLama=Number(o.totalDibayar??o.pembayaran??o.dp??o.uangMuka??0)||0;
+      const sisaLama=Math.max(0,total-dibayarLama);
+
+      if(sisaLama<=0)throw Error("Tagihan order sudah lunas.");
+      if(nominal>sisaLama)
+        throw Error(`Nominal ${rp(nominal)} melebihi sisa tagihan ${rp(sisaLama)}.`);
+
+      const dibayarBaru=dibayarLama+nominal;
+      const sisaBaru=Math.max(0,total-dibayarBaru);
+      const lunas=sisaBaru<=0;
+
+      // Update order/tagihan.
+      tx.update(orderRef,{
+        totalDibayar:dibayarBaru,
+        sudahDibayar:dibayarBaru,
+        sisa:sisaBaru,
+        sisaBayar:sisaBaru,
+        piutang:sisaBaru,
+        status:lunas?"lunas":"tagihan",
+        lastPaymentAt:serverTimestamp(),
+        lastPaymentAmount:nominal,
+        updatedAt:serverTimestamp()
+      });
+
+      // PENTING: mengikuti Rules yang sekarang.
+      // Hanya field yang diizinkan untuk update Owner yang diubah di sini.
+      tx.update(requestRef,{
+        status:"approved",
+        approvedAt:serverTimestamp(),
+        approvedBy:uid
+      });
     });
-    msg("Cicilan berhasil disetujui. Sisa tagihan sudah diperbarui.","ok");await loadCicilanRequests();
-  }catch(e){console.error(e);msg("Gagal approval cicilan: "+(e?.message||e),"err");}
+
+    msg("Cicilan berhasil disetujui. Sisa tagihan sudah diperbarui.","ok");
+    await loadCicilanRequests();
+  }catch(e){
+    console.error(e);
+    msg("Gagal approval cicilan: "+(e?.message||e),"err");
+  }
 };
+
 window.rejectCicilan=async requestId=>{
   const req=cicilanRequests.find(x=>x.id===requestId);if(!req)return;
-  const alasan=prompt("Alasan penolakan transfer/cicilan:","Bukti transfer belum sesuai");if(alasan===null)return;
+  const alasan=prompt("Alasan penolakan transfer/cicilan:","Bukti transfer belum sesuai");
+  if(alasan===null)return;
+
   try{
     const ref=doc(db,"tabungan_member",requestId);
     await runTransaction(db,async tx=>{
-      const ss=await tx.get(ref);if(!ss.exists())throw Error("Request tidak ditemukan.");
-      const d=ss.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Request bukan milik Owner ini.");
-      if(String(d.status||"pending").toLowerCase()!=="pending")throw Error("Request sudah diproses.");
-      tx.update(ref,{status:"rejected",rejectedAt:serverTimestamp(),rejectedBy:uid,alasanApproval:alasan});
+      const ss=await tx.get(ref);
+      if(!ss.exists())throw Error("Request tidak ditemukan.");
+      const d=ss.data()||{};
+      if(String(d.ownerUid||d.ownerId||"")!==ownerUid)
+        throw Error("Request bukan milik Owner ini.");
+      if(String(d.status||"pending").toLowerCase()!=="pending")
+        throw Error("Request sudah diproses.");
+
+      // Rules saat ini mewajibkan approvedBy untuk update Owner.
+      // Tagihan tidak disentuh ketika request ditolak.
+      tx.update(ref,{
+        status:"rejected",
+        approvedBy:uid
+      });
     });
-    msg("Request cicilan ditolak. Tagihan tidak berubah.","ok");await loadCicilanRequests();
-  }catch(e){console.error(e);msg("Gagal menolak cicilan: "+(e?.message||e),"err");}
+
+    msg("Request cicilan ditolak. Tagihan tidak berubah.","ok");
+    await loadCicilanRequests();
+  }catch(e){
+    console.error(e);
+    msg("Gagal menolak cicilan: "+(e?.message||e),"err");
+  }
 };
 
 function render(){
