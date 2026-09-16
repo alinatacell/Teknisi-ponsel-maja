@@ -31,33 +31,17 @@ function tanggal(v){const t=time(v);return t?new Date(t).toLocaleString("id-ID")
 function isOwner(){return norm(role)==="owner";}
 function isWorker(){return ["employee","karyawan","everyone"].includes(norm(role));}
 function memberEmail(){return String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();}
-function memberIds(){
-  return [...new Set([
-    uid,
-    profile.memberUid,profile.memberId,profile.idMember,
-    profile.uidMember,profile.id,profile.kodeMember,profile.kode
-  ].map(x=>String(x??"").trim()).filter(Boolean))];
-}
 function matchesMember(r){
-  // ISOLASI KARYAWAN / EMPLOYEE: hanya UID akun Firebase yang sedang login.
+  // ISOLASI ANTAR KARYAWAN: hanya UID Firebase akun yang sedang login.
   // Tidak memakai nama, email, memberId, kode, atau UID akun lain.
-  if(!uid)return false;
-  const m=memberObj(r)||{};
-  const myUid=String(uid).trim();
-  const ids=[
-    r.memberUid,
-    r.createdByMemberUid,
-    r.uidMember,
-    m.uid,
-    m.userId,
-    m.memberUid,
-    m.uidMember
-  ].map(x=>String(x??'').trim()).filter(Boolean);
-  // Jangan memakai ?? untuk identitas, karena satu field yang berbeda
-  // tidak boleh menutupi field UID lain yang benar.
-  return ids.includes(myUid);
+  const memberUid=orderMemberUid(r);
+  return !!uid && memberUid===uid;
 }
-function orderMemberUid(r){const m=memberObj(r);return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||"").trim();}
+function orderMemberUid(r){
+  const m=memberObj(r)||{};
+  const k=(r.karyawan&&typeof r.karyawan==="object")?r.karyawan:{};
+  return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||k.uid||k.userId||k.memberUid||"").trim();
+}
 function orderMemberId(r){const m=memberObj(r);return String(r.memberId||r.idMember||m.memberId||m.id||m.kode||m.kodeMember||"").trim();}
 function totalOrder(r){return Math.max(0,num(r.totalBayar??r.total??r.subtotal??0));}
 function totalDibayar(r){if(r.totalDibayar!=null)return Math.max(0,num(r.totalDibayar));if(r.pembayaran!=null)return Math.max(0,num(r.pembayaran));if(r.dp!=null)return Math.max(0,num(r.dp));if(r.uangMuka!=null)return Math.max(0,num(r.uangMuka));return 0;}
