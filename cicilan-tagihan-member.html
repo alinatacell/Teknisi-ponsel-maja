@@ -39,23 +39,23 @@ function memberIds(){
   ].map(x=>String(x??"").trim()).filter(Boolean))];
 }
 function matchesMember(r){
-  // ISOLASI KARYAWAN: utamakan UID akun Firebase yang sedang login.
-  // Untuk data order lama/berbeda struktur, gunakan memberId/email milik akun yang sama.
+  // ISOLASI KARYAWAN / EMPLOYEE: hanya UID akun Firebase yang sedang login.
+  // Tidak memakai nama, email, memberId, kode, atau UID akun lain.
   if(!uid)return false;
-  const m=memberObj(r);
+  const m=memberObj(r)||{};
+  const myUid=String(uid).trim();
   const ids=[
-    r.memberUid,r.uidMember,r.createdByMemberUid,r.createdBy,r.memberId,r.idMember,
-    m.uid,m.userId,m.memberUid,m.memberId,m.id,m.kode,m.kodeMember
-  ].map(x=>String(x??"").trim()).filter(Boolean);
-  if(ids.includes(uid))return true;
-
-  const myIds=new Set(memberIds());
-  // Hanya pakai ID tambahan bila memang tersimpan pada profil akun login.
-  if(ids.some(x=>x!==uid && myIds.has(x)))return true;
-
-  const myEmail=memberEmail();
-  const orderEmails=[r.memberEmail,m.email].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
-  return !!myEmail && orderEmails.includes(myEmail);
+    r.memberUid,
+    r.createdByMemberUid,
+    r.uidMember,
+    m.uid,
+    m.userId,
+    m.memberUid,
+    m.uidMember
+  ].map(x=>String(x??'').trim()).filter(Boolean);
+  // Jangan memakai ?? untuk identitas, karena satu field yang berbeda
+  // tidak boleh menutupi field UID lain yang benar.
+  return ids.includes(myUid);
 }
 function orderMemberUid(r){const m=memberObj(r);return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||"").trim();}
 function orderMemberId(r){const m=memberObj(r);return String(r.memberId||r.idMember||m.memberId||m.id||m.kode||m.kodeMember||"").trim();}
