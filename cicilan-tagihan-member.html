@@ -31,11 +31,31 @@ function tanggal(v){const t=time(v);return t?new Date(t).toLocaleString("id-ID")
 function isOwner(){return norm(role)==="owner";}
 function isWorker(){return ["employee","karyawan","everyone"].includes(norm(role));}
 function memberEmail(){return String(profile.email||auth.currentUser?.email||window.parent?.fixzySession?.profile?.email||"").trim().toLowerCase();}
+function memberIds(){
+  return [...new Set([
+    uid,
+    profile.memberUid,profile.memberId,profile.idMember,
+    profile.uidMember,profile.id,profile.kodeMember,profile.kode
+  ].map(x=>String(x??"").trim()).filter(Boolean))];
+}
 function matchesMember(r){
-  // ISOLASI ANTAR KARYAWAN: hanya UID Firebase akun yang sedang login.
-  // Tidak memakai nama, email, memberId, kode, atau UID akun lain.
-  const memberUid=orderMemberUid(r);
-  return !!uid && memberUid===uid;
+  // ISOLASI KARYAWAN: utamakan UID akun Firebase yang sedang login.
+  // Untuk data order lama/berbeda struktur, gunakan memberId/email milik akun yang sama.
+  if(!uid)return false;
+  const m=memberObj(r);
+  const ids=[
+    r.memberUid,r.uidMember,r.createdByMemberUid,r.memberId,r.idMember,
+    m.uid,m.userId,m.memberUid,m.memberId,m.id,m.kode,m.kodeMember
+  ].map(x=>String(x??"").trim()).filter(Boolean);
+  if(ids.includes(uid))return true;
+
+  const myIds=new Set(memberIds());
+  // Hanya pakai ID tambahan bila memang tersimpan pada profil akun login.
+  if(ids.some(x=>x!==uid && myIds.has(x)))return true;
+
+  const myEmail=memberEmail();
+  const orderEmails=[r.memberEmail,m.email].map(x=>String(x??"").trim().toLowerCase()).filter(Boolean);
+  return !!myEmail && orderEmails.includes(myEmail);
 }
 function orderMemberUid(r){const m=memberObj(r);return String(r.memberUid||r.uidMember||m.uid||m.userId||m.memberUid||"").trim();}
 function orderMemberId(r){const m=memberObj(r);return String(r.memberId||r.idMember||m.memberId||m.id||m.kode||m.kodeMember||"").trim();}
