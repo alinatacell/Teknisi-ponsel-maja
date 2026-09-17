@@ -57,9 +57,9 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 
 <div class="card"><div class="title">🔎 Cari Order Berdasarkan Nama Karyawan</div>
 <div class="filters">
-<div><label>NAMA KARYAWAN</label>
+<div><label>CARI BERDASARKAN KARYAWAN / EMPLOYEE</label>
 <select id="search">
- <option value="">Pilih nama karyawan...</option>
+ <option value="">Pilih karyawan / employee...</option>
 </select>
 </div>
 <div><label>STATUS</label><div style="font-size:11px;font-weight:900;color:#15803d;padding:11px 0">Menunggu Approval</div></div>
@@ -101,11 +101,16 @@ function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c
 function getOwner(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid}
 
 function employeeName(r){
- const k=r?.karyawan;
- if(k&&typeof k==="object"){
-  return String(k.nama||k.name||k.namaKaryawan||k.employeeName||"").trim();
+ // Data utama FIXZY: karyawan.nama
+ const sources=[r?.karyawan,r?.employee];
+ for(const k of sources){
+  if(k&&typeof k==="object"){
+   const name=String(k.nama||k.name||k.namaKaryawan||k.employeeName||k.namaEmployee||"").trim();
+   if(name)return name;
+  }
+  if(typeof k==="string"&&k.trim())return k.trim();
  }
- if(typeof k==="string"&&k.trim())return k.trim();
+ // Dukungan data lama/dokumen yang menyimpan nama employee langsung di field order.
  return String(r?.karyawanNama||r?.namaKaryawan||r?.employeeName||r?.namaEmployee||r?.createdByName||r?.namaPenginput||"").trim();
 }
 function employeeKey(r){return employeeName(r).toLowerCase().replace(/\s+/g," ").trim()}
@@ -231,7 +236,7 @@ function loadEmployeeOptions(){
   }
  });
 
- select.innerHTML='<option value="">Pilih nama karyawan...</option>';
+ select.innerHTML='<option value="">Pilih karyawan / employee...</option>';
  [...map.entries()]
    .sort((a,b)=>a[1].localeCompare(b[1],"id",{sensitivity:"base"}))
    .forEach(([key,name])=>{
