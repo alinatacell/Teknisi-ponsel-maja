@@ -55,7 +55,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,deleteDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,updateDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
@@ -175,6 +175,7 @@ async function loadHistory(){
  historyOrders=[...map.values()].filter(o=>{
    const st=normStatus(o.status||o.approvalStatus||"");
    if(!["approved","ditolak","rejected","declined"].includes(st))return false;
+   if(o.hiddenFromApprovalHistory===true)return false;
    return orderEmployeeMatches(o);
  }).sort((a,b)=>{
    const av=a.approvedAt?.toMillis?a.approvedAt.toMillis():new Date(a.approvedAt||a.updatedAt||a.createdAt||a.tanggal||0).getTime();
@@ -364,21 +365,10 @@ window.deleteHistoryOrder=async id=>{
  if(!r)return;
  const st=normStatus(r.status||r.approvalStatus||"");
  const label=st==="approved"?"APPROVED":"DITOLAK";
- if(!confirm(`HAPUS permanen order ${r.nomorNota||id} yang berstatus ${label}?\n\nData order akan dihapus dari penjualan${st==="approved"?" dan order_member":""}.`))return;
+ if(!confirm(`Sembunyikan riwayat order ${r.nomorNota||id} (${label})?\n\nOrder tidak akan tampil lagi di Riwayat Approval. Data transaksi APPROVED di order_member tetap dipertahankan.`))return;
  try{
-   msg("Menghapus riwayat order...","ok");
+   msg("Menghapus dari tampilan riwayat...","ok");
    const ref=doc(db,"penjualan",id);
-   const omRefs=[];
-   if(st==="approved"){
-     const orderMemberId=String(r.orderMemberId||"").trim();
-     if(orderMemberId)omRefs.push(doc(db,"order_member",orderMemberId));
-     else{
-       try{
-         const q=await getDocs(query(collection(db,"order_member"),where("sourcePenjualanId","==",id)));
-         q.forEach(d=>omRefs.push(d.ref));
-       }catch(e){console.warn("Cari order_member untuk hapus",e?.message||e)}
-     }
-   }
    await runTransaction(db,async tx=>{
      const snap=await tx.get(ref);
      if(!snap.exists())throw Error("Order sudah tidak ada.");
@@ -386,10 +376,16 @@ window.deleteHistoryOrder=async id=>{
      if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
      const current=normStatus(d.status||d.approvalStatus||"");
      if(!["approved","ditolak","rejected","declined"].includes(current))throw Error("Order sudah berubah status.");
-     tx.delete(ref);
-     omRefs.forEach(x=>tx.delete(x));
+     // Jangan tx.delete: rules Owner FIXZY umumnya mengizinkan UPDATE tetapi tidak DELETE.
+     // Riwayat disembunyikan dengan flag sehingga transaksi asli tetap aman.
+     tx.update(ref,{
+       hiddenFromApprovalHistory:true,
+       historyDeletedAt:serverTimestamp(),
+       historyDeletedBy:uid,
+       updatedAt:serverTimestamp()
+     });
    });
-   await reloadAfterHistoryChange(`Riwayat order ${r.nomorNota||id} berhasil dihapus.`);
+   await reloadAfterHistoryChange(`Riwayat order ${r.nomorNota||id} berhasil dihapus dari tampilan riwayat.`);
  }catch(e){console.error(e);msg("Gagal menghapus riwayat: "+(e?.message||e),"err")}
 };
 
