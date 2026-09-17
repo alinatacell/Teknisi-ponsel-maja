@@ -65,11 +65,12 @@ body.dark .employee-btn.active{background:#ffc107;color:#111827}
 <div class="card"><div class="title">🔎 Cari Order Berdasarkan Nama Karyawan</div>
 <div class="filters">
 <div class="employee-search-wrap"><label>CARI BERDASARKAN KARYAWAN / EMPLOYEE</label>
-<div class="employee-menu-wrap">
-  <label>KARYAWAN / EMPLOYEE</label>
-  <div id="employeeMenu" class="employee-menu">
-    <button type="button" class="employee-btn active" data-employee="">SEMUA</button>
-  </div>
+<div class="employee-search-wrap">
+  <label>CARI KARYAWAN / EMPLOYEE</label>
+  <select id="search">
+    <option value="">Pilih karyawan...</option>
+  </select>
+  <div class="employee-help">Nama karyawan dan kode dimuat otomatis dari data Firebase Owner yang sedang login.</div>
 </div>
 </div>
 <div><label>STATUS</label><div style="font-size:11px;font-weight:900;color:#15803d;padding:11px 0">Menunggu Approval</div></div>
@@ -115,132 +116,119 @@ function employeeUid(r){const k=r?.karyawan||r?.employee||{};if(k&&typeof k==="o
 function employeeKey(r){return employeeName(r).toLowerCase().replace(/\s+/g," ").trim()}
 function normalizeEmployee(e){return{uid:String(e.uid||e.id||e.userId||"").trim(),nama:String(e.nama||e.name||e.namaKaryawan||e.employeeName||e.namaEmployee||"Karyawan").trim(),email:String(e.email||"").trim(),wa:String(e.wa||e.noWa||e.nomorWa||"").trim(),kode:String(e.kode||e.kodeKaryawan||"").trim()}}
 function employeeSearchText(e){return[e.uid,e.nama,e.name,e.email,e.wa,e.noWa,e.kode,e.kodeKaryawan,e.role].map(v=>String(v??"")).join(" ").toLowerCase()}
-async function loadEmployees(){employees=[];const map=new Map();const qs=[query(collection(db,"users"),where("ownerUid","==",ownerUid)),query(collection(db,"users"),where("ownerId","==",ownerUid))];for(const q of qs){try{const snap=await getDocs(q);snap.forEach(d=>{const x={uid:d.id,...d.data()},rr=String(x.role||"").toLowerCase();if(["karyawan","employee","karyawan/employee","staff"].includes(rr)){const e=normalizeEmployee(x);if(e.uid&&!map.has(e.uid))map.set(e.uid,e)}})}catch(e){console.warn("Query users employee:",e.message||e)}}employees=[...map.values()]}
-function showEmployeeResults(list){const box=$("employeeResults");if(!box)return;if(!list.length){box.innerHTML='<div class="employee-empty">Karyawan / employee tidak ditemukan di Firebase.</div>';box.classList.add("show");return}box.innerHTML=list.slice(0,30).map(e=>`<div class="employee-result" data-employee-uid="${esc(e.uid)}"><b>${esc(e.nama)}</b>${e.kode||e.email?`<small>${esc([e.kode,e.email].filter(Boolean).join(" • "))}</small>`:""}</div>`).join("");box.classList.add("show")}
-function chooseEmployee(id){const e=employees.find(x=>x.uid===id);if(!e)return;selectedEmployee=e;$("search").value=e.nama;$("employeeResults").classList.remove("show");render();renderApprovedHistory();renderCicilanRequests()}
-function searchEmployees(){const key=$("search").value.trim().toLowerCase();selectedEmployee=null;if(!key){$("employeeResults").classList.remove("show");render();renderApprovedHistory();renderCicilanRequests();return}showEmployeeResults(employees.filter(e=>employeeSearchText(e).includes(key)))}
-async function getSpreadsheetLinks(){
- const s=await getDoc(doc(db,"pengaturan_spreadsheet",ownerUid));if(!s.exists())return[];
- const d=s.data()||{};let links=Array.isArray(d.spreadsheetLinks)?d.spreadsheetLinks.map(x=>typeof x==="string"?x:String(x?.url||"")).map(x=>x.trim()).filter(Boolean):[];
- if(!links.length&&d.spreadsheetUrl)links=[String(d.spreadsheetUrl).trim()];return[...new Set(links)];
-}
-function cleanSheet(s){return String(s??"").trim().toLowerCase().replace(/[\s_\-()./]+/g,"")}
-function pickSheet(o,keys){for(const k of keys){const v=o[cleanSheet(k)];if(v!==undefined&&String(v).trim()!=="")return v}return""}
-function sheetNum(v){
- if(typeof v==="number")return Number.isFinite(v)?v:0;let x=String(v??"").trim().replace(/[^\d,.-]/g,"");if(!x)return 0;
- const dots=(x.match(/\./g)||[]).length,commas=(x.match(/,/g)||[]).length;
- if(dots&&commas){const ld=x.lastIndexOf("."),lc=x.lastIndexOf(",");if(lc>ld){const dec=x.length-lc-1;x=dec<=2?x.replace(/\./g,"").replace(",","."):x.replace(/,/g,"").replace(/\./g,"")}else{const dec=x.length-ld-1;x=dec<=2?x.replace(/,/g,""):x.replace(/,/g,"").replace(/\./g,"")}}
- else if(commas){const a=x.split(",");x=a.length===2&&a[1].length<=2?x.replace(",","."):x.replace(/,/g,"")}
- else if(dots){const a=x.split(".");x=a.length===2&&a[1].length<=2?x:x.replace(/\./g,"")}
- const n=parseFloat(x);return Number.isFinite(n)?n:0;
-}
-function parseCSV(text){
- const out=[];let row=[],cell="",q=false;text=text.replace(/^\uFEFF/,"");
- for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'){if(q&&n==='"'){cell+='"';i++}else q=!q}else if(c===","&&!q){row.push(cell);cell=""}else if((c==="\n"||c==="\r")&&!q){if(c==="\r"&&n==="\n")i++;row.push(cell);cell="";if(row.some(v=>String(v).trim()))out.push(row);row=[]}else cell+=c}
- if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()))out.push(row)}return out;
-}
-function normalizeSheet(rows,sourceIndex,sourceUrl){
- if(!rows.length)throw Error("Spreadsheet kosong.");const h=rows[0].map(cleanSheet),data=[];
- for(let i=1;i<rows.length;i++){const r=rows[i],o={};h.forEach((k,j)=>o[k]=r[j]??"");
-  const nama=pickSheet(o,["nama barang","nama produk","nama","produk","product","barang"]);if(!nama)continue;
-  const modalValue=pickSheet(o,["modal","harga modal","harga beli","harga modal produk","hpp","harga pokok"]),jualValue=pickSheet(o,["jual","harga jual","harga jual produk","harga penjualan"]),supplier=pickSheet(o,["supplier","suplier","nama supplier","nama suplier","vendor"]),stokValue=pickSheet(o,["stock","stok","sisa stok","sisa","jumlah stok"]),kode=pickSheet(o,["kode","sku","kode produk","id"])||String(r[0]??"").trim();
-  const modal=sheetNum(modalValue!==""?modalValue:(r[3]??"")),jual=sheetNum(jualValue!==""?jualValue:(r[4]??"")),stok=Math.max(0,sheetNum(stokValue!==""?stokValue:(r[6]??"")));
-  data.push({id:`sheet${sourceIndex}_${i}_${btoa(unescape(encodeURIComponent(String(sourceUrl)))).replace(/[^a-zA-Z0-9]/g,"").slice(0,10)}`,kode:String(kode||"").trim(),nama:String(nama).trim(),namaProduk:String(nama).trim(),kodeProduk:String(kode||"").trim(),supplier:String(supplier||`Supplier ${sourceIndex}`).trim(),modal,jual,stock:stok,stok,hargaCash:modal,hargaTempo:jual,hargaDasar:modal,hargaJual:jual,modalSatuan:modal,sourceIndex,sourceSpreadsheet:sourceUrl,ownerUid});
- }return data;
-}
-function csvUrlFromSheet(url){
- const u=new URL(url),host=u.hostname.toLowerCase();if(!host.includes("docs.google.com")||!u.pathname.includes("/spreadsheets/"))return url;
- const gid=u.searchParams.get("gid")||(url.match(/[?#&]gid=([^&#]+)/i)||[])[1]||"0",pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)\/pub(?:html)?/i);
- if(pub)return`https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
- const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);if(id)return`https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;return url;
-}
-async function readSheet(url,index){
- const res=await fetch(csvUrlFromSheet(url),{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);const text=await res.text();
- if(!text||text.trim().length<2)throw Error("Data spreadsheet kosong.");if(/<html|<!doctype/i.test(text.slice(0,500)))throw Error("Bukan CSV. Pastikan Spreadsheet sudah Publish to web.");
- return normalizeSheet(parseCSV(text),index,url);
-}
-async function loadSpreadsheetCatalog(){
- stockCatalog=[];const links=await getSpreadsheetLinks(),map=new Map();
- for(let i=0;i<links.length;i++)try{for(const p of await readSheet(links[i],i+1))map.set(`${p.supplier}|${p.kode}|${p.nama}`.toLowerCase(),p)}catch(e){console.warn("Spreadsheet",i+1,e)}
- stockCatalog=[...map.values()];
-}
-function itemName(x){return String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-")}
-function stockName(x){return String(x.nama||x.namaProduk||x.namaBarang||x.kode||x.kodeProduk||"-")}
-function stockCode(x){return String(x.kode||x.kodeProduk||x.kodeBarang||"")}
-function stockPrice(x){return Number(x.hargaJual??x.harga??x.hargaTempo??x.hargaCash??0)||0}
-function stockModal(x){return Number(x.modalSatuan??x.modal??x.hargaModal??0)||0}
-function orderAdjustments(r,item){
- const tab=Number(item?.tabunganPerPcs??r?.tabunganPerPcs??r?.tabunganMember??r?.tabunganMemberPerPcs??0)||0;
- const up=Number(item?.upPengelolaPerPcs??r?.upPengelolaPerPcs??r?.upPengelola??0)||0;
- return{tab,up};
-}
-function finalProductPrice(r,p,item){
- const base=isCash(r)?(Number(p?.modal)||0):(Number(p?.jual)||0);
- const {tab,up}=orderAdjustments(r,item);return{base,tab,up,final:base+tab+up};
-}
-function normalizeItems(r){
- let a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
- return a.map(x=>({...x,nama:itemName(x),produkId:x.produkId||x.id||"",kode:x.kode||x.kodeProduk||"",qty:Number(x.qty||x.jumlah||1),harga:Number(x.harga||x.hargaJual||0),diskon:Number(x.diskon??x.discount??0),modalSatuan:Number(x.modalSatuan??x.modal??0),approvedQty:Number(x.approvedQty??0),stokTersedia:Number(x.stokTersedia??0)}))
-}
-function member(r){return r.member||r.pelanggan||{}}
-function status(r){return String(r.status||"menunggu_approval").toLowerCase()}
-function isCash(r){return String(r.jenisHarga||"").toLowerCase()==="cash"||String(r.tipeTransaksi||"").toLowerCase()==="member_cash"}
-
-async function load(){
- rows=[];approvedRows=[];stockCatalog=[];sheetCache=null;sheetLinks=[];if(!ownerUid)return;
- msg("Memuat data pesanan dan katalog Spreadsheet...");
- try{
-  sheetLinks=await getSpreadsheetLinks();const all=[],errors=[];
-  for(let i=0;i<sheetLinks.length;i++)try{all.push(...await readSheet(sheetLinks[i],i+1))}catch(e){errors.push(`Spreadsheet ${i+1}: ${e.message}`)}
-  const smap=new Map();all.forEach(p=>smap.set(`${p.supplier}|${p.kode}|${p.nama}`.toLowerCase(),p));
-  sheetCache=[...smap.values()];stockCatalog=sheetCache;if(errors.length)console.warn(errors.join(" | "));
- }catch(e){console.warn("Spreadsheet settings:",e.message||e)}
-
- const queries=[
-  query(collection(db,"penjualan"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"penjualan"),where("ownerId","==",ownerUid))
- ];
+async function loadEmployees(){
  const map=new Map();
 
- for(const q of queries){
-  try{
-   const s=await getDocs(q);
-   s.forEach(d=>{
-    const x={id:d.id,...d.data()};
-    const source=String(x.sumber||"").toLowerCase(),tipe=String(x.tipeTransaksi||"").toLowerCase();
-    const valid=source==="order_spreadsheet"||tipe==="order_cash"||tipe==="order_tempo"||x.sumberSpreadsheet===true;
-    if(valid&&!map.has(d.id))map.set(d.id,x);
-   });
-  }catch(e){console.warn("Query penjualan:",e.message||e)}
+ // Sumber utama: collection users milik Owner yang sedang login.
+ const qs=[
+   query(collection(db,"users"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"users"),where("ownerId","==",ownerUid))
+ ];
+
+ for(const q of qs){
+   try{
+     const snap=await getDocs(q);
+     snap.forEach(d=>{
+       const x={id:d.id,...d.data()};
+       const role=String(x.role??"").toLowerCase().trim();
+       if(!["karyawan","employee","pegawai"].includes(role))return;
+
+       const name=String(x.nama??x.name??x.namaKaryawan??x.employeeName??"").trim();
+       const kode=String(x.kode??x.kodeKaryawan??x.employeeCode??"").trim();
+       if(!name)return;
+
+       const key=d.id;
+       if(!map.has(key))map.set(key,{uid:d.id,name,kode});
+     });
+   }catch(e){
+     console.warn("Query users/karyawan:",e.message);
+   }
  }
 
- const allRows=[...map.values()];
- rows=allRows.filter(r=>status(r)==="menunggu_approval");
- approvedRows=allRows.filter(r=>status(r)==="approved");
+ // Fallback hanya jika data employee tidak tersedia lengkap di users:
+ // ambil identitas karyawan yang memang tersimpan pada order Owner.
+ [...rows,...approvedRows].forEach(r=>{
+   const name=employeeName(r);
+   const eid=employeeUid(r);
+   const kode=String(
+     r.karyawan?.kode ??
+     r.employee?.kode ??
+     r.karyawanKode ??
+     r.employeeCode ??
+     ""
+   ).trim();
 
- loadEmployeeOptions();
- render();
- renderApprovedHistory();
+   if(!name)return;
+   const key=eid||("name:"+name.toLowerCase());
+   if(!map.has(key))map.set(key,{uid:eid,name,kode});
+ });
 
- rows.forEach(r=>{recalcOrder(r.id);checkStock(r.id)});
+ employees=[...map.values()].sort((a,b)=>
+   a.name.localeCompare(b.name,"id",{sensitivity:"base"})
+ );
+
+ const select=$("search");
+ if(!select)return;
+
+ select.innerHTML='<option value="">Pilih karyawan...</option>';
+
+ employees.forEach(e=>{
+   const opt=document.createElement("option");
+   // uid dipakai sebagai nilai utama; bila data order lama tidak punya uid,
+   // fallback menggunakan nama.
+   opt.value=e.uid||("name:"+e.name.toLowerCase());
+   opt.dataset.name=e.name;
+   opt.dataset.kode=e.kode||"";
+   opt.textContent=e.kode ? `${e.name} — ${e.kode}` : e.name;
+   select.appendChild(opt);
+ });
+}
+
+function selectedEmployee(){
+ const select=$("search");
+ const opt=select?.selectedOptions?.[0];
+ return {
+   uid:String(opt?.value||"").trim(),
+   name:String(opt?.dataset?.name||"").trim().toLowerCase(),
+   kode:String(opt?.dataset?.kode||"").trim().toLowerCase()
+ };
 }
 
 function render(){
- const selectedUid=String(window.selectedEmployeeUid||"").trim();
- const selectedName=String(window.selectedEmployeeName||"").trim().toLowerCase();
+ const sel=selectedEmployee();
 
- if(!selectedUid && !selectedName){
-  $("list").innerHTML='<div class="card empty">Pilih nama karyawan pada menu di atas untuk menampilkan order.</div>';
-  return;
+ // Tidak ada pilihan = tidak tampilkan order.
+ if(!sel.uid){
+   $("list").innerHTML='<div class="card empty">Pilih karyawan/employee terlebih dahulu untuk menampilkan order.</div>';
+   return;
  }
 
  const list=rows.filter(r=>{
-  if(status(r)!=="menunggu_approval")return false;
-  const eid=employeeUid(r);
-  const ename=employeeName(r).toLowerCase();
-  return (selectedUid && eid===selectedUid) || (!eid && ename===selectedName);
+   if(status(r)!=="menunggu_approval")return false;
+
+   const eid=employeeUid(r).toLowerCase();
+   const ename=employeeName(r).toLowerCase();
+   const ekode=String(
+     r.karyawan?.kode ??
+     r.employee?.kode ??
+     r.karyawanKode ??
+     r.employeeCode ??
+     ""
+   ).trim().toLowerCase();
+
+   // Jika order menyimpan uid employee, gunakan uid.
+   if(eid && eid===sel.uid.toLowerCase())return true;
+
+   // Untuk data lama tanpa uid, cocokkan nama/kode yang dipilih.
+   if(!eid && sel.name && ename===sel.name)return true;
+   if(!eid && sel.kode && ekode===sel.kode)return true;
+
+   return false;
  });
- $("list").innerHTML=list.length?list.map(renderOrder).join(""):'<div class="card empty">Tidak ada order karyawan ini yang menunggu approval.</div>';
+
+ $("list").innerHTML=list.length
+   ?list.map(renderOrder).join("")
+   :'<div class="card empty">Tidak ada order karyawan ini yang menunggu approval.</div>';
 }
 function renderApprovedHistory(){
  const box=$("approvedHistory");if(!box)return;
