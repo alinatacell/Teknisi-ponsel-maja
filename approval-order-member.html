@@ -128,80 +128,86 @@ function employeeUid(r){
 }
 
 async function loadEmployees(){
- const map=new Map();
+  // ACUAN STRUKTUR FIREBASE: data karyawan berada di collection "users".
+  // Field utama sesuai dokumen Firebase:
+  // uid, namaKaryawan, ownerUid, role, jabatan, dll.
+  employees=[];
 
- // ACUAN: pola loadKaryawan dari halaman Penjualan FIXZY.
- // Sumber karyawan: collection karyawan milik Owner + users milik Owner.
- const kQueries=[
-  query(collection(db,"karyawan"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"karyawan"),where("ownerId","==",ownerUid))
- ];
- for(const q of kQueries){
-  try{
-   const snap=await getDocs(q);
-   snap.forEach(d=>{
-    const x={id:d.id,...d.data()};
-    const nama=String(x.nama??x.namaKaryawan??x.displayName??x.name??x.email??"").trim();
-    if(!nama)return;
-    map.set(d.id,{uid:d.id,nama,kode:String(x.kode??x.kodeKaryawan??x.employeeCode??"").trim(),email:String(x.email??"").trim(),wa:String(x.wa??x.noWa??x.nomorWa??"").trim()});
-   });
-  }catch(e){ console.warn("Query karyawan:",e.message); }
- }
+  const map=new Map();
+  const queries=[
+    query(collection(db,"users"),where("ownerUid","==",ownerUid))
+  ];
 
- const uQueries=[
-  query(collection(db,"users"),where("ownerUid","==",ownerUid)),
-  query(collection(db,"users"),where("ownerId","==",ownerUid))
- ];
- for(const q of uQueries){
-  try{
-   const snap=await getDocs(q);
-   snap.forEach(d=>{
-    const x={id:d.id,...d.data()};
-    const r=String(x.role??"").trim().toLowerCase();
-    if(!["karyawan","employee","pegawai","teknisi"].includes(r))return;
-    const nama=String(x.nama??x.namaKaryawan??x.displayName??x.name??x.email??"").trim();
-    if(!nama)return;
-    map.set(d.id,{uid:d.id,nama,kode:String(x.kode??x.kodeKaryawan??x.employeeCode??x.kodeEmployee??"").trim(),email:String(x.email??"").trim(),wa:String(x.wa??x.noWa??x.nomorWa??"").trim()});
-   });
-  }catch(e){ console.warn("Query users karyawan:",e.message); }
- }
+  // ownerId hanya fallback kompatibilitas data lama.
+  queries.push(query(collection(db,"users"),where("ownerId","==",ownerUid)));
 
- // Fallback hanya untuk order Owner yang memang sudah menyimpan identitas karyawan.
- [...rows,...approvedRows].forEach(r=>{
-  const nama=employeeName(r);
-  if(!nama)return;
-  const eid=employeeUid(r);
-  const kode=String(r.karyawan?.kode??r.employee?.kode??r.karyawanKode??r.employeeCode??"").trim();
-  const key=eid||("name:"+nama.toLowerCase());
-  if(!map.has(key))map.set(key,{uid:eid,nama,kode});
- });
+  for(const q of queries){
+    try{
+      const snap=await getDocs(q);
+      snap.forEach(d=>{
+        const x={uid:String(d.id),...d.data()};
 
- // Hilangkan duplikat nama, seperti pola halaman Penjualan.
- const seen=new Set();
- employees=[];
- for(const e of map.values()){
-  const key=String(e.nama||"").toLowerCase().trim();
-  if(!key||seen.has(key))continue;
-  seen.add(key);
-  employees.push(e);
- }
- employees.sort((a,b)=>a.nama.localeCompare(b.nama,"id",{sensitivity:"base"}));
+        const roleUser=String(x.role||"").trim().toLowerCase();
 
- const select=$("search");
- if(!select)return;
- select.innerHTML='<option value="">Pilih karyawan...</option>';
- employees.forEach(e=>{
-  const opt=document.createElement("option");
-  opt.value=e.uid||("name:"+e.nama.toLowerCase());
-  opt.dataset.name=e.nama;
-  opt.dataset.kode=e.kode||"";
-  opt.textContent=e.kode?`${e.nama} — ${e.kode}`:e.nama;
-  select.appendChild(opt);
- });
+        // Dokumen karyawan dikenali dari namaKaryawan + role karyawan.
+        // Jangan mengambil dokumen Owner sebagai karyawan.
+        const isKaryawanRole=[
+          "karyawan","employee","pegawai","teknisi"
+        ].includes(roleUser);
 
- if(!employees.length){
-  select.innerHTML='<option value="">Karyawan belum ditemukan</option>';
- }
+        const nama=String(
+          x.namaKaryawan ??
+          x.nama ??
+          ""
+        ).trim();
+
+        if(!isKaryawanRole || !nama)return;
+
+        const employeeUid=String(x.uid||d.id).trim();
+        const kode=String(
+          x.kodeKaryawan ??
+          x.kode ??
+          x.employeeCode ??
+          x.kodeEmployee ??
+          ""
+        ).trim();
+
+        map.set(employeeUid,{
+          uid:employeeUid,
+          nama,
+          kode,
+          email:String(x.email||"").trim(),
+          wa:String(x.noWA??x.wa??x.noWa??x.nomorWa??"").trim(),
+          jabatan:String(x.jabatan||"").trim()
+        });
+      });
+    }catch(e){
+      console.warn("Load users karyawan:",e.message);
+    }
+  }
+
+  employees=[...map.values()].sort(
+    (a,b)=>a.nama.localeCompare(b.nama,"id",{sensitivity:"base"})
+  );
+
+  const select=$("search");
+  if(!select)return;
+
+  select.innerHTML='<option value="">Pilih karyawan...</option>';
+
+  employees.forEach(e=>{
+    const opt=document.createElement("option");
+    opt.value=e.uid;
+    opt.dataset.name=e.nama;
+    opt.dataset.kode=e.kode||"";
+    opt.textContent=e.kode ? `${e.nama} — ${e.kode}` : e.nama;
+    select.appendChild(opt);
+  });
+
+  if(!employees.length){
+    select.innerHTML='<option value="">Karyawan belum ditemukan</option>';
+    console.warn("Tidak ada karyawan pada users dengan ownerUid:",ownerUid);
+  }
 }
 
 function selectedEmployee(){
