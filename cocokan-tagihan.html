@@ -14,10 +14,10 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card{background:#111827;co
 </style></head><body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>🔎 Cocokkan Tagihan Supplier</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
-<div class="card"><div class="title">Input Tagihan Supplier</div><div class="desc">Masukkan nominal invoice supplier dan pilih jatuh tempo. Sistem hanya dapat dibuka oleh <b>Owner</b>. Data diambil dari <b>Rekap Order Member</b> dan hanya mencocokkan <b>Nilai Barang / harga normal</b>. Tabungan, UP pengelola, dan kas tidak masuk pencocokan.</div>
+<div class="card"><div class="title">Input Tagihan Supplier</div><div class="desc">Masukkan nominal invoice supplier dan pilih jatuh tempo. Sistem hanya dapat dibuka oleh <b>Owner</b>. Data diambil dari <b>Rekap Order Member</b> dan hanya mencocokkan <b>Nilai Barang / harga normal</b>. Tabungan dan UP pengelola tidak dihitung di halaman ini.</div>
 <div class="grid"><div><label>NOMINAL TAGIHAN SUPPLIER</label><input id="supplierNominal" inputmode="numeric" placeholder="Contoh: 6845730"></div><div><label>JATUH TEMPO</label><select id="dueInput"><option value="">Pilih jatuh tempo...</option></select></div></div><button id="matchBtn" class="btn primary" type="button">🔎 Cocokkan Data</button><button id="reloadDataBtn" class="btn" type="button" style="margin-top:12px;background:#e5e7eb">↻ Muat Data Terbaru</button></div>
 <div class="card"><div class="title">Hasil Pencocokan</div><div id="result"><div class="empty">Masukkan nominal supplier dan jatuh tempo, lalu tekan Cocokkan Data.</div></div></div>
-<div class="card"><div class="title">Rincian Seluruh Employee</div><div class="desc">Data mengikuti rumus asli <b>Rekap Order Member</b>. Nilai barang dipakai untuk pencocokan supplier; pembayaran dan sisa tagihan ditampilkan terpisah.</div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Nota</th><th>Jatuh Tempo</th><th>Status</th><th class="num">Qty</th><th class="num">Nilai Barang</th><th class="num">Sudah Dibayar</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="detailTable"><tr><td colspan="8" class="empty">Belum ada data.</td></tr></tbody></table></div></div>
+<div class="card"><div class="title">Rincian Seluruh Employee</div><div class="desc">Data mengikuti <b>Nilai Barang</b> pada Rekap Order Member. Hanya Nilai Barang yang dipakai untuk pencocokan supplier; UP Pengelola dan Tabungan Member tidak dihitung.</div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Nota</th><th>Jatuh Tempo</th><th>Status</th><th class="num">Qty</th><th class="num">Nilai Barang</th><th class="num">Sudah Dibayar</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="detailTable"><tr><td colspan="8" class="empty">Belum ada data.</td></tr></tbody></table></div></div>
 </main>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -90,10 +90,12 @@ function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??
 function calculateOrder(r){
  const items=itemList(r);
  const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
- const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
- const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
- const kas=kasOf(r);
- const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
+ // Halaman Cocokkan Tagihan Supplier hanya memakai Nilai Barang.
+ // UP Pengelola, Tabungan Member, dan Kas TIDAK masuk perhitungan.
+ const up=0;
+ const tabungan=0;
+ const kas=0;
+ const totalTagihan=Math.max(0,nilaiBarang);
  const paid=paidOf(r);
  const cash=isCashOrder(r);
  const sisa=cash?0:Math.max(0,totalTagihan-paid);
