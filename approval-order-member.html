@@ -71,7 +71,7 @@ function employeeUid(x){
  const k=x?.karyawan,e=x?.employee;
  if(k&&typeof k==="object")return String(k.uid??k.userUid??k.userId??k.id??"").trim();
  if(e&&typeof e==="object")return String(e.uid??e.userUid??e.userId??e.id??"").trim();
- return String(x?.karyawanUid??x?.employeeUid??x?.employeeId??x?.userUid??"").trim();
+ return String(x?.approvalEmployeeUid??x?.karyawanUid??x?.employeeUid??x?.employeeId??x?.userUid??"").trim();
 }
 function employeeName(x){
  const k=x?.karyawan,e=x?.employee;
@@ -79,7 +79,7 @@ function employeeName(x){
  if(typeof k==="string")return k.trim();
  if(e&&typeof e==="object")return String(e.nama??e.namaKaryawan??e.name??"").trim();
  if(typeof e==="string")return e.trim();
- return String(x?.karyawanNama??x?.namaKaryawan??x?.employeeName??x?.employeeNama??"").trim();
+ return String(x?.approvalEmployeeName??x?.karyawanNama??x?.namaKaryawan??x?.employeeName??x?.employeeNama??"").trim();
 }
 function member(x){
  const m=x?.member||x?.pelanggan||{};
@@ -164,22 +164,39 @@ async function loadHistory(){
  historyOrders=[];
  if(!ownerUid||!selected){renderHistory();return;}
  const map=new Map();
- // Riwayat diambil dari PENJUALAN karena di sinilah identitas employee
- // asal order tetap tersimpan. Setelah itu dikelompokkan berdasarkan MEMBER.
+ // RIWAYAT UTAMA = collection order_member. Penjualan hanya dipakai
+ // sebagai fallback identitas employee untuk data lama yang belum memiliki
+ // approvalEmployeeUid/approvalEmployeeName di order_member.
  for(const field of ["ownerUid","ownerId"]){
    try{
-     const snap=await getDocs(query(collection(db,"penjualan"),where(field,"==",ownerUid)));
+     const snap=await getDocs(query(collection(db,"order_member"),where(field,"==",ownerUid)));
      snap.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
-   }catch(e){console.warn("riwayat penjualan "+field,e?.message||e)}
+   }catch(e){console.warn("riwayat order_member "+field,e?.message||e)}
  }
- historyOrders=[...map.values()].filter(o=>{
-   const st=normStatus(o.status||o.approvalStatus||"");
-   if(!["approved","ditolak","rejected","declined"].includes(st))return false;
+ let list=[...map.values()].filter(o=>{
    if(o.hiddenFromApprovalHistory===true)return false;
-   return orderEmployeeMatches(o);
+   const st=normStatus(o.approvalStatus||o.status||"");
+   return ["approved","rejected","ditolak","order_member","tagihan","lunas"].includes(st);
+ });
+ // Untuk dokumen lama, ambil employee hanya sebagai pencocokan. Isi riwayat
+ // tetap sepenuhnya berasal dari order_member.
+ const needFallback=list.filter(o=>!employeeUid(o)&&!employeeName(o)&&o.sourcePenjualanId);
+ if(needFallback.length){
+   const sourceMap=new Map();
+   for(const o of needFallback){
+     try{
+       const ps=await getDoc(doc(db,"penjualan",String(o.sourcePenjualanId)));
+       if(ps.exists())sourceMap.set(o.sourcePenjualanId,ps.data()||{});
+     }catch(e){console.warn("fallback employee source penjualan",o.sourcePenjualanId,e?.message||e)}
+   }
+   list=list.map(o=>sourceMap.has(o.sourcePenjualanId)?{...o,__sourceEmployee:sourceMap.get(o.sourcePenjualanId)}:o);
+ }
+ historyOrders=list.filter(o=>{
+   if(orderEmployeeMatches(o))return true;
+   return o.__sourceEmployee ? orderEmployeeMatches({...o,...o.__sourceEmployee}) : false;
  }).sort((a,b)=>{
-   const av=a.approvedAt?.toMillis?a.approvedAt.toMillis():new Date(a.approvedAt||a.updatedAt||a.createdAt||a.tanggal||0).getTime();
-   const bv=b.approvedAt?.toMillis?b.approvedAt.toMillis():new Date(b.approvedAt||b.updatedAt||b.createdAt||b.tanggal||0).getTime();
+   const av=a.approvedAt?.toMillis?a.approvedAt.toMillis():new Date(a.approvedAt||a.rejectedAt||a.updatedAt||a.createdAt||0).getTime();
+   const bv=b.approvedAt?.toMillis?b.approvedAt.toMillis():new Date(b.approvedAt||b.rejectedAt||b.updatedAt||b.createdAt||0).getTime();
    return bv-av;
  });
  renderHistory();
@@ -280,7 +297,9 @@ window.approveOrder=async id=>{
      const order={
        ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
        nomorNota:d.nomorNota||id,tipeOrder:String(d.jenisHarga||"").toLowerCase()==="cash"?"member_cash":"member_tempo",
-       status:"order_member",revisionRequired:false,
+       status:"order_member",approvalStatus:"approved",revisionRequired:false,
+       approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",
+       employeeUid:selected?.uid||"",employeeName:selected?.nama||"",
        member:d.member||d.pelanggan||{},
        items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
        dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
@@ -304,9 +323,26 @@ window.rejectOrder=async id=>{
    await runTransaction(db,async tx=>{
      const s=await tx.get(ref);if(!s.exists())throw Error("Order tidak ditemukan.");
      const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
-     tx.update(ref,{status:"ditolak",approvalStatus:"ditolak",alasanApproval:alasan,approvedBy:uid,approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",updatedAt:serverTimestamp()});
+     const its=itemsOf(d),total=Number(d.total??d.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
+     const existingId=String(d.orderMemberId||"").trim();
+     const omRef=existingId?doc(db,"order_member",existingId):doc(collection(db,"order_member"));
+     const order={
+       ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
+       nomorNota:d.nomorNota||id,tipeOrder:String(d.jenisHarga||"").toLowerCase()==="cash"?"member_cash":"member_tempo",
+       status:"rejected",approvalStatus:"rejected",revisionRequired:false,
+       approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",
+       employeeUid:selected?.uid||"",employeeName:selected?.nama||"",
+       member:d.member||d.pelanggan||{},items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
+       dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
+       sisa:Math.max(0,total-Number(d.dp??d.uangMuka??0)),piutang:Math.max(0,total-Number(d.dp??d.uangMuka??0)),
+       tempoHari:Number(d.tempoHari??0)||0,jatuhTempo:d.jatuhTempo||d.tanggalJatuhTempo||"",
+       alasanApproval:alasan,alasanPenolakan:alasan,rejectedAt:serverTimestamp(),rejectedBy:uid,
+       updatedAt:serverTimestamp(),hiddenFromApprovalHistory:false
+     };
+     tx.set(omRef,order,{merge:true});
+     tx.update(ref,{status:"ditolak",approvalStatus:"ditolak",alasanApproval:alasan,approvedBy:uid,orderMemberId:omRef.id,approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",updatedAt:serverTimestamp()});
    });
-   msg("Order ditolak.","ok");await loadOrders();await loadHistory();
+   msg("Order ditolak dan disimpan ke riwayat order_member.","ok");await loadOrders();await loadHistory();
  }catch(e){console.error(e);msg("Gagal menolak: "+(e?.message||e),"err")}
 };
 async function reloadAfterHistoryChange(message){
@@ -321,71 +357,45 @@ async function reloadAfterHistoryChange(message){
 }
 
 window.returnHistoryToPending=async id=>{
- const r=historyOrders.find(x=>x.id===id);
- if(!r)return;
- const st=normStatus(r.status||r.approvalStatus||"");
- const label=st==="approved"?"APPROVED":"DITOLAK";
+ const r=historyOrders.find(x=>x.id===id);if(!r)return;
+ const st=normStatus(r.approvalStatus||r.status||"");
+ const label=["rejected","ditolak"].includes(st)?"DITOLAK":"APPROVED";
  if(!confirm(`Kembalikan order ${r.nomorNota||id} (${label}) ke MENUNGGU APPROVAL untuk revisi?`))return;
  try{
    msg("Mengembalikan order ke approval...","ok");
-   const ref=doc(db,"penjualan",id);
-   let orderMemberId=String(r.orderMemberId||"").trim();
-   const omRefs=[];
-   if(st==="approved" && !orderMemberId){
-     try{
-       const q=await getDocs(query(collection(db,"order_member"),where("sourcePenjualanId","==",id)));
-       q.forEach(d=>omRefs.push(d.ref));
-     }catch(e){console.warn("Cari order_member terkait",e?.message||e)}
-   }else if(st==="approved" && orderMemberId){
-     omRefs.push(doc(db,"order_member",orderMemberId));
-   }
+   const ref=doc(db,"penjualan",String(r.sourcePenjualanId||""));
+   const omRef=doc(db,"order_member",r.id);
    await runTransaction(db,async tx=>{
-     const snap=await tx.get(ref);
-     if(!snap.exists())throw Error("Order tidak ditemukan.");
-     const d=snap.data()||{};
-     if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
-     const current=normStatus(d.status||d.approvalStatus||"");
-     if(!["approved","ditolak","rejected","declined"].includes(current))throw Error("Order sudah berubah status.");
-     tx.update(ref,{
-       status:"menunggu_approval",
-       approvalStatus:"menunggu_approval",
-       revisionRequired:true,
-       revisionReturnedAt:serverTimestamp(),
-       revisionReturnedBy:uid,
-       updatedAt:serverTimestamp()
-     });
-     omRefs.forEach(x=>tx.delete(x));
+     const os=await tx.get(omRef);if(!os.exists())throw Error("Data order_member tidak ditemukan.");
+     const o=os.data()||{};if(String(o.ownerUid||o.ownerId||"")!==ownerUid)throw Error("Order Member bukan milik Owner ini.");
+     const current=normStatus(o.approvalStatus||o.status||"");
+     if(!["approved","rejected","ditolak","order_member","tagihan","lunas"].includes(current))throw Error("Order sudah bukan riwayat APPROVED/DITOLAK.");
+     tx.update(omRef,{status:"revisi",approvalStatus:"revisi",revisionRequired:true,revisionReturnedAt:serverTimestamp(),revisionReturnedBy:uid,hiddenFromApprovalHistory:false,updatedAt:serverTimestamp()});
+     if(r.sourcePenjualanId){
+       const ps=await tx.get(ref);if(!ps.exists())throw Error("Data penjualan sumber tidak ditemukan.");
+       const p=ps.data()||{};if(String(p.ownerUid||p.ownerId||"")!==ownerUid)throw Error("Data penjualan bukan milik Owner ini.");
+       tx.update(ref,{status:"menunggu_approval",approvalStatus:"menunggu_approval",revisionRequired:true,revisionReturnedAt:serverTimestamp(),revisionReturnedBy:uid,updatedAt:serverTimestamp()});
+     }
    });
    await reloadAfterHistoryChange(`Order ${r.nomorNota||id} dikembalikan ke MENUNGGU APPROVAL.`);
  }catch(e){console.error(e);msg("Gagal mengembalikan order: "+(e?.message||e),"err")}
 };
-
 window.deleteHistoryOrder=async id=>{
- const r=historyOrders.find(x=>x.id===id);
- if(!r)return;
- const st=normStatus(r.status||r.approvalStatus||"");
- const label=st==="approved"?"APPROVED":"DITOLAK";
- if(!confirm(`Sembunyikan riwayat order ${r.nomorNota||id} (${label})?\n\nOrder tidak akan tampil lagi di Riwayat Approval. Data transaksi APPROVED di order_member tetap dipertahankan.`))return;
+ const r=historyOrders.find(x=>x.id===id);if(!r)return;
+ const st=normStatus(r.approvalStatus||r.status||"");
+ const label=["rejected","ditolak"].includes(st)?"DITOLAK":"APPROVED";
+ if(!confirm(`Sembunyikan riwayat order ${r.nomorNota||id} (${label})?\n\nData asli order_member tetap tersimpan.`))return;
  try{
    msg("Menghapus dari tampilan riwayat...","ok");
-   const ref=doc(db,"penjualan",id);
+   const ref=doc(db,"order_member",id);
    await runTransaction(db,async tx=>{
-     const snap=await tx.get(ref);
-     if(!snap.exists())throw Error("Order sudah tidak ada.");
-     const d=snap.data()||{};
-     if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
-     const current=normStatus(d.status||d.approvalStatus||"");
-     if(!["approved","ditolak","rejected","declined"].includes(current))throw Error("Order sudah berubah status.");
-     // Jangan tx.delete: rules Owner FIXZY umumnya mengizinkan UPDATE tetapi tidak DELETE.
-     // Riwayat disembunyikan dengan flag sehingga transaksi asli tetap aman.
-     tx.update(ref,{
-       hiddenFromApprovalHistory:true,
-       historyDeletedAt:serverTimestamp(),
-       historyDeletedBy:uid,
-       updatedAt:serverTimestamp()
-     });
+     const snap=await tx.get(ref);if(!snap.exists())throw Error("Data order_member tidak ditemukan.");
+     const d=snap.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order Member bukan milik Owner ini.");
+     const current=normStatus(d.approvalStatus||d.status||"");
+     if(!["approved","rejected","ditolak","order_member","tagihan","lunas"].includes(current))throw Error("Order sudah bukan status riwayat.");
+     tx.update(ref,{hiddenFromApprovalHistory:true,historyDeletedAt:serverTimestamp(),historyDeletedBy:uid,updatedAt:serverTimestamp()});
    });
-   await reloadAfterHistoryChange(`Riwayat order ${r.nomorNota||id} berhasil dihapus dari tampilan riwayat.`);
+   await reloadAfterHistoryChange(`Riwayat order ${r.nomorNota||id} berhasil disembunyikan.`);
  }catch(e){console.error(e);msg("Gagal menghapus riwayat: "+(e?.message||e),"err")}
 };
 
