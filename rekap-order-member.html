@@ -26,6 +26,22 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .rekap-item.tagihan{background:#fef3c7}
 .rekap-item.tagihan .value{color:#b45309}
 
+
+.rekap-jatuh-tempo{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fff}
+.jt-title{font-size:13px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:8px;margin-bottom:9px}
+.jt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.jt-item{border:2px solid #111827;border-radius:8px;padding:10px;background:#fffbeb;min-width:0}
+.jt-item .jt-date{font-size:10px;font-weight:900;color:#92400e;margin-bottom:5px}
+.jt-item .jt-nominal{font-size:15px;font-weight:900;color:#b45309;word-break:break-word}
+.jt-item .jt-count{font-size:10px;color:#64748b;margin-top:4px}
+.jt-empty{text-align:center;padding:10px;color:#64748b;font-size:11px}
+body.dark .rekap-jatuh-tempo{background:#111827;border-color:#475569}
+body.dark .jt-title{border-color:#475569}
+body.dark .jt-item{background:#292211;border-color:#475569}
+body.dark .jt-item .jt-date{color:#fbbf24}
+body.dark .jt-item .jt-nominal{color:#f59e0b}
+@media(max-width:650px){.jt-grid{grid-template-columns:1fr 1fr}.jt-item:last-child:nth-child(odd){grid-column:1/-1}}
+
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
@@ -101,9 +117,15 @@ body.dark td{border-color:#334155}
     </div>
   </div>
 </div>
+<div class="rekap-jatuh-tempo">
+  <div class="jt-title">📅 TAGIHAN BERDASARKAN TANGGAL JATUH TEMPO</div>
+  <div id="jatuhTempoSummary" class="jt-grid">
+    <div class="jt-empty">Memuat...</div>
+  </div>
+</div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -123,12 +145,9 @@ function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice 
 let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
 
 function ownerOf(d){
- const role=String(d.role||"").trim().toLowerCase();
+ const role=String(d.role||"").toLowerCase();
  if(role==="owner")return uid;
- if(role==="superadmin"||role==="super_admin"||role==="super admin")return "";
- if(["karyawan","employee","karyawan/employee","pegawai"].includes(role)){
-   return String(d.ownerUid||d.ownerId||"").trim();
- }
+ if(role==="superadmin"||role==="super_admin")return "";
  return String(d.ownerUid||d.ownerId||"").trim()||uid;
 }
 
@@ -147,12 +166,15 @@ function basePriceOfItem(x,r={}){
  const cash=isCashOrder(r);
  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
+ // Harga pada items hasil approval adalah harga yang disetujui.
+ // Setelah revisi, harga ini harus menjadi sumber utama Rekap.
+ // hargaDasar/hargaTempo hanya menjadi fallback jika harga tidak tersedia.
+ const approvedPrice=Number(x.harga);
+ if(Number.isFinite(approvedPrice)&&approvedPrice>0)return approvedPrice;
  const direct=Number(x.hargaDasar);
  if(Number.isFinite(direct)&&direct>0)return direct;
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
  if(Number.isFinite(specific)&&specific>0)return specific;
- const composed=Number(x.harga);
- if(Number.isFinite(composed)&&composed>0)return Math.max(0,composed-up-tab);
  return 0;
 }
 
@@ -352,6 +374,48 @@ function renderRekap(){
   </tr>`;
  }).join("");
 
+
+ // Pisahkan sisa tagihan berdasarkan tanggal jatuh tempo.
+ const jatuhTempoMap=new Map();
+ data.forEach(r=>{
+   const calc=calculateOrder(r);
+   const kasKey=kasMemberMonthKey(r);
+   const kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
+   const totalTagihanAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
+   const sisa=calc.cash?0:Math.max(0,totalTagihanAwal-calc.paid);
+   if(sisa<=0)return;
+
+   const due=dueDate(r);
+   const key=due
+     ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
+     : "tanpa-tanggal";
+
+   const old=jatuhTempoMap.get(key)||{date:due,total:0,count:0};
+   old.total+=sisa;
+   old.count++;
+   jatuhTempoMap.set(key,old);
+ });
+
+ const jtRows=[...jatuhTempoMap.values()].sort((a,b)=>{
+   if(!a.date&&!b.date)return 0;
+   if(!a.date)return 1;
+   if(!b.date)return -1;
+   return a.date-b.date;
+ });
+
+ $("jatuhTempoSummary").innerHTML=jtRows.length
+   ? jtRows.map(x=>{
+       const label=x.date
+         ? x.date.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"})
+         : "Tanggal belum diisi";
+       return `<div class="jt-item">
+         <div class="jt-date">JATUH TEMPO ${esc(label)}</div>
+         <div class="jt-nominal">${rp(x.total)}</div>
+         <div class="jt-count">${x.count} order</div>
+       </div>`;
+     }).join("")
+   : '<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
+
  $("totalNilaiBarang").textContent=rp(nilai);
  $("totalPengelola").textContent=rp(up);
  $("totalTabungan").textContent=rp(tabungan);
@@ -377,43 +441,24 @@ $("dark").onclick=()=>{
    document.body.classList.contains("dark")?"☀️":"🌙";
 };
 
-async function getProfileForUser(u){
-  // Pertama: document ID = UID.
-  const direct=await getDoc(doc(db,"users",u.uid));
-  if(direct.exists())return direct.data()||{};
+onAuthStateChanged(auth,async u=>{
+ if(!u){
+  notice("Belum login. Silakan login melalui FIXZY.","err");
+  return;
+ }
 
-  // Kompatibel dengan users lama yang document ID-nya bukan UID.
-  const byUid=await getDocs(query(collection(db,"users"),where("uid","==",u.uid)));
-  if(!byUid.empty)return byUid.docs[0].data()||{};
-
-  if(u.email){
-    const byEmail=await getDocs(query(collection(db,"users"),where("email","==",u.email)));
-    if(!byEmail.empty)return byEmail.docs[0].data()||{};
-  }
-
-  throw Error("Profil akun tidak ditemukan.");
-}
-
-async function startFromExistingSession(u){
-  if(!u)return;
-
+ try{
   uid=u.uid;
-  $("email").textContent=u.email||"-";
-  notice("Membaca akun yang sudah login di index...");
 
-  profile=await getProfileForUser(u);
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+
+  profile=s.data()||{};
   ownerUid=ownerOf(profile);
 
-  const role=String(profile.role||"").trim().toLowerCase();
-
-  if(role==="superadmin"||role==="super_admin"||role==="super admin"){
-    ready=true;
-    $("orderTable").innerHTML='<tr><td colspan="11" class="empty">Akun Superadmin tidak membuka data bisnis Owner.</td></tr>';
-    notice("Akun Superadmin • Data bisnis Owner tidak dibuka.","err");
-    return;
-  }
-
   if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
+
+  $("email").textContent=u.email||"-";
 
   await loadStock();
   await loadOrders();
@@ -421,46 +466,16 @@ async function startFromExistingSession(u){
   ready=true;
   renderAll();
 
-  const roleLabel=String(profile.role||"Akun").trim()||"Akun";
   notice(
-    `Akun aktif • ${roleLabel} • Rekap milik Owner ini • ${orders.length} order member.`,
+    `Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,
     "ok"
   );
-}
-
-let authHandled=false;
-
-async function handleExistingAuth(u){
-  if(authHandled)return;
-  if(!u){
-    // Jangan meminta login ulang. Tunggu sebentar karena index bisa baru
-    // selesai memulihkan sesi Firebase.
-    notice("Membaca sesi login dari index...");
-    return;
-  }
-
-  authHandled=true;
-  try{
-    await startFromExistingSession(u);
-  }catch(e){
-    console.error(e);
-    authHandled=false;
-    notice("Sesi akun terbaca, tetapi data Owner gagal dimuat: "+e.message,"err");
-  }
-}
-
-// Pakai persistence browser yang sama. Tidak ada halaman/form login di sini.
-setPersistence(auth,browserLocalPersistence).catch(e=>{
-  console.warn("Auth persistence:",e.message);
+ }catch(e){
+  console.error(e);
+  notice(
+    "Gagal memuat Rekap Order Member: "+e.message,
+    "err"
+  );
+ }
 });
-
-onAuthStateChanged(auth,u=>{
-  handleExistingAuth(u);
-});
-
-// Cek currentUser juga, supaya tidak bergantung hanya pada event pertama.
-setTimeout(()=>{
-  if(!authHandled && auth.currentUser)handleExistingAuth(auth.currentUser);
-},1500);
-
 </script></body></html>
