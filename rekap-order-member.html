@@ -422,6 +422,119 @@ function renderRekap(){
  $("orderTable").innerHTML=
    rows||
    '<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+
+ // RINCIAN NOMINAL PANEL — dikelompokkan per tanggal jatuh tempo.
+ const panelMap=new Map();
+ const panelKasShown=new Set();
+
+ // Ambil nilai kas terbesar per bulan/member, mengikuti sumber data rekap.
+ const panelKasMap=new Map();
+ data.forEach(r=>{
+   const k=kasMemberMonthKey(r);
+   const raw=num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas);
+   if(raw>(panelKasMap.get(k)||0))panelKasMap.set(k,raw);
+ });
+
+ data.forEach(r=>{
+   const calc=calculateOrder(r);
+   if(calc.cash)return;
+
+   const kasKey=kasMemberMonthKey(r);
+   const kasRow=!panelKasShown.has(kasKey)
+      ? (panelKasMap.get(kasKey)||calc.kas)
+      : 0;
+   panelKasShown.add(kasKey);
+
+   const nilai=num(calc.nilaiBarang);
+   const up=num(calc.up);
+   const tab=num(calc.tabungan);
+   const kas=num(kasRow);
+   const totalTambahan=up+tab+kas;
+   const totalAwal=nilai+totalTambahan;
+   const sisa=Math.max(0,totalAwal-num(calc.paid));
+
+   if(sisa<=0)return;
+
+   const due=dueDate(r);
+   const key=due
+      ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
+      : "tanpa-tanggal";
+
+   if(!panelMap.has(key)){
+     panelMap.set(key,{
+       due,
+       nilai:0,
+       up:0,
+       tab:0,
+       kas:0,
+       tambahan:0,
+       tagihan:0,
+       orders:0,
+       pcs:0
+     });
+   }
+
+   const g=panelMap.get(key);
+   g.nilai+=nilai;
+   g.up+=up;
+   g.tab+=tab;
+   g.kas+=kas;
+   g.tambahan+=totalTambahan;
+   g.tagihan+=sisa;
+   g.orders++;
+   g.pcs+=calc.items.reduce((a,x)=>a+num(x.qty),0);
+ });
+
+ const panelData=[...panelMap.values()].sort((a,b)=>{
+   if(!a.due)return 1;
+   if(!b.due)return -1;
+   return a.due-b.due;
+ });
+
+ $("jatuhTempoSummary").innerHTML=panelData.length
+   ? panelData.map(g=>{
+       const tanggal=g.due
+         ? g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})
+         : "Tanpa Tanggal Jatuh Tempo";
+
+       return `<div class="jt-card">
+         <div class="jt-date">📅 ${esc(tanggal)}</div>
+
+         <div class="jt-row">
+           <span>Nilai Barang</span>
+           <b>${rp(g.nilai)}</b>
+         </div>
+
+         <div class="jt-row jt-extra">
+           <span>UP Pengelola</span>
+           <b>${rp(g.up)}</b>
+         </div>
+
+         <div class="jt-row">
+           <span>Tabungan Member</span>
+           <b>${rp(g.tab)}</b>
+         </div>
+
+         <div class="jt-row">
+           <span>Uang Kas</span>
+           <b>${rp(g.kas)}</b>
+         </div>
+
+         <div class="jt-row jt-extra">
+           <span>Total Tambahan</span>
+           <b>${rp(g.tambahan)}</b>
+         </div>
+
+         <div class="jt-row jt-total">
+           <span>Total Tagihan</span>
+           <b>${rp(g.tagihan)}</b>
+         </div>
+
+         <div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div>
+       </div>`;
+     }).join("")
+   : '<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
+
 }
 
 function renderAll(){
