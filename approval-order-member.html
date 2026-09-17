@@ -102,7 +102,10 @@ function itemsOf(x){
 function orderEmployeeMatches(o){
  if(!selected)return false;
  const eid=employeeUid(o).toLowerCase(), en=employeeName(o).toLowerCase();
- return (eid && eid===selected.uid.toLowerCase()) || (!eid && en===selected.nama.toLowerCase());
+ const aUid=String(o?.approvalEmployeeUid??o?.employeeUid??o?.karyawanUid??o?.employeeId??o?.karyawanId??o?.employee?.uid??o?.karyawan?.uid??"").trim().toLowerCase();
+ const aName=String(o?.approvalEmployeeName??o?.employeeName??o?.karyawanNama??o?.namaKaryawan??o?.employee?.nama??o?.employee?.namaKaryawan??o?.karyawan?.nama??o?.karyawan?.namaKaryawan??"").trim().toLowerCase();
+ const su=selected.uid.toLowerCase(), sn=selected.nama.toLowerCase();
+ return (eid && eid===su) || (aUid && aUid===su) || (!eid && !aUid && en===sn) || (!eid && !aUid && !en && aName===sn) || (aName===sn);
 }
 
 /* INI BAGIAN KUNCI:
@@ -281,11 +284,11 @@ window.approveOrder=async id=>{
        approvedAt:serverTimestamp(),updatedAt:serverTimestamp()
      };
      tx.set(omRef,order,{merge:true});
-     tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:its,approvedTotal:total,orderMemberId:omRef.id,updatedAt:serverTimestamp()});
+     tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:its,approvedTotal:total,orderMemberId:omRef.id,approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",updatedAt:serverTimestamp()});
      return omRef.id;
    });
    msg("Order berhasil di-approve dan masuk order_member.","ok");
-   await loadOrders();
+   await loadOrders();await loadHistory();
  }catch(e){console.error(e);msg("Gagal approval: "+(e?.message||e),"err")}
 };
 window.rejectOrder=async id=>{
@@ -296,9 +299,9 @@ window.rejectOrder=async id=>{
    await runTransaction(db,async tx=>{
      const s=await tx.get(ref);if(!s.exists())throw Error("Order tidak ditemukan.");
      const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
-     tx.update(ref,{status:"ditolak",approvalStatus:"ditolak",alasanApproval:alasan,approvedBy:uid,updatedAt:serverTimestamp()});
+     tx.update(ref,{status:"ditolak",approvalStatus:"ditolak",alasanApproval:alasan,approvedBy:uid,approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",updatedAt:serverTimestamp()});
    });
-   msg("Order ditolak.","ok");await loadOrders();
+   msg("Order ditolak.","ok");await loadOrders();await loadHistory();
  }catch(e){console.error(e);msg("Gagal menolak: "+(e?.message||e),"err")}
 };
 function waNum(v){let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;return s}
