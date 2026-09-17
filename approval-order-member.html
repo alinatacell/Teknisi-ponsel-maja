@@ -45,6 +45,11 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
  <div id="orderCount" class="count">Pilih employee untuk menampilkan order.</div>
 </div>
 <div id="list"></div>
+<div class="card" id="historyCard" style="display:none">
+ <div class="title">📚 Riwayat Order Member</div>
+ <div class="notice">Riwayat hanya menampilkan order yang sudah approved untuk employee dan member yang dipilih.</div>
+ <div id="historyList"></div>
+</div>
 </main>
 
 <script type="module">
@@ -55,7 +60,7 @@ import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,ser
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
-let uid="",ownerUid="",profile={},employees=[],selected=null,orders=[],ready=false;
+let uid="",ownerUid="",profile={},employees=[],selected=null,orders=[],historyOrders=[],ready=false;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -126,9 +131,9 @@ function renderEmployees(){
  const box=$("employees");
  if(!employees.length){box.innerHTML='<div class="empty">Employee milik Owner tidak ditemukan.</div>';$("employeeStatus").textContent="0 employee";return;}
  box.innerHTML=employees.map((e,i)=>`<button class="employee-btn ${selected&&selected.uid===e.uid?"active":""}" data-eid="${esc(e.uid)}">${esc(e.nama)}${e.kode?`<small>${esc(e.kode)}</small>`:""}</button>`).join("");
- box.querySelectorAll(".employee-btn").forEach(b=>b.onclick=()=>{
+ box.querySelectorAll(".employee-btn").forEach(b=>b.onclick=async()=>{
    selected=employees.find(e=>e.uid===b.dataset.eid)||null;
-   renderEmployees();renderOrders();
+   renderEmployees();renderOrders();await loadHistory();
  });
  $("employeeStatus").textContent=`${employees.length} employee tersedia`;
 }
@@ -152,10 +157,70 @@ async function loadOrders(){
  });
  renderOrders();
 }
+async function loadHistory(){
+ historyOrders=[];
+ if(!ownerUid||!selected){renderHistory();return;}
+ const map=new Map();
+ // Riwayat diambil dari PENJUALAN karena di sinilah identitas employee
+ // asal order tetap tersimpan. Setelah itu dikelompokkan berdasarkan MEMBER.
+ for(const field of ["ownerUid","ownerId"]){
+   try{
+     const snap=await getDocs(query(collection(db,"penjualan"),where(field,"==",ownerUid)));
+     snap.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+   }catch(e){console.warn("riwayat penjualan "+field,e?.message||e)}
+ }
+ historyOrders=[...map.values()].filter(o=>{
+   const st=normStatus(o.status||o.approvalStatus||"");
+   if(!["approved","order_member","lunas","tagihan"].includes(st))return false;
+   return orderEmployeeMatches(o);
+ }).sort((a,b)=>{
+   const av=a.approvedAt?.toMillis?a.approvedAt.toMillis():new Date(a.approvedAt||a.updatedAt||a.createdAt||a.tanggal||0).getTime();
+   const bv=b.approvedAt?.toMillis?b.approvedAt.toMillis():new Date(b.approvedAt||b.updatedAt||b.createdAt||b.tanggal||0).getTime();
+   return bv-av;
+ });
+ renderHistory();
+}
+function renderHistory(){
+ const card=$("historyCard"),box=$("historyList");
+ if(!card||!box)return;
+ if(!selected){card.style.display="none";box.innerHTML="";return;}
+ card.style.display="block";
+ if(!historyOrders.length){box.innerHTML=`<div class="empty">Belum ada riwayat order approved untuk employee <b>${esc(selected.nama)}</b>.</div>`;return;}
+ // Kelompokkan berdasarkan MEMBER, bukan digabung menjadi satu riwayat umum.
+ const groups=new Map();
+ historyOrders.forEach(o=>{
+   const m=member(o),key=(m.kode||m.nama||"member").toLowerCase();
+   if(!groups.has(key))groups.set(key,{member:m,orders:[]});
+   groups.get(key).orders.push(o);
+ });
+ box.innerHTML=[...groups.values()].map(g=>{
+   const totalTagihan=g.orders.reduce((a,o)=>a+(Number(o.sisa??o.sisaBayar??o.piutang??o.totalTagihanMember??0)||0),0);
+   return `<div class="history-group">
+    <div class="history-head">
+      <div><b>👤 ${esc(g.member.nama)}</b>${g.member.kode?` <small>• ${esc(g.member.kode)}</small>`:""}<div class="meta">${g.member.wa?`WA: ${esc(g.member.wa)}`:""}</div></div>
+      <span class="badge approved">${g.orders.length} ORDER</span>
+    </div>
+    <div class="history-body">
+      ${g.orders.map(o=>{
+        const items=itemsOf(o),total=Number(o.total??o.subtotal??0)||0,dp=Number(o.dp??o.uangMuka??0)||0,sisa=Number(o.sisa??o.sisaBayar??o.piutang??0)||0;
+        const due=o.jatuhTempo||o.tanggalJatuhTempo||"-",tempo=Number(o.tempoHari??0)||0;
+        return `<div class="history-row">
+          <div><b>${esc(o.nomorNota||o.id)}</b> <span class="badge approved">APPROVED</span></div>
+          <div class="meta">${items.map(x=>`• ${esc(x.nama)} × ${x.qty} = <b>${rp(x.total)}</b>`).join("<br>")}</div>
+          <div class="summary">💰 Total: <b>${rp(total)}</b><br>${String(o.jenisHarga||o.tipeOrder||"").toLowerCase().includes("cash")?"💵 CASH / LUNAS":`💵 DP: <b>${rp(dp)}</b><br>📌 Sisa: <b>${rp(sisa)}</b><br>📅 Tempo: <b>${tempo} hari</b> • Jatuh tempo: <b>${esc(due)}</b>`}</div>
+        </div>`;
+      }).join("")}
+      <div class="member-total">📌 Total sisa tagihan member dari riwayat: <b>${rp(totalTagihan)}</b></div>
+    </div>
+   </div>`;
+ }).join("");
+}
+
 function renderOrders(){
  if(!selected){
    $("orderCount").textContent="Pilih employee untuk menampilkan order.";
    $("list").innerHTML='<div class="card empty">👆 Pilih nama employee terlebih dahulu.</div>';
+   renderHistory();
    return;
  }
  const list=orders.filter(orderEmployeeMatches);
