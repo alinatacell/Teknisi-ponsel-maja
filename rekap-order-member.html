@@ -26,6 +26,22 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 .rekap-item.tagihan{background:#fef3c7}
 .rekap-item.tagihan .value{color:#b45309}
 
+
+.rekap-jatuh-tempo{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fff}
+.jt-title{font-size:13px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:8px;margin-bottom:9px}
+.jt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.jt-item{border:2px solid #111827;border-radius:8px;padding:10px;background:#fffbeb;min-width:0}
+.jt-item .jt-date{font-size:10px;font-weight:900;color:#92400e;margin-bottom:5px}
+.jt-item .jt-nominal{font-size:15px;font-weight:900;color:#b45309;word-break:break-word}
+.jt-item .jt-count{font-size:10px;color:#64748b;margin-top:4px}
+.jt-empty{text-align:center;padding:10px;color:#64748b;font-size:11px}
+body.dark .rekap-jatuh-tempo{background:#111827;border-color:#475569}
+body.dark .jt-title{border-color:#475569}
+body.dark .jt-item{background:#292211;border-color:#475569}
+body.dark .jt-item .jt-date{color:#fbbf24}
+body.dark .jt-item .jt-nominal{color:#f59e0b}
+@media(max-width:650px){.jt-grid{grid-template-columns:1fr 1fr}.jt-item:last-child:nth-child(odd){grid-column:1/-1}}
+
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
@@ -70,7 +86,21 @@ body.dark td{border-color:#334155}
   .acts .btn{padding:8px}
   .card{padding:12px}
 }
-</style></head><body>
+<style>
+.rekap-jatuh-tempo{margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff}
+.jt-title{font-weight:900;font-size:12px;margin-bottom:10px}
+.jt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.jt-card{border:1px solid #e5e7eb;border-radius:10px;padding:12px;background:#f8fafc}
+.jt-date{font-weight:900;font-size:13px;margin-bottom:9px}
+.jt-line{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin:5px 0}
+.jt-line b{font-weight:900;text-align:right}
+.jt-total{margin-top:9px;padding-top:9px;border-top:1px solid #d1d5db;font-weight:900}
+.jt-count{text-align:center;margin-top:8px;font-size:10px;color:#64748b;font-weight:800}
+.jt-empty{text-align:center;padding:15px;color:#64748b;font-size:11px}
+body.dark .rekap-jatuh-tempo{background:#111827;border-color:#475569}
+body.dark .jt-card{background:#0f172a;border-color:#475569}
+body.dark .jt-line{color:#e5e7eb}
+</style></style></head><body>
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Rekap Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
 
@@ -101,9 +131,15 @@ body.dark td{border-color:#334155}
     </div>
   </div>
 </div>
+<div class="rekap-jatuh-tempo">
+  <div class="jt-title">📅 TAGIHAN BERDASARKAN TANGGAL JATUH TEMPO</div>
+  <div id="jatuhTempoSummary" class="jt-grid">
+    <div class="jt-empty">Memuat...</div>
+  </div>
+</div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -114,7 +150,7 @@ const cfg={
  messagingSenderId:"995892519622",
  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const app=initializeApp(cfg),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -349,6 +385,48 @@ function renderRekap(){
   </tr>`;
  }).join("");
 
+
+ // Pisahkan sisa tagihan berdasarkan tanggal jatuh tempo.
+ const jatuhTempoMap=new Map();
+ data.forEach(r=>{
+   const calc=calculateOrder(r);
+   const kasKey=kasMemberMonthKey(r);
+   const kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
+   const totalTagihanAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
+   const sisa=calc.cash?0:Math.max(0,totalTagihanAwal-calc.paid);
+   if(sisa<=0)return;
+
+   const due=dueDate(r);
+   const key=due
+     ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
+     : "tanpa-tanggal";
+
+   const old=jatuhTempoMap.get(key)||{date:due,total:0,count:0};
+   old.total+=sisa;
+   old.count++;
+   jatuhTempoMap.set(key,old);
+ });
+
+ const jtRows=[...jatuhTempoMap.values()].sort((a,b)=>{
+   if(!a.date&&!b.date)return 0;
+   if(!a.date)return 1;
+   if(!b.date)return -1;
+   return a.date-b.date;
+ });
+
+ $("jatuhTempoSummary").innerHTML=jtRows.length
+   ? jtRows.map(x=>{
+       const label=x.date
+         ? x.date.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"})
+         : "Tanggal belum diisi";
+       return `<div class="jt-item">
+         <div class="jt-date">JATUH TEMPO ${esc(label)}</div>
+         <div class="jt-nominal">${rp(x.total)}</div>
+         <div class="jt-count">${x.count} order</div>
+       </div>`;
+     }).join("")
+   : '<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
+
  $("totalNilaiBarang").textContent=rp(nilai);
  $("totalPengelola").textContent=rp(up);
  $("totalTabungan").textContent=rp(tabungan);
@@ -358,6 +436,81 @@ function renderRekap(){
  $("orderTable").innerHTML=
    rows||
    '<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+ // ============================================================
+ // RINCIAN NOMINAL PER TANGGAL JATUH TEMPO
+ // Nilai barang = harga asli sebelum tambahan.
+ // Tambahan = UP Pengelola + Tabungan Member + Kas Bulanan.
+ // Tagihan = Nilai Barang + seluruh tambahan - pembayaran.
+ // ============================================================
+ const dueMap=new Map();
+ const kasForSummary=new Map();
+ data.forEach(r=>{
+   const k=kasMemberMonthKey(r);
+   const raw=num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas);
+   if(raw>(kasForSummary.get(k)||0))kasForSummary.set(k,raw);
+ });
+ const kasShown=new Set();
+
+ data.forEach(r=>{
+   const calc=calculateOrder(r);
+   if(calc.cash)return;
+
+   const k=kasMemberMonthKey(r);
+   const kasRow=!kasShown.has(k)?(kasForSummary.get(k)||calc.kas):0;
+   kasShown.add(k);
+
+   const nilai=num(calc.nilaiBarang);
+   const up=num(calc.up);
+   const tab=num(calc.tabungan);
+   const kas=num(kasRow);
+   const totalAwal=nilai+up+tab+kas;
+   const sisa=Math.max(0,totalAwal-num(calc.paid));
+   if(sisa<=0)return;
+
+   const due=dueDate(r);
+   const key=due
+     ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
+     : "tanpa-tanggal";
+
+   if(!dueMap.has(key))dueMap.set(key,{
+     date:due,
+     nilai:0,up:0,tab:0,kas:0,total:0,orders:0,pcs:0
+   });
+
+   const g=dueMap.get(key);
+   g.nilai+=nilai;
+   g.up+=up;
+   g.tab+=tab;
+   g.kas+=kas;
+   g.total+=sisa;
+   g.orders++;
+   g.pcs+=calc.items.reduce((a,x)=>a+num(x.qty),0);
+ });
+
+ const summary=[...dueMap.values()].sort((a,b)=>{
+   if(!a.date)return 1;
+   if(!b.date)return -1;
+   return a.date-b.date;
+ });
+
+ $("jatuhTempoSummary").innerHTML=summary.length?summary.map(g=>{
+   const tambahan=g.up+g.tab+g.kas;
+   const label=g.date
+     ? g.date.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})
+     : "Tanpa tanggal jatuh tempo";
+
+   return `<div class="jt-card">
+     <div class="jt-date">📅 ${esc(label)}</div>
+     <div class="jt-line"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div>
+     <div class="jt-line"><span>UP Pengelola</span><b>${rp(g.up)}</b></div>
+     <div class="jt-line"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div>
+     <div class="jt-line"><span>Uang Kas</span><b>${rp(g.kas)}</b></div>
+     <div class="jt-line"><span>Total Tambahan</span><b>${rp(tambahan)}</b></div>
+     <div class="jt-line jt-total"><span>Total Tagihan</span><b>${rp(g.total)}</b></div>
+     <div class="jt-count">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div>
+   </div>`;
+ }).join(""):'<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
+
 }
 
 function renderAll(){
@@ -374,14 +527,16 @@ $("dark").onclick=()=>{
    document.body.classList.contains("dark")?"☀️":"🌙";
 };
 
-async function startFromIndexSession(){
+async function bacaSesiDariIndex(){
   try{
-    const session=(window.parent&&window.parent.fixzySession)
+    // INDEX sudah melakukan login + validasi Firebase Auth.
+    // Halaman ini hanya membaca hasil validasi yang diberikan INDEX.
+    const session=window.parent && window.parent.fixzySession
       ? window.parent.fixzySession
       : null;
 
     if(!session){
-      notice("Menunggu sesi akun dari INDEX...","err");
+      notice("Sesi akun dari INDEX belum tersedia.","err");
       return;
     }
 
@@ -394,6 +549,8 @@ async function startFromIndexSession(){
       return;
     }
 
+    // OWNER: ownerUid = UID sendiri.
+    // EMPLOYEE/KARYAWAN: ownerUid berasal dari akun Owner yang diberikan INDEX.
     if(role==="owner"){
       ownerUid=uid;
     }else if(["employee","karyawan","kasir","kurir","reseller"].includes(role)){
@@ -414,7 +571,8 @@ async function startFromIndexSession(){
     $("email").textContent=
       profile.email||
       session.email||
-      (window.parent?.document?.getElementById("accountName")?.textContent||"-");
+      window.parent?.document?.getElementById("accountName")?.textContent||
+      "-";
 
     await loadStock();
     await loadOrders();
@@ -423,22 +581,16 @@ async function startFromIndexSession(){
     renderAll();
 
     notice(
-      `Akun aktif dari INDEX • ${role.toUpperCase()} • Rekap Owner • ${orders.length} order member.`,
+      `Akun aktif dari INDEX • ${role.toUpperCase()} • Rekap Owner ini • ${orders.length} order member.`,
       "ok"
     );
   }catch(e){
     console.error(e);
-    notice("Gagal membaca sesi dari INDEX: "+e.message,"err");
+    notice("Gagal membaca akun dari INDEX: "+e.message,"err");
   }
 }
 
-/*
-  REKAP INI TIDAK MELAKUKAN LOGIN.
-  INDEX sudah memvalidasi akun dan menaruh data akun di window.fixzySession.
-  Karena halaman ini dibuka INDEX melalui iframe, sesi tersebut dibaca dari parent.
-*/
-startFromIndexSession();
-setTimeout(()=>{
-  if(!ready)startFromIndexSession();
-},500);
+// Tidak ada login di halaman ini.
+// INDEX adalah satu-satunya halaman yang menangani autentikasi.
+bacaSesiDariIndex();
 </script></body></html>
