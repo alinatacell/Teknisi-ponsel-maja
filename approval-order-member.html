@@ -32,6 +32,13 @@ input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;
 body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body.dark .item{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark label{color:#9ca3af}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .summary{background:#1c1917;border-color:#475569}body.dark .meta b{color:#fff}body.dark .stockline{color:#94a3b8}body.dark .history-card{background:#0f2417;border-color:#166534}body.dark .history-head{background:#12351f;border-color:#166534}body.dark .history-item{border-color:#166534}body.dark .revert-info{background:#27170a;border-color:#c2410c}body.dark .search-hint{background:#0f172a;border-color:#475569}
 @media(max-width:800px){.filters{grid-template-columns:1fr}.item-grid{grid-template-columns:1fr 100px}.item-grid>div:first-child{grid-column:1/-1}.order-edit-grid{grid-template-columns:1fr}}
 @media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.refresh{padding:8px}.order-head{flex-direction:column}.actions .btn{flex:1;min-width:120px}}
+
+.employee-menu-wrap{grid-column:1/-1}
+.employee-menu{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+.employee-btn{flex:0 0 auto;border:2px solid #111827;border-radius:9px;padding:10px 14px;background:#fff;color:#111827;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 #111827}
+.employee-btn.active{background:#ffc107}
+body.dark .employee-btn{background:#0f172a;color:#fff;border-color:#475569;box-shadow:none}
+body.dark .employee-btn.active{background:#ffc107;color:#111827}
 </style>
 </head>
 <body>
@@ -58,8 +65,12 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <div class="card"><div class="title">🔎 Cari Order Berdasarkan Nama Karyawan</div>
 <div class="filters">
 <div class="employee-search-wrap"><label>CARI BERDASARKAN KARYAWAN / EMPLOYEE</label>
-<input id="search" type="search" autocomplete="off" placeholder="Ketik kata kunci karyawan / employee...">
-<div id="employeeResults" class="employee-results"></div>
+<div class="employee-menu-wrap">
+  <label>KARYAWAN / EMPLOYEE</label>
+  <div id="employeeMenu" class="employee-menu">
+    <button type="button" class="employee-btn active" data-employee="">SEMUA</button>
+  </div>
+</div>
 </div>
 <div><label>STATUS</label><div style="font-size:11px;font-weight:900;color:#15803d;padding:11px 0">Menunggu Approval</div></div>
 <div><label>HASIL PENCARIAN</label><div id="resultStatus" style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Belum memilih karyawan.</div></div>
@@ -91,7 +102,7 @@ import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,ser
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
-let uid="",ownerUid="",profile={},role="",rows=[],approvedRows=[],ready=false,stockCatalog=[],sheetLinks=[],sheetCache=null,cicilanRequests=[],employees=[],selectedEmployee=null;
+let employees=[];\nlet uid="",ownerUid="",profile={},role="",rows=[],approvedRows=[],ready=false,stockCatalog=[],sheetLinks=[],sheetCache=null,cicilanRequests=[],employees=[],selectedEmployee=null;
 
 const $=id=>document.getElementById(id),rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
@@ -215,75 +226,22 @@ async function load(){
 }
 
 function render(){
- const key=$("search").value.trim().toLowerCase();
- if(!key||!selectedEmployee){
-  $("list").innerHTML='<div class="card empty">🔎 Ketik kata kunci karyawan / employee untuk mencari di Firebase, lalu pilih hasilnya.</div>';
-  $("searchCount").style.display="none";
-  $("resultStatus").textContent="Belum memilih karyawan.";
+ const selectedUid=String(window.selectedEmployeeUid||"").trim();
+ const selectedName=String(window.selectedEmployeeName||"").trim().toLowerCase();
+
+ if(!selectedUid && !selectedName){
+  $("list").innerHTML='<div class="card empty">Pilih nama karyawan pada menu di atas untuk menampilkan order.</div>';
   return;
  }
- const list=rows.filter(r=>status(r)==="menunggu_approval"&&(employeeUid(r)===selectedEmployee.uid||employeeKey(r)===employeeKey(selectedEmployee)));
- $("list").innerHTML=list.length?list.map(renderOrder).join(""):`<div class="card empty">Tidak ada order Menunggu Approval untuk karyawan "${esc($("search").value.trim())}".</div>`;
- $("resultStatus").textContent=list.length?`${list.length} order ditemukan.`:"Tidak ada order yang cocok.";
- $("searchCount").textContent=`🔎 ${list.length} order Menunggu Approval • ${list.reduce((n,r)=>n+normalizeItems(r).reduce((a,x)=>a+(Number(x.qty)||0),0),0)} PCS`;
- $("searchCount").style.display="block";
-}
 
-function renderOrder(r){
- const m=member(r),items=normalizeItems(r),st=status(r),date=r.tanggal||today(),emp=employeeName(r)||"-";
- const itemHtml=items.map((x,i)=>`<div class="item" data-order="${r.id}" data-index="${i}" data-selected-product="${esc(x.produkId||"")}">
- <div class="item-top"><div><div class="item-name">${esc(x.nama)}</div><div class="stockline">Kode: ${esc(x.kode||"-")} • Pesanan: <b>${x.qty}</b> pcs</div></div><div id="stock_${r.id}_${i}" class="stockline">Cek stok...</div></div>
- <div class="item-grid">
-  <div><div class="qty-label">CARI / GANTI PRODUK</div><input class="product-search" type="search" autocomplete="off" placeholder="Ketik nama / kode produk..."><div class="product-results add-results"></div><div class="replacement-info stockline" style="margin-top:5px"></div></div>
-  <div><div class="qty-label">QTY DISETUJUI</div><input class="approved" type="number" min="0" max="${x.qty}" value="${x.approvedQty||x.qty}"></div>
-  <div><div class="qty-label">HARGA/PCS</div><input class="price" type="number" min="0" value="${x.harga||0}"></div>
- </div>
- <div style="margin-top:8px"><div class="qty-label">JUMLAH</div><input class="line" value="0" readonly></div>
- </div>`).join("");
-
- const tempo=!isCash(r);
- return `<div class="order" data-id="${r.id}">
- <div class="order-head"><div><div class="order-title">${esc(r.nomorNota||r.id)}</div><div style="font-size:11px;color:#64748b;margin-top:3px">👨‍🔧 Karyawan: <b>${esc(emp)}</b> • ${esc(date)} • ${esc(m.nama||"-")} • Kode Member: <b>${esc(m.kode||"-")}</b></div></div><span class="badge ${st}">${esc(st.replaceAll("_"," "))}</span></div>
- <div class="order-body">
- <div class="meta"><b>WA:</b> ${esc(m.wa||"-")}<br><b>Alamat:</b> ${esc(m.alamat||"-")}<br><b>Pembayaran:</b> ${isCash(r)?"CASH / TUNAI — LUNAS / TANPA TAGIHAN":`TEMPO ${Number(r.tempoHari||0)} hari • Jatuh tempo: ${esc(r.jatuhTempo||r.tanggalJatuhTempo||"-")}`}</div>
- ${tempo?`<div class="order-edit-grid">
-   <div><label>TEMPO / DTE (HARI)</label><input class="tempo-edit" type="number" min="0" value="${Number(r.tempoHari||0)}"></div>
-   <div><label>JATUH TEMPO</label><input class="due-edit" type="date" value="${esc(r.jatuhTempo||r.tanggalJatuhTempo||"")}"></div>
- </div>`:""}
- <div class="items">${itemHtml}</div>
- <div class="summary" id="sum_${r.id}">Menghitung...</div>
- <div class="actions">
- ${st==="menunggu_approval"?`<button class="btn approve" onclick="approveOrder('${r.id}')">✅ ${r.orderMemberId?"Approve Ulang":"Setujui & Buat Order"}</button><button class="btn reject" onclick="rejectOrder('${r.id}')">❌ Tolak</button>`:""}
- <button class="btn add-product" onclick="openAddProduct('${r.id}')">➕ Tambah Produk</button><button class="btn wa" onclick="sendWA('${r.id}')">📲 Kirim WA Member</button>
- </div></div></div>`;
-}
-
-function recalcOrder(id){
- const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);if(!card)return;
- const r=rows.find(x=>x.id===id),cash=isCash(r);let total=0,approved=0;
- card.querySelectorAll(".item").forEach((el,i)=>{
-  const q=Math.max(0,Number(el.querySelector(".approved").value)||0);
-  const price=Math.max(0,Number(el.querySelector(".price").value)||0);
-  const original=normalizeItems(r)[i],discount=Math.min(Number(original.diskon)||0,price*q),line=Math.max(0,price*q-discount);
-  el.querySelector(".line").value=line;total+=line;approved+=q;
+ const list=rows.filter(r=>{
+  if(status(r)!=="menunggu_approval")return false;
+  const eid=employeeUid(r);
+  const ename=employeeName(r).toLowerCase();
+  return (selectedUid && eid===selectedUid) || (!eid && ename===selectedName);
  });
- if(cash){$(`sum_${id}`).innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br><b>💵 CASH / TUNAI — LUNAS</b>`;return}
- const dp=Math.min(Number(r.dp||r.uangMuka||0),total),sisa=Math.max(0,total-dp),tempo=Number(card.querySelector(".tempo-edit")?.value??r.tempoHari??0)||0,due=card.querySelector(".due-edit")?.value||r.jatuhTempo||r.tanggalJatuhTempo||"-";
- $(`sum_${id}`).innerHTML=`Produk disetujui: <b>${approved} pcs</b> • Nilai barang: <b>${rp(total)}</b><br>DP tercatat: <b>${rp(dp)}</b> • Sisa estimasi: <b>${rp(sisa)}</b><br>📅 Tempo: <b>${tempo} hari</b> • Jatuh tempo: <b>${esc(due)}</b>`;
+ $("list").innerHTML=list.length?list.map(renderOrder).join(""):'<div class="card empty">Tidak ada order karyawan ini yang menunggu approval.</div>';
 }
-
-function checkStock(id){
- const r=rows.find(x=>x.id===id);if(!r)return;
- normalizeItems(r).forEach((x,i)=>{
-  const p=stockCatalog.find(z=>String(z.id)===String(x.produkId))||stockCatalog.find(z=>String(z.kode||z.kodeProduk)===String(x.kode));
-  if(!p){$(`stock_${id}_${i}`).innerHTML='<span class="stock-no">PRODUK TIDAK DITEMUKAN DI SPREADSHEET</span>';return}
-  const st=Number(p.stock)||0;
-  $(`stock_${id}_${i}`).innerHTML=`<span class="${st>=x.qty?"stock-ok":"stock-no"}">Stok Spreadsheet: ${st} • ${st>=x.qty?"TERSEDIA":"KURANG"}</span>`;
-}
-
-/* =========================================================
-   RIWAYAT APPROVED
-========================================================= */
 function renderApprovedHistory(){
  const box=$("approvedHistory");if(!box)return;
  const key=$("search").value.trim().toLowerCase();
