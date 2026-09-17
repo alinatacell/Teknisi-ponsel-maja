@@ -329,6 +329,8 @@ function build(){
   for(const x of cart){if(x.qty<1)throw Error(`Qty ${x.nama} minimal 1.`);if(x.qty>x.stok)throw Error(`Pesanan ${x.nama} melebihi stok ${x.stok} pcs.`)}
   return{
     ownerUid:businessUid,uid:businessUid,createdBy:uid,createdByEmail:auth.currentUser?.email||"",
+    // UID karyawan top-level untuk filter Approval yang efisien.
+    karyawanUid:uid,karyawanNama:nama,karyawanWa:wa,
     nomorNota:$("nota").textContent,tanggal:$("tgl").textContent,
     karyawan:{uid,nama,wa,email:auth.currentUser?.email||"",kode:$("kode").value},
     pelanggan:{nama,wa,alamat:$("alamat").value.trim()},
