@@ -53,7 +53,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 </div></div>
 
 <main>
-<div id="notice" class="notice">Menunggu akun...</div>
+<div id="notice" class="notice">Memulihkan akun yang sudah login di FIXZY...</div>
 
 <div class="card"><div class="title">🔎 Cari Order Berdasarkan Nama Karyawan</div>
 <div class="filters">
@@ -82,7 +82,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc,increment,deleteDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
@@ -431,19 +431,53 @@ $("list").addEventListener("input",e=>{const order=e.target.closest(".order");if
 $("addProductSearch").addEventListener("input",()=>{clearTimeout(window._addSearchTimer);window._addSearchTimer=setTimeout(searchAddProducts,250)});
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 
-onAuthStateChanged(auth,async u=>{
- if(!u){msg("Belum login.","err");return}
+async function handleLoggedInUser(u){
+ if(!u){msg("Sesi login FIXZY tidak ditemukan. Kembali ke index/login terlebih dahulu.","err");return}
  try{
-  uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-  profile=s.data()||{};role=String(profile.role||"").toLowerCase();
-  if(role!=="owner"){ready=false;$("email").textContent=u.email||"-";msg("Akses ditolak. Halaman Approval hanya untuk akun Owner.","err");$("list").innerHTML='<div class="card empty">Akun ini bukan Owner. Gunakan akun Owner untuk Approval.</div>';return}
-  ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;
-  await load();await loadCicilanRequests();
+  uid=u.uid;
+  $("email").textContent=u.email||"-";
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Profil akun tidak ditemukan di users/{uid}.");
+  profile=s.data()||{};
+  role=String(profile.role||"").trim().toLowerCase();
+  if(role!=="owner"){
+   ready=false;
+   msg("Akses ditolak. Halaman Approval hanya untuk akun Owner.","err");
+   $("list").innerHTML='<div class="card empty">Akun ini bukan Owner. Gunakan akun Owner untuk Approval.</div>';
+   return;
+  }
+  ownerUid=getOwner(profile);
+  if(!ownerUid)throw Error("Owner UID tidak ditemukan.");
+  ready=true;
+  await load();
+  await loadCicilanRequests();
   $("list").innerHTML='<div class="card empty">🔎 Ketik nama karyawan terlebih dahulu untuk menampilkan order.</div>';
   $("approvedHistoryCard").style.display="none";
   $("cicilanCard").style.display="none";
-  msg("Akun Owner aktif • ketik nama karyawan untuk mencari order.","ok")
- }catch(e){console.error(e);msg(e.message,"err")}
+  msg("Akun Owner aktif dari sesi login FIXZY • ketik nama karyawan untuk mencari order.","ok");
+ }catch(e){
+  console.error(e);
+  msg("Gagal membaca sesi akun: "+(e?.message||e),"err");
+ }
+}
+
+/* Pastikan session Firebase yang dibuat di index.html dipakai kembali.
+   Tidak ada login kedua dan tidak memakai localStorage/sessionStorage sebagai
+   pengganti Firebase Auth. */
+setPersistence(auth,browserLocalPersistence)
+ .catch(e=>console.warn("Persistence Firebase:",e?.message||e))
+ .finally(async()=>{
+   try{
+    if(typeof auth.authStateReady==="function") await auth.authStateReady();
+    await handleLoggedInUser(auth.currentUser);
+   }catch(e){
+    console.error(e);
+    msg("Gagal memulihkan sesi login FIXZY: "+(e?.message||e),"err");
+   }
+ });
+
+onAuthStateChanged(auth,u=>{
+ if(u) handleLoggedInUser(u);
 });
 </script>
 </body>
