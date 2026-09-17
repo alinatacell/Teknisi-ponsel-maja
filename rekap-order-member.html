@@ -166,12 +166,15 @@ function basePriceOfItem(x,r={}){
  const cash=isCashOrder(r);
  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
+ // Harga pada items hasil approval adalah harga yang disetujui.
+ // Setelah revisi, harga ini harus menjadi sumber utama Rekap.
+ // hargaDasar/hargaTempo hanya menjadi fallback jika harga tidak tersedia.
+ const approvedPrice=Number(x.harga);
+ if(Number.isFinite(approvedPrice)&&approvedPrice>0)return approvedPrice;
  const direct=Number(x.hargaDasar);
  if(Number.isFinite(direct)&&direct>0)return direct;
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
  if(Number.isFinite(specific)&&specific>0)return specific;
- const composed=Number(x.harga);
- if(Number.isFinite(composed)&&composed>0)return Math.max(0,composed-up-tab);
  return 0;
 }
 
