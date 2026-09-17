@@ -119,19 +119,29 @@ body.dark td{border-color:#334155}
 </div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Harga Supplier / Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,browserLocalPersistence,setPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const app=initializeApp(cfg);
+const auth=getAuth(app);
+const db=getFirestore(app);
 const $=id=>document.getElementById(id);
+try{await setPersistence(auth,browserLocalPersistence)}catch(e){console.warn("Persistence Auth:",e.message)}
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number(v)||0;
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
 let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
 
-function ownerOf(d){const role=String(d.role||"").toLowerCase();if(role==="owner")return uid;if(role==="superadmin"||role==="super_admin")return "";return String(d.ownerUid||d.ownerId||"").trim()||uid}
+function ownerOf(d){
+ const role=String(d.role||d.peran||d.userRole||"").trim().toLowerCase();
+ if(role==="owner")return uid;
+ if(["karyawan","employee","staff","kasir"].includes(role))
+   return String(d.ownerUid||d.ownerId||d.konterOwnerUid||"").trim();
+ if(role==="superadmin"||role==="super_admin")return "";
+ return String(d.ownerUid||d.ownerId||"").trim()||uid;
+}
 function isCashOrder(r){const vals=[r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,r.metodePembayaran,r.jenisPembayaran,r.caraBayar].map(v=>String(v??"").trim().toLowerCase());return vals.some(v=>["member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"].includes(v))}
 function orderStatus(r){const calc=calculateOrder(r);return isCashOrder(r)||(calc.totalTagihan>0&&calc.sisa<=0)?"lunas":"tagihan"}
 function storedNumber(v){return Number(v??0)||0}
@@ -146,7 +156,11 @@ function inPeriod(r){const p=$("periode").value;if(p==="all")return true;const r
 async function loadStock(){const map=new Map();const qs=[query(collection(db,"stok"),where("ownerUid","==",ownerUid)),query(collection(db,"stok"),where("ownerId","==",ownerUid)),query(collection(db,"stok"),where("uid","==",uid))];for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...d.data()})})}catch(e){console.warn("Query stok:",e.message)}}stockProducts=[...map.values()];stockByKey=new Map();stockProducts.forEach(p=>{const keys=[p.id,p.produkId,p.kode,p.kodeProduk,p.sku,p.nama,p.namaProduk].map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);keys.forEach(k=>{if(!stockByKey.has(k))stockByKey.set(k,p)})})}
 function findStockForItem(x){const keys=[x.produkId,x.id,x.kode,x.kodeProduk,x.sku,x.nama,x.namaProduk].map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);for(const k of keys){const p=stockByKey.get(k);if(p)return p}return null}
 
-async function loadOrders(){const map=new Map();const qs=[query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),query(collection(db,"order_member"),where("ownerId","==",ownerUid))];for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x)})}catch(e){console.warn("Query order_member:",e.message)}}const arr=[...map.values()];await Promise.all(arr.map(async x=>{const sid=String(x.sourcePenjualanId||"").trim();if(!sid)return;try{const ps=await getDoc(doc(db,"penjualan",sid));if(!ps.exists())return;const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();if(own&&own!==ownerUid)return;x._paymentSource=p;const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);if(sourceItems.length){const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};return{...si,...oi,upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0}})}}for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k]}}catch(e){console.warn("Sinkron pembayaran order",x.id,e.message)}}));orders=arr}
+async function loadOrders(){const map=new Map();const qs=[
+ query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+ query(collection(db,"order_member"),where("ownerId","==",ownerUid)),
+ query(collection(db,"order_member"),where("konterOwnerUid","==",ownerUid))
+];for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x)})}catch(e){console.warn("Query order_member:",e.message)}}const arr=[...map.values()];await Promise.all(arr.map(async x=>{const sid=String(x.sourcePenjualanId||"").trim();if(!sid)return;try{const ps=await getDoc(doc(db,"penjualan",sid));if(!ps.exists())return;const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();if(own&&own!==ownerUid)return;x._paymentSource=p;const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);if(sourceItems.length){const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};return{...si,...oi,upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0}})}}for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k]}}catch(e){console.warn("Sinkron pembayaran order",x.id,e.message)}}));orders=arr}
 
 function kasMemberMonthKey(r){const m=r.member||r.pelanggan||{};const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";let d=null;if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x}const ym=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`:"tanpa-bulan";return memberId+"|"+ym}
 
@@ -212,13 +226,35 @@ function renderAll(){if(!ready)return;renderRekap()}
 $("periode").onchange=renderAll;$("search").oninput=renderAll;
 $("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
 
-onAuthStateChanged(auth,async u=>{
- if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return}
+async function initFromUser(u){
+ if(!u){notice("Belum login. Silakan login melalui halaman FIXZY.","err");return}
  try{
-  uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-  profile=s.data()||{};ownerUid=ownerOf(profile);if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
-  $("email").textContent=u.email||"-";await loadStock();await loadOrders();ready=true;renderAll();
-  notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");
+  uid=u.uid;
+  const s=await getDoc(doc(db,"users",uid));
+  profile=s.exists()?(s.data()||{}):{role:"owner",ownerUid:uid};
+  ownerUid=ownerOf(profile);
+  if(!ownerUid){
+   const role=String(profile.role||profile.peran||profile.userRole||"").toLowerCase();
+   if(["superadmin","super_admin"].includes(role))throw Error("Superadmin tidak menggunakan rekap data bisnis Owner.");
+   throw Error("Owner akun tidak ditemukan.");
+  }
+  $("email").textContent=u.email||"-";
+  await loadStock();
+  await loadOrders();
+  ready=true;
+  renderAll();
+  const role=String(profile.role||profile.peran||profile.userRole||"owner").toLowerCase();
+  const label=role==="owner"?"OWNER":(["karyawan","employee","staff","kasir"].includes(role)?"KARYAWAN":"AKUN");
+  notice(`${label} aktif • Rekap seluruh Order Member dalam konter Owner ini • ${orders.length} order member.`,"ok");
  }catch(e){console.error(e);notice("Gagal memuat Rekap Order Member: "+e.message,"err")}
-});
+}
+let authResolved=false;
+onAuthStateChanged(auth,async u=>{authResolved=true;await initFromUser(u)});
+setTimeout(async()=>{
+ if(!authResolved){
+  const u=auth.currentUser;
+  if(u)await initFromUser(u);
+  else notice("Belum login. Silakan login melalui halaman FIXZY.","err");
+ }
+},4000);
 </script></body></html>
