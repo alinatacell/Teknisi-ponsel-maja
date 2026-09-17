@@ -111,11 +111,22 @@ const today=()=>new Date().toISOString().slice(0,10);
 function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
 function getOwner(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid}
 
-function employeeName(r){const sources=[r?.karyawan,r?.employee];for(const k of sources){if(k&&typeof k==="object"){const n=String(k.nama||k.name||k.namaKaryawan||k.employeeName||k.namaEmployee||"").trim();if(n)return n}if(typeof k==="string"&&k.trim())return k.trim()}return String(r?.karyawanNama||r?.namaKaryawan||r?.employeeName||r?.namaEmployee||r?.createdByName||r?.namaPenginput||"").trim()}
-function employeeUid(r){const k=r?.karyawan||r?.employee||{};if(k&&typeof k==="object")return String(k.uid||k.userId||k.id||"").trim();return String(r?.karyawanUid||r?.employeeUid||r?.createdBy||"").trim()}
-function employeeKey(r){return employeeName(r).toLowerCase().replace(/\s+/g," ").trim()}
-function normalizeEmployee(e){return{uid:String(e.uid||e.id||e.userId||"").trim(),nama:String(e.nama||e.name||e.namaKaryawan||e.employeeName||e.namaEmployee||"Karyawan").trim(),email:String(e.email||"").trim(),wa:String(e.wa||e.noWa||e.nomorWa||"").trim(),kode:String(e.kode||e.kodeKaryawan||"").trim()}}
-function employeeSearchText(e){return[e.uid,e.nama,e.name,e.email,e.wa,e.noWa,e.kode,e.kodeKaryawan,e.role].map(v=>String(v??"")).join(" ").toLowerCase()}
+function employeeName(r){
+ const k=r?.karyawan;
+ if(k&&typeof k==="object") return String(k.nama??k.name??"").trim();
+ if(typeof k==="string") return k.trim();
+ const e=r?.employee;
+ if(e&&typeof e==="object") return String(e.nama??e.name??"").trim();
+ return String(r?.karyawanNama??r?.namaKaryawan??r?.employeeName??r?.employeeNama??"").trim();
+}
+function employeeUid(r){
+ const k=r?.karyawan;
+ if(k&&typeof k==="object") return String(k.uid??k.userUid??k.id??"").trim();
+ const e=r?.employee;
+ if(e&&typeof e==="object") return String(e.uid??e.userUid??e.id??"").trim();
+ return String(r?.karyawanUid??r?.employeeUid??r?.employeeId??"").trim();
+}
+
 async function loadEmployees(){
  const map=new Map();
  const qs=[
@@ -188,52 +199,28 @@ async function loadEmployees(){
 }
 
 function selectedEmployee(){
- const select=$("search");
- const opt=select?.selectedOptions?.[0];
+ const select=$("search"),opt=select?.selectedOptions?.[0];
  if(!opt||!opt.value)return null;
- return {
-  uid:String(opt.value||"").trim(),
-  nama:String(opt.dataset.name||opt.textContent||"").trim(),
-  kode:String(opt.dataset.kode||"").trim()
- };
+ return {uid:String(opt.value).trim(),nama:String(opt.dataset.name||"").trim(),kode:String(opt.dataset.kode||"").trim()};
 }
 
 function render(){
  const sel=selectedEmployee();
-
- // Tidak ada pilihan = tidak tampilkan order.
- if(!sel.uid){
-   $("list").innerHTML='<div class="card empty">Pilih karyawan/employee terlebih dahulu untuk menampilkan order.</div>';
+ if(!sel){
+   $("list").innerHTML='<div class="card empty">Pilih karyawan / employee terlebih dahulu untuk menampilkan order.</div>';
    return;
  }
-
+ const wantedUid=sel.uid.toLowerCase(), wantedName=sel.nama.toLowerCase(), wantedKode=sel.kode.toLowerCase();
  const list=rows.filter(r=>{
    if(status(r)!=="menunggu_approval")return false;
-
-   const eid=employeeUid(r).toLowerCase();
-   const ename=employeeName(r).toLowerCase();
-   const ekode=String(
-     r.karyawan?.kode ??
-     r.employee?.kode ??
-     r.karyawanKode ??
-     r.employeeCode ??
-     ""
-   ).trim().toLowerCase();
-
-   // Jika order menyimpan uid employee, gunakan uid.
-   if(eid && eid===sel.uid.toLowerCase())return true;
-
-   // Untuk data lama tanpa uid, cocokkan nama/kode yang dipilih.
-   if(!eid && sel.name && ename===sel.name)return true;
-   if(!eid && sel.kode && ekode===sel.kode)return true;
-
-   return false;
+   const uidEmp=employeeUid(r).toLowerCase();
+   const nameEmp=employeeName(r).toLowerCase();
+   const kodeEmp=String(r.karyawan?.kode??r.employee?.kode??r.karyawanKode??r.employeeCode??"").trim().toLowerCase();
+   return (uidEmp&&uidEmp===wantedUid)||(!uidEmp&&nameEmp===wantedName)||(!uidEmp&&wantedKode&&kodeEmp===wantedKode);
  });
-
- $("list").innerHTML=list.length
-   ?list.map(renderOrder).join("")
-   :'<div class="card empty">Tidak ada order karyawan ini yang menunggu approval.</div>';
+ $("list").innerHTML=list.length?list.map(r=>renderOrder(r)).join(""):'<div class="card empty">Tidak ada order yang menunggu approval untuk karyawan ini.</div>';
 }
+
 function renderApprovedHistory(){
  const box=$("approvedHistory");
  if(!box)return;
