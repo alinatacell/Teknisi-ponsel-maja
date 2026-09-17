@@ -103,7 +103,7 @@ body.dark td{border-color:#334155}
 </div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -374,32 +374,71 @@ $("dark").onclick=()=>{
    document.body.classList.contains("dark")?"☀️":"🌙";
 };
 
-async function startFromExistingSession(){
- try{await setPersistence(auth,browserLocalPersistence);}catch(e){console.warn("Persistence:",e.message);}
- const u=auth.currentUser;
- if(!u){
-  notice("Sesi FIXZY belum terbaca. Buka melalui index setelah login.","err");
-  return;
- }
- try{
-  uid=u.uid;
-  const s=await getDoc(doc(db,"users",uid));
-  if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-  profile=s.data()||{};
-  ownerUid=ownerOf(profile);
-  if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
-  $("email").textContent=u.email||"-";
-  await loadStock();
-  await loadOrders();
-  ready=true;
-  renderAll();
-  notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");
- }catch(e){
-  console.error(e);
-  notice("Gagal memuat Rekap Order Member: "+e.message,"err");
- }
+async function startFromIndexSession(){
+  try{
+    const session=(window.parent&&window.parent.fixzySession)
+      ? window.parent.fixzySession
+      : null;
+
+    if(!session){
+      notice("Menunggu sesi akun dari INDEX...","err");
+      return;
+    }
+
+    uid=String(session.uid||"").trim();
+    profile=session.profile||{};
+    const role=String(session.role||profile.role||"").trim().toLowerCase();
+
+    if(!uid){
+      notice("UID akun dari INDEX tidak ditemukan.","err");
+      return;
+    }
+
+    if(role==="owner"){
+      ownerUid=uid;
+    }else if(["employee","karyawan","kasir","kurir","reseller"].includes(role)){
+      ownerUid=String(
+        session.ownerUid||profile.ownerUid||profile.ownerId||""
+      ).trim();
+    }else{
+      ownerUid=String(
+        session.ownerUid||profile.ownerUid||profile.ownerId||""
+      ).trim();
+    }
+
+    if(!ownerUid){
+      notice("Owner akun dari INDEX tidak ditemukan.","err");
+      return;
+    }
+
+    $("email").textContent=
+      profile.email||
+      session.email||
+      (window.parent?.document?.getElementById("accountName")?.textContent||"-");
+
+    await loadStock();
+    await loadOrders();
+
+    ready=true;
+    renderAll();
+
+    notice(
+      `Akun aktif dari INDEX • ${role.toUpperCase()} • Rekap Owner • ${orders.length} order member.`,
+      "ok"
+    );
+  }catch(e){
+    console.error(e);
+    notice("Gagal membaca sesi dari INDEX: "+e.message,"err");
+  }
 }
 
-onAuthStateChanged(auth,()=>startFromExistingSession());
-setTimeout(()=>{if(!ready)startFromExistingSession()},800);
+/*
+  REKAP INI TIDAK MELAKUKAN LOGIN.
+  INDEX sudah memvalidasi akun dan menaruh data akun di window.fixzySession.
+  Karena halaman ini dibuka INDEX melalui iframe, sesi tersebut dibaca dari parent.
+*/
+startFromIndexSession();
+setTimeout(()=>{
+  if(!ready)startFromIndexSession();
+},500);
 </script></body></html>
