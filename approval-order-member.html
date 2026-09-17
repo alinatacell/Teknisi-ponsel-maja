@@ -17,7 +17,7 @@ main{max-width:1100px;margin:auto;padding:88px 12px 24px}.notice{font-size:11px;
 .employee-menu{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch}
 .employee-btn{flex:0 0 auto;border:2px solid #111827;border-radius:12px;padding:11px 18px;background:#fff;color:#111827;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 #111827;font-size:16px}
 .employee-btn.active{background:#ffc107}.employee-btn small{display:block;font-size:9px;color:#64748b;margin-top:3px}.employee-btn.active small{color:#111827}
-.order{border:2px solid #111827;border-radius:12px;margin-bottom:14px;overflow:hidden;background:#fff}.order-head{padding:13px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-size:20px;font-weight:900;line-height:1.1}.badge.rejected{background:#fee2e2;border-color:#ef4444;color:#991b1b}.badge.approved{background:#dcfce7;border-color:#22c55e;color:#166534}.badge{display:inline-block;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.order-body{padding:14px}.meta{font-size:13px;line-height:1.65}.item{border:2px solid #111827;border-radius:10px;padding:12px;margin-top:10px}.item-name{font-size:18px;font-weight:900}.item-meta{font-size:13px;color:#64748b;margin-top:4px}.summary{margin-top:12px;border:2px solid #111827;border-radius:10px;padding:11px;background:#fffbeb;font-size:14px;line-height:1.8}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.empty{text-align:center;padding:28px;color:#64748b;font-size:13px}
+.order{border:2px solid #111827;border-radius:12px;margin-bottom:14px;overflow:hidden;background:#fff}.order-head{padding:13px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-size:20px;font-weight:900;line-height:1.1}.badge.rejected{background:#fee2e2;border-color:#ef4444;color:#991b1b}.badge.approved{background:#dcfce7;border-color:#22c55e;color:#166534}.badge{display:inline-block;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.order-body{padding:14px}.meta{font-size:13px;line-height:1.65}.item{border:2px solid #111827;border-radius:10px;padding:12px;margin-top:10px}.item-name{font-size:18px;font-weight:900}.item-meta{font-size:13px;color:#64748b;margin-top:4px}.summary{margin-top:12px;border:2px solid #111827;border-radius:10px;padding:11px;background:#fffbeb;font-size:14px;line-height:1.8}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.history-return{background:#ffc107;color:#111827}.history-delete{background:#fee2e2;color:#991b1b;border-color:#991b1b}.empty{text-align:center;padding:28px;color:#64748b;font-size:13px}
 .statusline{font-size:12px;font-weight:900;color:#15803d}.count{font-size:12px;color:#64748b;margin-top:7px}
 body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body.dark .item,body.dark .employee-btn{background:#111827;color:#e5e7eb;border-color:#475569;box-shadow:none}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark .summary{background:#1c1917;border-color:#475569}body.dark .employee-btn.active{background:#ffc107;color:#111827}
 @media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.order-head{flex-direction:column}.actions .btn{flex:1;min-width:120px}.order-title{font-size:18px}}
@@ -47,7 +47,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <div id="list"></div>
 <div class="card" id="historyCard" style="display:none">
  <div class="title">📚 Riwayat Order Member</div>
- <div class="notice">Riwayat hanya menampilkan order yang sudah approved untuk employee dan member yang dipilih.</div>
+ <div class="notice">Riwayat berisi order yang sudah <b>APPROVED</b> atau <b>DITOLAK</b>. Setiap order bisa dikembalikan ke <b>MENUNGGU APPROVAL</b> untuk revisi, atau dihapus.</div>
  <div id="historyList"></div>
 </div>
 </main>
@@ -55,7 +55,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,deleteDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
@@ -174,7 +174,7 @@ async function loadHistory(){
  }
  historyOrders=[...map.values()].filter(o=>{
    const st=normStatus(o.status||o.approvalStatus||"");
-   if(!["approved","order_member","lunas","tagihan","ditolak","rejected","declined"].includes(st))return false;
+   if(!["approved","ditolak","rejected","declined"].includes(st))return false;
    return orderEmployeeMatches(o);
  }).sort((a,b)=>{
    const av=a.approvedAt?.toMillis?a.approvedAt.toMillis():new Date(a.approvedAt||a.updatedAt||a.createdAt||a.tanggal||0).getTime();
@@ -214,6 +214,10 @@ function renderHistory(){
           <div><b>${esc(o.nomorNota||o.id)}</b> <span class="badge ${rejected?"rejected":"approved"}">${label}</span></div>
           <div class="meta">${items.length?items.map(x=>`• ${esc(x.nama)} × ${x.qty} = <b>${rp(x.total)}</b>`).join("<br>"):"Tidak ada rincian produk"}</div>
           <div class="summary">💰 Total: <b>${rp(total)}</b>${rejected?`<br>❌ Alasan: <b>${esc(o.alasanApproval||o.alasanPenolakan||o.reason||"Tidak dicantumkan")}</b>`:`<br>${String(o.jenisHarga||o.tipeOrder||"").toLowerCase().includes("cash")?"💵 CASH / LUNAS":`💵 DP: <b>${rp(dp)}</b><br>📌 Sisa: <b>${rp(sisa)}</b><br>📅 Tempo: <b>${tempo} hari</b> • Jatuh tempo: <b>${esc(due)}</b>`}`}</div>
+          <div class="actions">
+            <button class="btn history-return" onclick="returnHistoryToPending('${esc(o.id)}')">↩️ KEMBALIKAN KE APPROVAL</button>
+            <button class="btn history-delete" onclick="deleteHistoryOrder('${esc(o.id)}')">🗑️ HAPUS</button>
+          </div>
         </div>`;
       }).join("")}
       <div class="member-total">📌 Total sisa tagihan member dari riwayat: <b>${rp(totalTagihan)}</b></div>
@@ -304,6 +308,91 @@ window.rejectOrder=async id=>{
    msg("Order ditolak.","ok");await loadOrders();await loadHistory();
  }catch(e){console.error(e);msg("Gagal menolak: "+(e?.message||e),"err")}
 };
+async function reloadAfterHistoryChange(message){
+ try{
+   await loadOrders();
+   await loadHistory();
+   msg(message,"ok");
+ }catch(e){
+   console.error(e);
+   msg("Data berhasil diubah, tetapi gagal memuat ulang: "+(e?.message||e),"err");
+ }
+}
+
+window.returnHistoryToPending=async id=>{
+ const r=historyOrders.find(x=>x.id===id);
+ if(!r)return;
+ const st=normStatus(r.status||r.approvalStatus||"");
+ const label=st==="approved"?"APPROVED":"DITOLAK";
+ if(!confirm(`Kembalikan order ${r.nomorNota||id} (${label}) ke MENUNGGU APPROVAL untuk revisi?`))return;
+ try{
+   msg("Mengembalikan order ke approval...","ok");
+   const ref=doc(db,"penjualan",id);
+   let orderMemberId=String(r.orderMemberId||"").trim();
+   const omRefs=[];
+   if(st==="approved" && !orderMemberId){
+     try{
+       const q=await getDocs(query(collection(db,"order_member"),where("sourcePenjualanId","==",id)));
+       q.forEach(d=>omRefs.push(d.ref));
+     }catch(e){console.warn("Cari order_member terkait",e?.message||e)}
+   }else if(st==="approved" && orderMemberId){
+     omRefs.push(doc(db,"order_member",orderMemberId));
+   }
+   await runTransaction(db,async tx=>{
+     const snap=await tx.get(ref);
+     if(!snap.exists())throw Error("Order tidak ditemukan.");
+     const d=snap.data()||{};
+     if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
+     const current=normStatus(d.status||d.approvalStatus||"");
+     if(!["approved","ditolak","rejected","declined"].includes(current))throw Error("Order sudah berubah status.");
+     tx.update(ref,{
+       status:"menunggu_approval",
+       approvalStatus:"menunggu_approval",
+       revisionRequired:true,
+       revisionReturnedAt:serverTimestamp(),
+       revisionReturnedBy:uid,
+       updatedAt:serverTimestamp()
+     });
+     omRefs.forEach(x=>tx.delete(x));
+   });
+   await reloadAfterHistoryChange(`Order ${r.nomorNota||id} dikembalikan ke MENUNGGU APPROVAL.`);
+ }catch(e){console.error(e);msg("Gagal mengembalikan order: "+(e?.message||e),"err")}
+};
+
+window.deleteHistoryOrder=async id=>{
+ const r=historyOrders.find(x=>x.id===id);
+ if(!r)return;
+ const st=normStatus(r.status||r.approvalStatus||"");
+ const label=st==="approved"?"APPROVED":"DITOLAK";
+ if(!confirm(`HAPUS permanen order ${r.nomorNota||id} yang berstatus ${label}?\n\nData order akan dihapus dari penjualan${st==="approved"?" dan order_member":""}.`))return;
+ try{
+   msg("Menghapus riwayat order...","ok");
+   const ref=doc(db,"penjualan",id);
+   const omRefs=[];
+   if(st==="approved"){
+     const orderMemberId=String(r.orderMemberId||"").trim();
+     if(orderMemberId)omRefs.push(doc(db,"order_member",orderMemberId));
+     else{
+       try{
+         const q=await getDocs(query(collection(db,"order_member"),where("sourcePenjualanId","==",id)));
+         q.forEach(d=>omRefs.push(d.ref));
+       }catch(e){console.warn("Cari order_member untuk hapus",e?.message||e)}
+     }
+   }
+   await runTransaction(db,async tx=>{
+     const snap=await tx.get(ref);
+     if(!snap.exists())throw Error("Order sudah tidak ada.");
+     const d=snap.data()||{};
+     if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
+     const current=normStatus(d.status||d.approvalStatus||"");
+     if(!["approved","ditolak","rejected","declined"].includes(current))throw Error("Order sudah berubah status.");
+     tx.delete(ref);
+     omRefs.forEach(x=>tx.delete(x));
+   });
+   await reloadAfterHistoryChange(`Riwayat order ${r.nomorNota||id} berhasil dihapus.`);
+ }catch(e){console.error(e);msg("Gagal menghapus riwayat: "+(e?.message||e),"err")}
+};
+
 function waNum(v){let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;return s}
 window.sendWA=id=>{
  const r=orders.find(x=>x.id===id);if(!r)return;const m=member(r),its=itemsOf(r);
