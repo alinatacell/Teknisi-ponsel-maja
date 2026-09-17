@@ -16,7 +16,16 @@ main{max-width:1100px;margin:auto;padding:88px 12px 30px}
 .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
 label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
 input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
-.money-total{font-size:15px;font-weight:900;margin-top:12px;padding:10px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
+
+/* RINCIAN TOTAL */
+.money-total{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
+.rekap-rincian{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.rekap-item{border:2px solid #111827;border-radius:8px;padding:9px 7px;background:#fff;min-width:0}
+.rekap-item .label{display:block;font-size:10px;font-weight:900;color:#4b5563;margin-bottom:5px}
+.rekap-item .value{display:block;font-size:13px;font-weight:900;color:#111827;word-break:break-word}
+.rekap-item.tagihan{background:#fef3c7}
+.rekap-item.tagihan .value{color:#b45309}
+
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
@@ -24,6 +33,9 @@ table{width:100%;border-collapse:collapse;min-width:0}
   table{min-width:680px}
   th,td{padding:8px 7px;font-size:10px}
   th{font-size:9px}
+  .rekap-rincian{grid-template-columns:1fr 1fr}
+  .rekap-item:last-child{grid-column:1/-1}
+  .rekap-item .value{font-size:12px}
 }
 th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
 th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
@@ -43,6 +55,10 @@ body.dark .title{border-color:#475569}
 body.dark label{color:#9ca3af}
 body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
 body.dark .money-total{background:#1c1917}
+body.dark .rekap-item{background:#0f172a;border-color:#475569}
+body.dark .rekap-item .label{color:#9ca3af}
+body.dark .rekap-item .value{color:#fff}
+body.dark .rekap-item.tagihan{background:#292211}
 body.dark th{background:#020617}
 body.dark td{border-color:#334155}
 @media(max-width:850px){.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
@@ -60,9 +76,34 @@ body.dark td{border-color:#334155}
 
 <div class="card"><div class="title">REKAPAN ORDERAN</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
 
-<div class="card"><div class="title">DAFTAR ORDER SEMUA MEMBER</div><div class="money-total">Total Sisa Tagihan: <b id="sisaTotal">Rp 0</b></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+<div class="card"><div class="title">DAFTAR ORDER SEMUA MEMBER</div>
+<div class="money-total">
+  <div class="rekap-rincian">
+    <div class="rekap-item">
+      <span class="label">NILAI BARANG</span>
+      <span class="value" id="totalNilaiBarang">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">PENGELOLA</span>
+      <span class="value" id="totalPengelola">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">TABUNGAN</span>
+      <span class="value" id="totalTabungan">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">KAS</span>
+      <span class="value" id="totalKas">Rp 0</span>
+    </div>
+    <div class="rekap-item tagihan">
+      <span class="label">TAGIHAN</span>
+      <span class="value" id="sisaTotal">Rp 0</span>
+    </div>
+  </div>
+</div>
+<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -79,40 +120,70 @@ const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number(v)||0;
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
-let uid="",ownerUid="",profile={},orders=[],ready=false;
+let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
+
 function ownerOf(d){
- const role=String(d.role||"").toLowerCase();
+ const role=String(d.role||"").trim().toLowerCase();
  if(role==="owner")return uid;
- if(role==="superadmin"||role==="super_admin")return "";
+ if(role==="superadmin"||role==="super_admin"||role==="super admin")return "";
+ if(["karyawan","employee","karyawan/employee","pegawai"].includes(role)){
+   return String(d.ownerUid||d.ownerId||"").trim();
+ }
  return String(d.ownerUid||d.ownerId||"").trim()||uid;
 }
+
 function isCashOrder(r){
  const vals=[r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,r.metodePembayaran,r.jenisPembayaran,r.caraBayar]
    .map(v=>String(v??"").trim().toLowerCase());
  return vals.some(v=>["member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"].includes(v));
 }
+
 function orderStatus(r){
- if(isCashOrder(r))return "lunas";
- const p=r._paymentSource||{};
- const states=[r.status,r.approvalStatus,r.statusPembayaran,r.paymentStatus,p.status,p.statusPembayaran,p.paymentStatus]
-   .map(v=>String(v??"").trim().toLowerCase());
- if(states.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v)))return "lunas";
- const total=Math.max(0,Number(r.totalBayar??r.total??0)||0);
- const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
- const sisa=Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0);
- return (sisa<=0 || (total>0 && paid>=total))?"lunas":"tagihan";
+ const calc=calculateOrder(r);
+ return isCashOrder(r)|| (calc.totalTagihan>0&&calc.sisa<=0) ? "lunas" : "tagihan";
 }
+
+function basePriceOfItem(x,r={}){
+ const cash=isCashOrder(r);
+ const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
+ const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
+ const direct=Number(x.hargaDasar);
+ if(Number.isFinite(direct)&&direct>0)return direct;
+ const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
+ if(Number.isFinite(specific)&&specific>0)return specific;
+ const composed=Number(x.harga);
+ if(Number.isFinite(composed)&&composed>0)return Math.max(0,composed-up-tab);
+ return 0;
+}
+
 function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
  return a.map(x=>{
   const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
-  const harga=Math.max(0,Number(x.harga??x.hargaJual??x.hargaSatuan??x.price??0)||0);
-  const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??x.upPerPcs??0)||0);
-  const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??x.menabungMemberPerPcs??x.menabungMember??0)||0);
-  const total=Math.max(0,Number(x.total??x.totalHarga??x.subtotal??((harga*qty)-Number(x.diskon||0)))||0);
-  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,harga,total,upPengelolaPerPcs:up,tabunganPerPcs:tabungan};
+  const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0);
+  const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
+  const hargaAwal=basePriceOfItem(x,r);
+  const diskon=Math.max(0,Number(x.diskon??x.discount??0)||0);
+  const nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,hargaAwal,diskon,nilaiBarang,upPengelolaPerPcs:up,tabunganPerPcs:tabungan,total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)};
  });
 }
+
+function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
+function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
+function calculateOrder(r){
+ const items=itemList(r);
+ const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
+ const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
+ const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
+ const kas=kasOf(r);
+ const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
+ const paid=paidOf(r);
+ const cash=isCashOrder(r);
+ const sisa=cash?0:Math.max(0,totalTagihan-paid);
+ return{items,nilaiBarang,up,tabungan,kas,totalTagihan,paid,sisa,cash};
+}
+
 function dueDate(r){
  if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
@@ -123,6 +194,7 @@ function dueDate(r){
  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,y]=s.split("/").map(Number);return new Date(y,m-1,d);}
  const d=new Date(s);return isNaN(d.getTime())?null:d;
 }
+
 function inPeriod(r){
  const p=$("periode").value;if(p==="all")return true;
  const raw=r.approvedAt||r.createdAt||r.tanggal||"";let d=null;
@@ -135,16 +207,57 @@ function inPeriod(r){
  if(p==="year")return d.getFullYear()===now.getFullYear();
  return true;
 }
+
+async function loadStock(){
+ const map=new Map();
+ const qs=[
+   query(collection(db,"stok"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"stok"),where("ownerId","==",ownerUid)),
+   query(collection(db,"stok"),where("uid","==",uid))
+ ];
+ for(const q of qs){
+  try{
+   const s=await getDocs(q);
+   s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...d.data()});});
+  }catch(e){console.warn("Query stok:",e.message);}
+ }
+ stockProducts=[...map.values()];
+ stockByKey=new Map();
+ stockProducts.forEach(p=>{
+  const keys=[p.id,p.produkId,p.kode,p.kodeProduk,p.sku,p.nama,p.namaProduk]
+   .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
+  keys.forEach(k=>{if(!stockByKey.has(k))stockByKey.set(k,p);});
+ });
+}
+
+function findStockForItem(x){
+ const keys=[x.produkId,x.id,x.kode,x.kodeProduk,x.sku,x.nama,x.namaProduk]
+   .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
+ for(const k of keys){const p=stockByKey.get(k);if(p)return p;}
+ return null;
+}
+
 async function loadOrders(){
  const map=new Map();
- const qs=[query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),query(collection(db,"order_member"),where("ownerId","==",ownerUid))];
- for(const q of qs){try{const s=await getDocs(q);s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x);});}catch(e){console.warn("Query order_member:",e.message);}}
+ const qs=[
+   query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of qs){
+  try{
+   const s=await getDocs(q);
+   s.forEach(d=>{const x={id:d.id,...d.data()};if(!map.has(d.id))map.set(d.id,x);});
+  }catch(e){console.warn("Query order_member:",e.message);}
+ }
  const arr=[...map.values()];
  await Promise.all(arr.map(async x=>{
-  const sid=String(x.sourcePenjualanId||"").trim();if(!sid)return;
+  const sid=String(x.sourcePenjualanId||"").trim();
+  if(!sid)return;
   try{
-   const ps=await getDoc(doc(db,"penjualan",sid));if(!ps.exists())return;
-   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();if(own&&own!==ownerUid)return;
+   const ps=await getDoc(doc(db,"penjualan",sid));
+   if(!ps.exists())return;
+   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();
+   if(own&&own!==ownerUid)return;
    x._paymentSource=p;
    const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
    const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
@@ -152,7 +265,11 @@ async function loadOrders(){
     const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));
     x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{
      const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};
-     return{...si,...oi,upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0};
+     return{
+      ...si,...oi,
+      upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,
+      tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0
+     };
     });
    }
    for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){
@@ -162,52 +279,188 @@ async function loadOrders(){
  }));
  orders=arr;
 }
+
 function kasMemberMonthKey(r){
  const m=r.member||r.pelanggan||{};
  const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
  const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";let d=null;
- if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x;}
+ if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
+ else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x;}
  const ym=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`:"tanpa-bulan";
  return memberId+"|"+ym;
 }
+
 function renderRekap(){
  const search=$("search").value.trim().toLowerCase();
- const data=orders.filter(inPeriod).filter(r=>{const m=r.member||r.pelanggan||{};return!search||String(r.nomorNota||r.id||"").toLowerCase().includes(search)||String(m.nama||"").toLowerCase().includes(search);});
+ const data=orders.filter(inPeriod).filter(r=>{
+  const m=r.member||r.pelanggan||{};
+  return!search||
+    String(r.nomorNota||r.id||"").toLowerCase().includes(search)||
+    String(m.nama||"").toLowerCase().includes(search);
+ });
+
  let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
+
+ // Kas bulanan tetap hanya dihitung satu kali untuk setiap member + bulan.
  const kasBulananMap=new Map();
- data.forEach(r=>{const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0,key=kasMemberMonthKey(r),prev=kasBulananMap.get(key)||0;if(raw>prev)kasBulananMap.set(key,raw);});
+
+ data.forEach(r=>{
+  const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
+  const key=kasMemberMonthKey(r);
+  const prev=kasBulananMap.get(key)||0;
+  if(raw>prev)kasBulananMap.set(key,raw);
+ });
+
  const kasSudahDitampilkan=new Set();
+
  const rows=data.map(r=>{
-  const items=itemList(r),q=items.reduce((a,x)=>a+x.qty,0),value=items.reduce((a,x)=>a+x.total,0),cash=isCashOrder(r);
-  const total=Math.max(0,Number(r.totalBayar??r.total??value)||0),p=r._paymentSource||{};
-  const paid=Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0,Number(p.totalDibayar??p.pembayaran??p.dp??0)||0);
-  const explicitPaid=[r.statusPembayaran,r.paymentStatus,p.statusPembayaran,p.paymentStatus].map(v=>String(v??"").trim().toLowerCase());
-  const sourceTotal=Math.max(0,Number(p.totalBayar??p.total??0)||0);
-  const paidFull=explicitPaid.some(v=>["lunas","paid","dibayar","selesai","terbayar"].includes(v))||(sourceTotal>0&&paid>=sourceTotal);
-  const sisa=cash||paidFull?0:Math.max(0,Number(r.sisaBayar??r.sisa??(total-paid))||0),st=orderStatus(r),jenis=cash?"CASH":"TEMPO";
-  const upDefault=Math.max(0,Number(r.upPengelolaPerPcs??r.upPengelola??r.upPerPcs??0)||0),tabDefault=Math.max(0,Number(r.tabunganPerPcs??r.tabungan??r.menabungMemberPerPcs??r.menabungMember??0)||0);
-  const upRowCalc=items.reduce((a,x)=>a+x.qty*(Number(x.upPengelolaPerPcs)||upDefault),0);
-  const tabRowCalc=items.reduce((a,x)=>a+x.qty*(Number(x.tabunganPerPcs)||tabDefault),0);
-  const upRow=upRowCalc>0?upRowCalc:Math.max(0,Number(r.totalUpPengelola??r.totalUPPengelola??r.upPengelolaTotal??r.totalUp??0)||0);
-  const tabRow=tabRowCalc>0?tabRowCalc:Math.max(0,Number(r.totalTabunganMember??r.totalTabungan??r.tabunganTotal??0)||0);
-  const kasKey=kasMemberMonthKey(r),kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||0:0;kasSudahDitampilkan.add(kasKey);
-  qty+=q;nilai+=value;up+=upRow;tabungan+=tabRow;kas+=kasRow;sisaTotal+=sisa;
-  const m=r.member||r.pelanggan||{},due=dueDate(r);
-  return `<tr><td><b>${esc(r.nomorNota||r.id)}</b></td><td>${esc(m.nama||"-")}</td><td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td><td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td><td>${due?due.toLocaleDateString("id-ID"):"-"}</td><td class="num">${q.toLocaleString("id-ID")}</td><td class="num">${rp(value)}</td><td class="num">${rp(upRow)}</td><td class="num">${rp(tabRow)}</td><td class="num">${rp(kasRow)}</td><td class="num">${rp(sisa)}</td></tr>`;
+  const calc=calculateOrder(r);
+  const items=calc.items;
+  const q=items.reduce((a,x)=>a+x.qty,0);
+  const value=calc.nilaiBarang;
+  const upRow=calc.up;
+  const tabRow=calc.tabungan;
+  const cash=calc.cash;
+  const kasKey=kasMemberMonthKey(r);
+  const kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
+  kasSudahDitampilkan.add(kasKey);
+  // Satu-satunya rumus tagihan yang dipakai Rekap.
+  const totalTagihanAwal=value+upRow+tabRow+kasRow;
+  const paid=calc.paid;
+  const sisa=cash?0:Math.max(0,totalTagihanAwal-paid);
+  // Total Sisa Tagihan harus merupakan penjumlahan seluruh baris yang tampil.
+  sisaTotal+=sisa;
+  qty+=q; nilai+=value; up+=upRow; tabungan+=tabRow; kas+=kasRow;
+
+  const m=r.member||r.pelanggan||{};
+  const due=dueDate(r);
+  const st=sisa<=0?"lunas":"tagihan";
+  const jenis=cash?"CASH":"TEMPO";
+
+  return `<tr>
+    <td><b>${esc(r.nomorNota||r.id)}</b></td>
+    <td>${esc(m.nama||"-")}</td>
+    <td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td>
+    <td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td>
+    <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
+    <td class="num">${q.toLocaleString("id-ID")}</td>
+    <td class="num">${rp(value)}</td>
+    <td class="num">${rp(upRow)}</td>
+    <td class="num">${rp(tabRow)}</td>
+    <td class="num">${rp(kasRow)}</td>
+    <td class="num">${rp(sisa)}</td>
+  </tr>`;
  }).join("");
- $("orderCount")?.remove();$("qtyTotal")?.remove();$("nilaiTotal")?.remove();$("upTotal")?.remove();$("tabunganTotal")?.remove();$("kasTotal")?.remove();
- $("sisaTotal").textContent=rp(sisaTotal);$("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+
+ $("totalNilaiBarang").textContent=rp(nilai);
+ $("totalPengelola").textContent=rp(up);
+ $("totalTabungan").textContent=rp(tabungan);
+ $("totalKas").textContent=rp(kas);
+ $("sisaTotal").textContent=rp(sisaTotal);
+
+ $("orderTable").innerHTML=
+   rows||
+   '<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
 }
-function renderAll(){if(!ready)return;renderRekap();}
-$("periode").onchange=renderAll;$("search").oninput=renderAll;
-$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
-onAuthStateChanged(auth,async u=>{
- if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}
- try{
-  uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-  profile=s.data()||{};ownerUid=ownerOf(profile);if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
-  $("email").textContent=u.email||"-";await loadOrders();ready=true;renderAll();
-  notice(`Akun aktif • Rekap Order Member milik Owner ini • ${orders.length} order member.`,"ok");
- }catch(e){console.error(e);notice("Gagal memuat Rekap Order Member: "+e.message,"err");}
+
+function renderAll(){
+ if(!ready)return;
+ renderRekap();
+}
+
+$("periode").onchange=renderAll;
+$("search").oninput=renderAll;
+
+$("dark").onclick=()=>{
+ document.body.classList.toggle("dark");
+ $("dark").textContent=
+   document.body.classList.contains("dark")?"☀️":"🌙";
+};
+
+async function getProfileForUser(u){
+  // Pertama: document ID = UID.
+  const direct=await getDoc(doc(db,"users",u.uid));
+  if(direct.exists())return direct.data()||{};
+
+  // Kompatibel dengan users lama yang document ID-nya bukan UID.
+  const byUid=await getDocs(query(collection(db,"users"),where("uid","==",u.uid)));
+  if(!byUid.empty)return byUid.docs[0].data()||{};
+
+  if(u.email){
+    const byEmail=await getDocs(query(collection(db,"users"),where("email","==",u.email)));
+    if(!byEmail.empty)return byEmail.docs[0].data()||{};
+  }
+
+  throw Error("Profil akun tidak ditemukan.");
+}
+
+async function startFromExistingSession(u){
+  if(!u)return;
+
+  uid=u.uid;
+  $("email").textContent=u.email||"-";
+  notice("Membaca akun yang sudah login di index...");
+
+  profile=await getProfileForUser(u);
+  ownerUid=ownerOf(profile);
+
+  const role=String(profile.role||"").trim().toLowerCase();
+
+  if(role==="superadmin"||role==="super_admin"||role==="super admin"){
+    ready=true;
+    $("orderTable").innerHTML='<tr><td colspan="11" class="empty">Akun Superadmin tidak membuka data bisnis Owner.</td></tr>';
+    notice("Akun Superadmin • Data bisnis Owner tidak dibuka.","err");
+    return;
+  }
+
+  if(!ownerUid)throw Error("Owner akun tidak ditemukan.");
+
+  await loadStock();
+  await loadOrders();
+
+  ready=true;
+  renderAll();
+
+  const roleLabel=String(profile.role||"Akun").trim()||"Akun";
+  notice(
+    `Akun aktif • ${roleLabel} • Rekap milik Owner ini • ${orders.length} order member.`,
+    "ok"
+  );
+}
+
+let authHandled=false;
+
+async function handleExistingAuth(u){
+  if(authHandled)return;
+  if(!u){
+    // Jangan meminta login ulang. Tunggu sebentar karena index bisa baru
+    // selesai memulihkan sesi Firebase.
+    notice("Membaca sesi login dari index...");
+    return;
+  }
+
+  authHandled=true;
+  try{
+    await startFromExistingSession(u);
+  }catch(e){
+    console.error(e);
+    authHandled=false;
+    notice("Sesi akun terbaca, tetapi data Owner gagal dimuat: "+e.message,"err");
+  }
+}
+
+// Pakai persistence browser yang sama. Tidak ada halaman/form login di sini.
+setPersistence(auth,browserLocalPersistence).catch(e=>{
+  console.warn("Auth persistence:",e.message);
 });
+
+onAuthStateChanged(auth,u=>{
+  handleExistingAuth(u);
+});
+
+// Cek currentUser juga, supaya tidak bergantung hanya pada event pertama.
+setTimeout(()=>{
+  if(!authHandled && auth.currentUser)handleExistingAuth(auth.currentUser);
+},1500);
+
 </script></body></html>
