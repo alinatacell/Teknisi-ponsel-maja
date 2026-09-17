@@ -310,10 +310,12 @@ window.returnOrderForRevision=async id=>{
 
    // Balikkan posting UP Pengelola yang sebelumnya masuk saat approval.
    const oldUP=Number(o.totalUPPengelola||0)||0;
+   const oldKas=Number(o.kasBulanan||0)||0;
    const saldoPatch={updatedAt:serverTimestamp()};
-   if(oldUP){
+   if(oldUP||oldKas){
     if(!ss.exists())throw Error("saldo_owner tidak ditemukan. Pembalikan saldo dibatalkan.");
-    saldoPatch.saldoPengelola=increment(-oldUP);
+    if(oldUP)saldoPatch.saldoPengelola=increment(-oldUP);
+    if(oldKas)saldoPatch.saldoKas=increment(-oldKas);
    }
 
    tx.update(ref,{
@@ -334,7 +336,10 @@ window.returnOrderForRevision=async id=>{
     revisionBy:uid,
     revisionSourcePenjualanId:id,
     revisionPreviousTotalUPPengelola:oldUP,
+    revisionPreviousKasBulanan:oldKas,
+    kasApprovalCycle:Math.max(1,Number(o.kasApprovalCycle??0)||0),
     totalUPPengelola:0,
+    totalTabunganMember:0,
     kasBulanan:0,
     updatedAt:serverTimestamp()
    });
@@ -406,30 +411,44 @@ window.approveOrder=async id=>{
     if(st<x.approvedQty)throw Error(`Stok Spreadsheet ${x.nama} hanya ${st}, disetujui ${x.approvedQty}.`);
    }
 
-   const total=approved.reduce((a,x)=>a+(x.harga*x.approvedQty-Math.min(Number(x.diskon)||0,x.harga*x.approvedQty)),0);
    const cash=String(freshData.jenisHarga||"").toLowerCase()==="cash"||String(freshData.tipeTransaksi||"").toLowerCase()==="member_cash";
-   const dp=cash?total:Math.min(Number(freshData.dp||freshData.uangMuka||0),total);
-   const sisa=cash?0:Math.max(0,total-dp);
+   const itemsFinal=approved.map(x=>{
+    const up=Number(x.upPengelolaPerPcs??freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0;
+    const tab=Number(x.tabunganPerPcs??freshData.tabunganPerPcs??freshData.tabunganMember??0)||0;
+    const base=Number(x.hargaDasar??(cash?x.hargaCash:x.hargaTempo)??0)||0;
+    const qty=Math.max(0,Number(x.approvedQty)||0);
+    const finalPrice=Math.max(0,Number(x.harga)||0);
+    const diskon=Math.min(Number(x.diskon)||0,finalPrice*qty);
+    return{
+      produkId:x.produkId,nama:x.nama,kode:x.kode,qty,approvedQty:qty,
+      // 4 komponen transaksi disimpan terpisah.
+      hargaDasar:base,nilaiBarang:base*qty,
+      upPengelolaPerPcs:up,totalUPPengelola:up*qty,
+      tabunganPerPcs:tab,totalTabunganMember:tab*qty,
+      hargaMemberPerPcs:finalPrice,harga:finalPrice,
+      hargaTempo:x.hargaTempo??0,hargaCash:x.hargaCash??0,hargaJual:finalPrice,
+      diskon,modalSatuan:x.modalSatuan||0,
+      totalTagihanItem:Math.max(0,finalPrice*qty-diskon),
+      total:Math.max(0,finalPrice*qty-diskon)
+    };
+   });
 
-   const itemsFinal=approved.map(x=>({
-    produkId:x.produkId,nama:x.nama,kode:x.kode,qty:x.approvedQty,harga:x.harga,
-    hargaDasar:x.hargaDasar??0,hargaTempo:x.hargaTempo??0,hargaCash:x.hargaCash??0,hargaJual:x.harga,
-    tabunganPerPcs:Number(x.tabunganPerPcs??freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,
-    upPengelolaPerPcs:Number(x.upPengelolaPerPcs??freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0,
-    diskon:Math.min(Number(x.diskon)||0,x.harga*x.approvedQty),modalSatuan:x.modalSatuan||0,
-    total:x.harga*x.approvedQty-Math.min(Number(x.diskon)||0,x.harga*x.approvedQty)
-   }));
-
-   const totalUP=approved.reduce((a,x)=>a+x.approvedQty*(Number(x.upPengelolaPerPcs??freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0),0);
+   const total=itemsFinal.reduce((a,x)=>a+x.total,0);
+   const totalNilaiBarang=itemsFinal.reduce((a,x)=>a+x.nilaiBarang,0);
+   const totalUP=itemsFinal.reduce((a,x)=>a+x.totalUPPengelola,0);
+   const totalTabungan=itemsFinal.reduce((a,x)=>a+x.totalTabunganMember,0);
    const kasNominal=Number(freshData.kasBulanan??freshData.uangKasBulanan??0)||0;
    const bulan=String(freshData.tanggal||"").slice(0,7);
    const memberUid=String(freshData.memberUid||freshData.member?.uid||freshData.member?.memberUid||"");
-   const kasRef=(kasNominal&&bulan&&memberUid)?doc(db,"saldo_owner_kas_bulanan",ownerUid+"_"+memberUid+"_"+bulan):null;
+   const wasRevision=Boolean(oldOrder?.revisionRequired)||String(oldOrder?.status||"")==="revisi";
+   const existingCycle=Math.max(0,Number(oldOrder?.kasApprovalCycle??0)||0);
+   const kasCycle=existingOrderId&&wasRevision?existingCycle+1:existingCycle;
+   const kasRef=(kasNominal&&bulan&&memberUid)?doc(db,"saldo_owner_kas_bulanan",ownerUid+"_"+memberUid+"_"+bulan+"_"+String(kasCycle)):null;
    const kasSnap=kasRef?await tx.get(kasRef):null;
+   const dp=cash?total:Math.min(Number(freshData.dp||freshData.uangMuka||0),total);
+   const sisa=cash?0:Math.max(0,total-dp);
 
    const saldoRef=doc(db,"saldo_owner",ownerUid);
-   const wasRevision=Boolean(oldOrder?.revisionRequired)||String(oldOrder?.status||"")==="revisi";
-
    // Jika approval ulang melalui alur revisi, posting sebelumnya sudah
    // dibalik pada saat returnOrderForRevision.
    const oldPostedUP=wasRevision?0:(Number(oldOrder?.totalUPPengelola||0)||0);
@@ -445,14 +464,15 @@ window.approveOrder=async id=>{
     nomorNota:freshData.nomorNota||id,tipeOrder:cash?"member_cash":"member_tempo",
     status:"order_member",revisionRequired:false,
     member:freshData.member||freshData.pelanggan||{},items:itemsFinal,
-    subtotal:total,diskon:approved.reduce((a,x)=>a+Math.min(Number(x.diskon)||0,x.harga*x.approvedQty),0),
-    total,totalBayar:total,dp:cash?total:dp,uangMuka:cash?total:dp,
+    subtotal:total,diskon:itemsFinal.reduce((a,x)=>a+x.diskon,0),
+    total,totalBayar:total,totalTagihanMember:total,totalNilaiBarang,dp:cash?total:dp,uangMuka:cash?total:dp,
     sisa:cash?0:sisa,sisaBayar:cash?0:sisa,piutang:cash?0:sisa,pendapatan:cash?total:dp,
     tabunganPerPcs:Number(freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,
     upPengelolaPerPcs:Number(freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0,
     kasBulanan:shouldPostKas?kasNominal:0,
-    totalTabunganMember:approved.reduce((a,x)=>a+x.approvedQty*(Number(x.tabunganPerPcs??freshData.tabunganPerPcs??freshData.tabunganMember??0)||0),0),
+    totalTabunganMember:totalTabungan,
     totalUPPengelola:totalUP,
+    kasApprovalCycle:kasCycle,
     jenisHarga:cash?"cash":"tempo",
     tempoHari:cash?0:revisedTempo,
     jatuhTempo:cash?"":revisedDue,
