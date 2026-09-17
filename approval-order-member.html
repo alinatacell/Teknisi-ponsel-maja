@@ -308,12 +308,29 @@ window.returnOrderForRevision=async id=>{
    // menampilkan data yang terakhir disetujui.
    const revisionItems=Array.isArray(p.approvedItems)?p.approvedItems:(Array.isArray(p.items)?p.items:[]);
 
-   // Balikkan posting UP Pengelola yang sebelumnya masuk saat approval.
+   // Balikkan SEMUA posting yang dibuat saat approval lama.
+   // UP Pengelola dan Uang Kas harus kembali ke saldo masing-masing.
    const oldUP=Number(o.totalUPPengelola||0)||0;
+   const oldKas=Number(o.kasBulanan||o.uangKasBulanan||0)||0;
    const saldoPatch={updatedAt:serverTimestamp()};
-   if(oldUP){
+   if(oldUP||oldKas){
     if(!ss.exists())throw Error("saldo_owner tidak ditemukan. Pembalikan saldo dibatalkan.");
-    saldoPatch.saldoPengelola=increment(-oldUP);
+    if(oldUP)saldoPatch.saldoPengelola=increment(-oldUP);
+   }
+
+   let oldKasMarker=null;
+   if(oldKas){
+    const oldMemberUid=String(o.memberUid||o.member?.uid||o.member?.memberUid||p.memberUid||p.member?.uid||"");
+    const oldTanggal=String(o.tanggal||p.tanggal||"");
+    const oldBulan=oldTanggal.slice(0,7);
+    if(oldMemberUid&&oldBulan){
+      oldKasMarker=doc(db,"saldo_owner_kas_bulanan",ownerUid+"_"+oldMemberUid+"_"+oldBulan);
+      const km=await tx.get(oldKasMarker);
+      if(km.exists() && String(km.data()?.orderMemberId||"")===String(r.orderMemberId)){
+        saldoPatch.saldoKas=increment(-oldKas);
+        tx.delete(oldKasMarker);
+      }
+    }
    }
 
    tx.update(ref,{
@@ -359,14 +376,16 @@ window.approveOrder=async id=>{
  const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);if(!card)return;
 
  const original=normalizeItems(r);
+ const cashOrder=isCash(r);
  const approved=original.map((x,i)=>{
   const el=card.querySelectorAll(".item")[i];
   const selectedId=el.dataset.selectedProduct||x.produkId;
   const p=stockCatalog.find(z=>String(z.id)===String(selectedId))||stockCatalog.find(z=>String(z.kode||z.kodeProduk)===String(x.kode));
   const q=Math.max(0,Math.min(x.qty,Number(el.querySelector(".approved").value)||0));
   const harga=Math.max(0,Number(el.querySelector(".price").value)||0);
-  if(p)return{...x,...p,produkId:p.id,nama:stockName(p),kode:stockCode(p),harga,modalSatuan:stockModal(p),approvedQty:q};
-  return{...x,approvedQty:q,harga};
+  const hargaDasar=p ? (cashOrder?Number(p.modal)||0:Number(p.jual)||0) : Math.max(0,Number(x.hargaDasar)||0);
+  if(p)return{...x,...p,produkId:p.id,nama:stockName(p),kode:stockCode(p),harga,hargaMemberPerPcs:harga,hargaDasar,modalSatuan:stockModal(p),approvedQty:q};
+  return{...x,approvedQty:q,harga,hargaMemberPerPcs:harga,hargaDasar};
  }).filter(x=>x.approvedQty>0);
 
  if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
@@ -417,6 +436,9 @@ window.approveOrder=async id=>{
     tabunganPerPcs:Number(x.tabunganPerPcs??freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,
     upPengelolaPerPcs:Number(x.upPengelolaPerPcs??freshData.upPengelolaPerPcs??freshData.upPengelola??0)||0,
     diskon:Math.min(Number(x.diskon)||0,x.harga*x.approvedQty),modalSatuan:x.modalSatuan||0,
+    hargaMemberPerPcs:x.harga,
+    nilaiBarangPerPcs:Number(x.hargaDasar)||0,
+    nilaiBarang:Math.max(0,(Number(x.hargaDasar)||0)*x.approvedQty-Math.min(Number(x.diskon)||0,(Number(x.hargaDasar)||0)*x.approvedQty)),
     total:x.harga*x.approvedQty-Math.min(Number(x.diskon)||0,x.harga*x.approvedQty)
    }));
 
@@ -444,8 +466,12 @@ window.approveOrder=async id=>{
     ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
     nomorNota:freshData.nomorNota||id,tipeOrder:cash?"member_cash":"member_tempo",
     status:"order_member",revisionRequired:false,
-    member:freshData.member||freshData.pelanggan||{},items:itemsFinal,
+    member:freshData.member||freshData.pelanggan||{},
+    memberUid:memberUid,
+    memberId:String(freshData.memberId||freshData.karyawan?.uid||freshData.member?.uid||""),
+    items:itemsFinal,
     subtotal:total,diskon:approved.reduce((a,x)=>a+Math.min(Number(x.diskon)||0,x.harga*x.approvedQty),0),
+    totalNilaiBarang:approved.reduce((a,x)=>a+(Number(x.hargaDasar)||0)*x.approvedQty-Math.min(Number(x.diskon)||0,(Number(x.hargaDasar)||0)*x.approvedQty),0),
     total,totalBayar:total,dp:cash?total:dp,uangMuka:cash?total:dp,
     sisa:cash?0:sisa,sisaBayar:cash?0:sisa,piutang:cash?0:sisa,pendapatan:cash?total:dp,
     tabunganPerPcs:Number(freshData.tabunganPerPcs??freshData.tabunganMember??0)||0,

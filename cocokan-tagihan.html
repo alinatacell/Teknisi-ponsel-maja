@@ -54,31 +54,14 @@ function isCashOrder(r){
 
 
 function basePriceOfItem(x,r={}){
- // PENTING:
- // Di data hasil Approval, x.harga adalah HARGA FINAL:
- // harga dasar + UP Pengelola + Tabungan.
- // Halaman pencocokan supplier hanya boleh memakai HARGA DASAR,
- // jadi UP dan Tabungan harus dikeluarkan dari harga final.
- const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
- const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
-
- const approvedPrice=Number(x.harga);
- if(Number.isFinite(approvedPrice)&&approvedPrice>0){
-   // Harga dasar hasil approval ulang = harga final - UP - Tabungan.
-   const dasarDariApproval=Math.max(0,approvedPrice-up-tab);
-   if(dasarDariApproval>0)return dasarDariApproval;
- }
-
- // Fallback untuk data lama yang belum mempunyai harga final.
- const direct=Number(x.hargaDasar);
+ // SUPPLIER: hanya harga dasar barang. UP, Tabungan, dan Kas dilarang masuk.
+ const direct=Number(x.hargaDasar??x.nilaiBarangPerPcs);
  if(Number.isFinite(direct)&&direct>0)return direct;
-
  const cash=isCashOrder(r);
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
  if(Number.isFinite(specific)&&specific>0)return specific;
  return 0;
 }
-
 
 function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
@@ -89,7 +72,7 @@ function itemList(r){
   const hargaAwal=basePriceOfItem(x,r);
   const diskon=Math.max(0,Number(x.diskon??x.discount??0)||0);
   const nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,hargaAwal,diskon,nilaiBarang,upPengelolaPerPcs:up,tabunganPerPcs:tabungan,total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)};
+  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,hargaAwal,diskon,nilaiBarang,total:nilaiBarang};
  });
 }
 

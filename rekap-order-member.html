@@ -163,18 +163,18 @@ function orderStatus(r){
 }
 
 function basePriceOfItem(x,r={}){
- const cash=isCashOrder(r);
- const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
- const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
- // Harga pada items hasil approval adalah harga yang disetujui.
- // Setelah revisi, harga ini harus menjadi sumber utama Rekap.
- // hargaDasar/hargaTempo hanya menjadi fallback jika harga tidak tersedia.
- const approvedPrice=Number(x.harga);
- if(Number.isFinite(approvedPrice)&&approvedPrice>0)return approvedPrice;
+ // NILAI BARANG selalu berasal dari harga dasar Spreadsheet.
+ // x.harga adalah harga tagihan member (sudah termasuk komponen tambahan),
+ // jadi tidak boleh dipakai sebagai harga supplier/nilai barang.
  const direct=Number(x.hargaDasar);
  if(Number.isFinite(direct)&&direct>0)return direct;
+ const cash=isCashOrder(r);
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
  if(Number.isFinite(specific)&&specific>0)return specific;
+ const approvedPrice=Number(x.harga);
+ const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
+ const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
+ if(Number.isFinite(approvedPrice)&&approvedPrice>0)return Math.max(0,approvedPrice-up-tab);
  return 0;
 }
 
@@ -186,8 +186,11 @@ function itemList(r){
   const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
   const hargaAwal=basePriceOfItem(x,r);
   const diskon=Math.max(0,Number(x.diskon??x.discount??0)||0);
-  const nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,hargaAwal,diskon,nilaiBarang,upPengelolaPerPcs:up,tabunganPerPcs:tabungan,total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)};
+  const storedNilai=Number(x.nilaiBarang);
+  const nilaiBarang=(Number.isFinite(storedNilai)&&storedNilai>=0)?storedNilai:Math.max(0,hargaAwal*qty-diskon);
+  const hargaMemberPerPcs=Math.max(0,Number(x.hargaMemberPerPcs??x.harga??0)||0);
+  const totalMember=Math.max(0,hargaMemberPerPcs*qty-diskon);
+  return{produkId:String(x.produkId||x.id||""),nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),kode:String(x.kode||x.kodeProduk||""),qty,hargaAwal,diskon,nilaiBarang,upPengelolaPerPcs:up,tabunganPerPcs:tabungan,hargaMemberPerPcs,total:totalMember};
  });
 }
 

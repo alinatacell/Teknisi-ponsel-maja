@@ -337,7 +337,8 @@ function build(){
     tipeTransaksi:jenis==="cash"?"order_cash":"order_tempo",jenisHarga:jenis,
     status:"menunggu_approval",approvalStatus:"menunggu_approval",
     items:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,supplier:x.supplier,qty:x.qty,
-      harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,
+      harga:x.harga,hargaMemberPerPcs:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,
+      nilaiBarangPerPcs:x.hargaDasar,nilaiBarang:Math.max(0,(Number(x.hargaDasar)||0)*(Number(x.qty)||0)-(Number(x.diskon)||0),
       tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,
       tambahanTabungan:(x.tabunganPerPcs||0)*x.qty,tambahanUpPengelola:(x.upPengelolaPerPcs||0)*x.qty,
       hargaJual:x.harga,discount:x.diskon||0,diskon:x.diskon||0,modalSatuan:x.modalSatuan,total:x.lineTotal,
@@ -350,6 +351,7 @@ function build(){
     tempoHari:jenis==="cash"?0:tempoHari,jatuhTempo:jenis==="cash"?null:jat,
     tanggalJatuhTempo:jenis==="cash"?null:jat,piutang:jenis==="cash"?0:c.sisa,
     pendapatan:jenis==="cash"?c.total:0,
+    totalNilaiBarangOrder:cart.reduce((a,x)=>a+(Number(x.hargaDasar)||0)*x.qty-(Number(x.diskon)||0),0),
     totalTabunganOrder:cart.reduce((a,x)=>a+(Number(x.tabunganPerPcs)||0)*x.qty,0),
     totalUpPengelolaOrder:cart.reduce((a,x)=>a+(Number(x.upPengelolaPerPcs)||0)*x.qty,0),
     tabunganPerPcs:getTabungan(),upPengelolaPerPcs:getUpPengelola(),
@@ -365,10 +367,10 @@ window.simpan=async()=>{
   const btn=document.querySelector('button[onclick="simpan()"]');if(btn?.disabled)return;
   try{
     const d=build();if(btn)btn.disabled=true;$("save").textContent="Mengirim pesanan...";
-    const batch=writeBatch(db),ref=doc(collection(db,"penjualan"));batch.set(ref,d);
-    const upNominal=Number(d.totalUpPengelolaOrder)||0;
-    if(upNominal){const sr=doc(db,"saldo_owner",businessUid);batch.set(sr,{updatedAt:serverTimestamp(),saldoPengelola:increment(upNominal)},{merge:true})}
-    await batch.commit();
+    // Input order hanya membuat dokumen MENUNGGU APPROVAL.
+    // Tidak ada perubahan saldo pada tahap ini.
+    const ref=doc(collection(db,"penjualan"));
+    await setDoc(ref,d);
     localStorage.removeItem(cartKey());cart=[];renderCart();
     $("save").textContent="Pesanan menunggu approval owner.";
     msg("Pesanan berhasil dikirim dan menunggu approval owner.","ok");
