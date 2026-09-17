@@ -23,7 +23,7 @@ body.dark .cart-over{background:#1c1917!important;border-left-color:#f87171}
 <div><label>ID AKUN</label><input id="kode" readonly></div>
 <div><label>CATATAN ORDER</label><input id="catatan"></div>
 <div class="full"><label>ALAMAT / CATATAN PENGIRIMAN</label><textarea id="alamat"></textarea></div>
-</div><div id="memberAutoInfo" class="notice ok" style="margin-top:9px">Nama, No. WA, dan pengaturan tabungan otomatis mengikuti akun karyawan yang sedang login.</div></div>
+</div><div id="memberAutoInfo" class="notice ok" style="margin-top:9px">Identitas transaksi mengikuti akun Owner/Employee yang sedang login. Member bukan akun login.</div></div>
 
 <div class="card"><div class="title">🔎 Cari & Tambah Produk</div>
 <div class="notice">Produk tidak ditampilkan semua. Ketik kata kunci terlebih dahulu, misalnya <b>Samsung</b>, <b>Vivo</b>, <b>A15</b>, atau nama produk. Hasil pencarian diambil dari semua Spreadsheet supplier yang tersimpan di Halaman 1.</div>
@@ -340,18 +340,11 @@ function build(){
       harga:x.harga,hargaAwal:x.hargaDasar,hargaDasar:x.hargaDasar,hargaTempo:x.hargaTempo,hargaCash:x.hargaCash,
       tabunganPerPcs:x.tabunganPerPcs,upPengelolaPerPcs:x.upPengelolaPerPcs,
       tambahanTabungan:(x.tabunganPerPcs||0)*x.qty,tambahanUpPengelola:(x.upPengelolaPerPcs||0)*x.qty,
-      hargaJual:x.harga,hargaMemberPerPcs:x.harga,
-      nilaiBarang:Math.max(0,(Number(x.hargaDasar)||0)*Number(x.qty||0)),
-      discount:x.diskon||0,diskon:x.diskon||0,modalSatuan:x.modalSatuan,total:x.lineTotal,
+      hargaJual:x.harga,discount:x.diskon||0,diskon:x.diskon||0,modalSatuan:x.modalSatuan,total:x.lineTotal,
       sourceIndex:x.sourceIndex,sourceSpreadsheet:x.sourceSpreadsheet})),
     produkList:cart.map(x=>({produkId:x.produkId,nama:x.nama,kode:x.kode,supplier:x.supplier,qty:x.qty})),
     produkDigunakan:cart.map(x=>x.nama).join(", "),
     subtotal:c.subtotal,diskon:c.diskonItem,total:c.total,totalBayar:c.total,
-    totalNilaiBarang:cart.reduce((a,x)=>a+(Number(x.hargaDasar)||0)*Number(x.qty||0),0),
-    totalTagihanMember:c.total,
-    // Struktur nilai dipisah sejak transaksi dibuat. Belum diposting ke saldo.
-    totalNilaiBarang:cart.reduce((a,x)=>a+(Number(x.hargaDasar)||0)*Number(x.qty||0),0),
-    totalTagihanMember:c.total,
     dp:jenis==="cash"?c.total:c.dp,uangMuka:jenis==="cash"?c.total:c.dp,
     sisa:jenis==="cash"?0:c.sisa,sisaBayar:jenis==="cash"?0:c.sisa,
     tempoHari:jenis==="cash"?0:tempoHari,jatuhTempo:jenis==="cash"?null:jat,
@@ -373,9 +366,8 @@ window.simpan=async()=>{
   try{
     const d=build();if(btn)btn.disabled=true;$("save").textContent="Mengirim pesanan...";
     const batch=writeBatch(db),ref=doc(collection(db,"penjualan"));batch.set(ref,d);
-    // PENTING: input order hanya membuat transaksi MENUNGGU APPROVAL.
-    // UP Pengelola / Kas / Tabungan belum boleh diposting ke saldo di tahap ini.
-    // Posting saldo dilakukan satu kali setelah Owner menyetujui order.
+    const upNominal=Number(d.totalUpPengelolaOrder)||0;
+    if(upNominal){const sr=doc(db,"saldo_owner",businessUid);batch.set(sr,{updatedAt:serverTimestamp(),saldoPengelola:increment(upNominal)},{merge:true})}
     await batch.commit();
     localStorage.removeItem(cartKey());cart=[];renderCart();
     $("save").textContent="Pesanan menunggu approval owner.";
@@ -412,7 +404,11 @@ onAuthStateChanged(auth,async u=>{
   try{
     uid=u.uid;
     const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
-    profile=s.data()||{};businessUid=business(profile);
+    profile=s.data()||{};
+    const loginRole=String(profile.role||profile.rol||profile.jabatan||"").toLowerCase();
+    const normalizedRole=(loginRole==="employee"||loginRole==="karyawan")?"employee":loginRole;
+    if(!["owner","employee"].includes(normalizedRole)) throw Error("Akses ditolak. Halaman Order Member hanya dapat digunakan oleh Owner atau Employee/Karyawan.");
+    businessUid=business(profile);
     let ownerDoc=profile;
     if(businessUid!==uid){const os=await getDoc(doc(db,"users",businessUid));if(os.exists())ownerDoc=os.data()||{}}
     ownerSettings={up:Number(ownerDoc.upPengelolaPerPcs??ownerDoc.upPengelola??0)||0,kas:Number(ownerDoc.kasBulananDefault??ownerDoc.kasBulanan??ownerDoc.uangKasBulanan??0)||0};
