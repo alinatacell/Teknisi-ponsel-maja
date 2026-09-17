@@ -15,7 +15,7 @@ body.dark{background:#0b1220;color:#e5e7eb}body.dark .card{background:#111827;co
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>🔎 Cocokkan Tagihan Supplier</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
 <div class="card"><div class="title">Input Tagihan Supplier</div><div class="desc">Masukkan nominal invoice supplier dan pilih jatuh tempo. Sistem hanya dapat dibuka oleh <b>Owner</b>. Data diambil dari <b>Rekap Order Member</b> dan hanya mencocokkan <b>Nilai Barang / harga normal</b>. Tabungan, UP pengelola, dan kas tidak masuk pencocokan.</div>
-<div class="grid"><div><label>NOMINAL TAGIHAN SUPPLIER</label><input id="supplierNominal" inputmode="numeric" placeholder="Contoh: 6845730"></div><div><label>JATUH TEMPO</label><select id="dueInput"><option value="">Pilih jatuh tempo...</option></select></div></div><button id="matchBtn" class="btn primary" type="button">🔎 Cocokkan Data</button></div>
+<div class="grid"><div><label>NOMINAL TAGIHAN SUPPLIER</label><input id="supplierNominal" inputmode="numeric" placeholder="Contoh: 6845730"></div><div><label>JATUH TEMPO</label><select id="dueInput"><option value="">Pilih jatuh tempo...</option></select></div></div><button id="matchBtn" class="btn primary" type="button">🔎 Cocokkan Data</button><button id="reloadDataBtn" class="btn" type="button" style="margin-top:12px;background:#e5e7eb">↻ Muat Data Terbaru</button></div>
 <div class="card"><div class="title">Hasil Pencocokan</div><div id="result"><div class="empty">Masukkan nominal supplier dan jatuh tempo, lalu tekan Cocokkan Data.</div></div></div>
 <div class="card"><div class="title">Rincian Seluruh Employee</div><div class="desc">Data mengikuti rumus asli <b>Rekap Order Member</b>. Nilai barang dipakai untuk pencocokan supplier; pembayaran dan sisa tagihan ditampilkan terpisah.</div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Nota</th><th>Jatuh Tempo</th><th>Status</th><th class="num">Qty</th><th class="num">Nilai Barang</th><th class="num">Sudah Dibayar</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="detailTable"><tr><td colspan="8" class="empty">Belum ada data.</td></tr></tbody></table></div></div>
 </main>
@@ -57,12 +57,15 @@ function basePriceOfItem(x,r={}){
  const cash=isCashOrder(r);
  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
+ // Harga hasil Approval / Approval Ulang menjadi sumber utama.
+ // hargaDasar dan hargaTempo hanya fallback agar revisi harga
+ // yang tersimpan di order_member tidak tertimpa oleh harga lama.
+ const approvedPrice=Number(x.harga);
+ if(Number.isFinite(approvedPrice)&&approvedPrice>0)return approvedPrice;
  const direct=Number(x.hargaDasar);
  if(Number.isFinite(direct)&&direct>0)return direct;
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
  if(Number.isFinite(specific)&&specific>0)return specific;
- const composed=Number(x.harga);
- if(Number.isFinite(composed)&&composed>0)return Math.max(0,composed-up-tab);
  return 0;
 }
 
@@ -186,6 +189,21 @@ function renderMatch(){
  notice(`Pencocokan selesai • ${rows.length} order pada ${document.getElementById("dueInput").value}.`,"ok");
 }
 document.getElementById("matchBtn").onclick=renderMatch;
+document.getElementById("reloadDataBtn").onclick=async()=>{
+  if(!ownerUid)return;
+  try{
+    notice("Memuat data terbaru dari Firebase...");
+    await loadOrders();
+    populateDueDates();
+    const nominal=moneyInput(document.getElementById("supplierNominal").value);
+    const dk=dateKeyFromInput(document.getElementById("dueInput").value);
+    if(nominal&&dk) renderMatch();
+    else notice(`Data terbaru dimuat • ${orders.length} order.`,"ok");
+  }catch(e){
+    console.error(e);
+    notice("Gagal memuat data terbaru: "+e.message,"err");
+  }
+};
 document.getElementById("dark").onclick=()=>{document.body.classList.toggle("dark");document.getElementById("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙";};
 onAuthStateChanged(auth,async u=>{
  if(!u){notice("Belum login. Silakan login melalui FIXZY.","err");return;}
