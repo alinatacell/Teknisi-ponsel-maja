@@ -54,16 +54,26 @@ function isCashOrder(r){
 
 
 function basePriceOfItem(x,r={}){
- const cash=isCashOrder(r);
+ // PENTING:
+ // Di data hasil Approval, x.harga adalah HARGA FINAL:
+ // harga dasar + UP Pengelola + Tabungan.
+ // Halaman pencocokan supplier hanya boleh memakai HARGA DASAR,
+ // jadi UP dan Tabungan harus dikeluarkan dari harga final.
  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
- // Harga hasil Approval / Approval Ulang menjadi sumber utama.
- // hargaDasar dan hargaTempo hanya fallback agar revisi harga
- // yang tersimpan di order_member tidak tertimpa oleh harga lama.
+
  const approvedPrice=Number(x.harga);
- if(Number.isFinite(approvedPrice)&&approvedPrice>0)return approvedPrice;
+ if(Number.isFinite(approvedPrice)&&approvedPrice>0){
+   // Harga dasar hasil approval ulang = harga final - UP - Tabungan.
+   const dasarDariApproval=Math.max(0,approvedPrice-up-tab);
+   if(dasarDariApproval>0)return dasarDariApproval;
+ }
+
+ // Fallback untuk data lama yang belum mempunyai harga final.
  const direct=Number(x.hargaDasar);
  if(Number.isFinite(direct)&&direct>0)return direct;
+
+ const cash=isCashOrder(r);
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
  if(Number.isFinite(specific)&&specific>0)return specific;
  return 0;
