@@ -3,335 +3,260 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FIXZY | Approval Order Member Baru</title>
+<title>FIXZY | Approval Order Member</title>
 <style>
-*{box-sizing:border-box}
-:root{--black:#0b0f14;--yellow:#ffc107;--bg:#eef2f6;--green:#16a34a;--red:#dc2626}
-html,body{margin:0;padding:0;font-family:Arial,sans-serif;background:var(--bg);color:#111827}
-header{position:sticky;top:0;z-index:10;background:var(--black);color:#fff;border-bottom:3px solid var(--yellow)}
-.head{max-width:1100px;margin:auto;padding:12px;display:flex;align-items:center;gap:12px}
-.logo{width:48px;height:48px;border-radius:12px;background:#000;object-fit:contain}
-.headtext{flex:1}.headtext h1{margin:0;font-size:18px}.email{font-size:11px;color:#9ca3af}
-.btn{border:2px solid #111827;border-radius:9px;padding:9px 12px;font-weight:900;cursor:pointer;background:#fff;box-shadow:2px 2px 0 #111827}
-main{max-width:1100px;margin:auto;padding:18px 12px}
-.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
-.title{font-weight:900;font-size:16px;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
-.notice{font-size:12px;font-weight:800;color:#64748b;margin-bottom:10px}
-.filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-label{display:block;font-size:11px;font-weight:900;margin-bottom:5px}
-input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;font:inherit}
-.employee-list{display:flex;gap:8px;overflow:auto;padding:4px 1px 8px}
-.employee{flex:0 0 auto;background:#fff;border:2px solid #111827;border-radius:9px;padding:9px 13px;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 #111827}
-.employee.active{background:var(--yellow)}
-.order{border:2px solid #111827;border-radius:12px;margin-top:12px;overflow:hidden}
-.orderhead{padding:12px;background:#f8fafc;border-bottom:2px solid #111827}
-.row{display:flex;justify-content:space-between;gap:10px}
-.orderbody{padding:12px}.member{font-weight:900}.meta{font-size:12px;line-height:1.7;color:#475569}
-.items{margin-top:10px;border:2px solid #111827;border-radius:8px;overflow:hidden}
-.item{padding:9px;border-bottom:1px solid #e5e7eb}.item:last-child{border:0}
-.summary{margin-top:10px;padding:10px;border:2px solid #111827;border-radius:8px;background:#fffbeb;line-height:1.8;font-size:12px}
-.badge{display:inline-block;border:1px solid #f59e0b;background:#fef3c7;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900}
-.empty{text-align:center;padding:28px;color:#64748b;font-weight:800;font-size:12px}
-.ok{color:var(--green)}.err{color:var(--red)}
-@media(max-width:650px){.filters{grid-template-columns:1fr}.headtext h1{font-size:16px}}
+*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626}
+html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:99;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107;display:flex;align-items:center}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
+.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.btn{border:2px solid #111827;border-radius:9px;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:#fff;color:#111827}
+main{max-width:1100px;margin:auto;padding:88px 12px 24px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
+.title{font-size:18px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
+.employee-menu{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch}
+.employee-btn{flex:0 0 auto;border:2px solid #111827;border-radius:12px;padding:11px 18px;background:#fff;color:#111827;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 #111827;font-size:16px}
+.employee-btn.active{background:#ffc107}.employee-btn small{display:block;font-size:9px;color:#64748b;margin-top:3px}.employee-btn.active small{color:#111827}
+.order{border:2px solid #111827;border-radius:12px;margin-bottom:14px;overflow:hidden;background:#fff}.order-head{padding:13px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-size:20px;font-weight:900;line-height:1.1}.badge{display:inline-block;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.order-body{padding:14px}.meta{font-size:13px;line-height:1.65}.item{border:2px solid #111827;border-radius:10px;padding:12px;margin-top:10px}.item-name{font-size:18px;font-weight:900}.item-meta{font-size:13px;color:#64748b;margin-top:4px}.summary{margin-top:12px;border:2px solid #111827;border-radius:10px;padding:11px;background:#fffbeb;font-size:14px;line-height:1.8}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.empty{text-align:center;padding:28px;color:#64748b;font-size:13px}
+.statusline{font-size:12px;font-weight:900;color:#15803d}.count{font-size:12px;color:#64748b;margin-top:7px}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body.dark .item,body.dark .employee-btn{background:#111827;color:#e5e7eb;border-color:#475569;box-shadow:none}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark .summary{background:#1c1917;border-color:#475569}body.dark .employee-btn.active{background:#ffc107;color:#111827}
+@media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.order-head{flex-direction:column}.actions .btn{flex:1;min-width:120px}.order-title{font-size:18px}}
 </style>
 </head>
 <body>
-<header>
- <div class="head">
-  <img class="logo" src="logo.png" onerror="this.style.display='none'" alt="FIXZY">
-  <div class="headtext"><h1>Approval Order Member</h1><div id="email" class="email">-</div></div>
-  <button class="btn" onclick="location.reload()">↻ Refresh</button>
- </div>
-</header>
-
+<header><div class="head">
+<img class="logo" src="logo.png" alt="FIXZY">
+<div class="hi"><h1>Approval Order Member</h1><span id="email" class="email">-</span></div>
+<button id="refresh" class="btn refresh">↻ Refresh</button>
+</div></header>
 <main>
- <div id="notice" class="card notice">Memuat sesi FIXZY...</div>
+<div id="notice" class="notice">Memulihkan akun yang sudah login di FIXZY...</div>
 
- <section class="card">
-  <div class="title">👨‍🔧 Pilih Employee / Karyawan</div>
-  <div class="notice">Daftar employee diambil langsung dari <b>users</b> milik Owner yang sedang login.</div>
-  <div id="employees" class="employee-list"></div>
- </section>
+<div class="card">
+ <div class="title">👨‍🔧 Pilih Employee / Karyawan</div>
+ <div class="notice">Daftar employee dibaca langsung dari <b>users</b> milik Owner yang sedang login.</div>
+ <div id="employees" class="employee-menu"></div>
+ <div id="employeeStatus" class="count">Memuat employee...</div>
+</div>
 
- <section class="card">
-  <div class="title">📋 Order Menunggu Approval</div>
-  <div id="orders"><div class="empty">Pilih employee terlebih dahulu.</div></div>
- </section>
+<div class="card">
+ <div class="title">📋 Order Menunggu Approval</div>
+ <div class="statusline">MENUNGGU APPROVAL</div>
+ <div id="orderCount" class="count">Pilih employee untuk menampilkan order.</div>
+</div>
+<div id="list"></div>
 </main>
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const firebaseConfig={
- apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
- authDomain:"fixzy-update.firebaseapp.com",
- projectId:"fixzy-update",
- storageBucket:"fixzy-update.firebasestorage.app",
- messagingSenderId:"995892519622",
- appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
-};
+const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
-
-let currentUid="";
-let ownerUid="";
-let employees=[];
-let orders=[];
-let selectedEmployee=null;
+let uid="",ownerUid="",profile={},employees=[],selected=null,orders=[],ready=false;
 
 const $=id=>document.getElementById(id);
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const rupiah=v=>"Rp "+(Number(v)||0).toLocaleString("id-ID");
-
-function notice(text,cls=""){
- $("notice").textContent=text;
- $("notice").className="card notice "+cls;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+function msg(t,c=""){ $("notice").textContent=t; $("notice").className="notice "+c; }
+function normStatus(x){return String(x??"").trim().toLowerCase().replace(/\s+/g,"_")}
+function employeeUid(x){
+ const k=x?.karyawan,e=x?.employee;
+ if(k&&typeof k==="object")return String(k.uid??k.userUid??k.userId??k.id??"").trim();
+ if(e&&typeof e==="object")return String(e.uid??e.userUid??e.userId??e.id??"").trim();
+ return String(x?.karyawanUid??x?.employeeUid??x?.employeeId??x?.userUid??"").trim();
+}
+function employeeName(x){
+ const k=x?.karyawan,e=x?.employee;
+ if(k&&typeof k==="object")return String(k.nama??k.namaKaryawan??k.name??"").trim();
+ if(typeof k==="string")return k.trim();
+ if(e&&typeof e==="object")return String(e.nama??e.namaKaryawan??e.name??"").trim();
+ if(typeof e==="string")return e.trim();
+ return String(x?.karyawanNama??x?.namaKaryawan??x?.employeeName??x?.employeeNama??"").trim();
+}
+function member(x){
+ const m=x?.member||x?.pelanggan||{};
+ return {
+   nama:String(m.nama??m.name??x?.memberNama??x?.namaMember??x?.pelangganNama??"Member").trim(),
+   kode:String(m.kode??m.memberId??x?.memberId??"").trim(),
+   wa:String(m.wa??m.noWa??m.nomorWa??x?.memberWa??"").trim()
+ };
+}
+function itemsOf(x){
+ const a=Array.isArray(x?.items)?x.items:Array.isArray(x?.produkList)?x.produkList:[];
+ return a.map(i=>({
+   nama:String(i.nama??i.namaProduk??i.name??"-"),
+   kode:String(i.kode??i.kodeProduk??""),
+   qty:Number(i.qty??i.jumlah??1)||0,
+   harga:Number(i.harga??i.hargaJual??i.price??0)||0,
+   total:Number(i.total??i.jumlahHarga??((Number(i.qty??i.jumlah??0)||0)*(Number(i.harga??i.hargaJual??0)||0)))||0
+ }));
+}
+function orderEmployeeMatches(o){
+ if(!selected)return false;
+ const eid=employeeUid(o).toLowerCase(), en=employeeName(o).toLowerCase();
+ return (eid && eid===selected.uid.toLowerCase()) || (!eid && en===selected.nama.toLowerCase());
 }
 
-function nameOfEmployee(x){
- return String(x.namaKaryawan||x.nama||x.displayName||x.name||x.email||"").trim();
-}
-
-/*
- * LOAD EMPLOYEE BARU
- * Satu sumber utama: users
- * ownerUid wajib sama dengan ownerUid akun Owner.
- */
+/* INI BAGIAN KUNCI:
+   Profil Owner dibaca langsung users/{auth.uid}.
+   Employee juga dibaca langsung dari collection users dengan ownerUid Owner.
+   Tidak memakai localStorage, tidak memakai collection karyawan, dan tidak
+   membuat employee dari data order. */
 async function loadEmployees(){
  employees=[];
  const map=new Map();
-
- const snap=await getDocs(
-   query(collection(db,"users"),where("ownerUid","==",ownerUid))
- );
-
- snap.forEach(docSnap=>{
-   const x=docSnap.data()||{};
-   const role=String(x.role||x.profileRole||"").trim().toLowerCase();
-
-   if(!["employee","karyawan","pegawai","teknisi"].includes(role)) return;
-
-   const uid=String(x.uid||docSnap.id).trim();
-   const nama=nameOfEmployee(x);
-   if(!uid||!nama)return;
-
-   map.set(uid,{
-     uid,
-     nama,
-     kode:String(x.kodeKaryawan||x.kode||x.employeeCode||"").trim(),
-     role
+ try{
+   const snap=await getDocs(query(collection(db,"users"),where("ownerUid","==",ownerUid)));
+   snap.forEach(d=>{
+     const x=d.data()||{},role=String(x.role??"").trim().toLowerCase();
+     if(!["employee","karyawan","pegawai","teknisi"].includes(role))return;
+     const nama=String(x.namaKaryawan??x.nama??x.displayName??x.name??x.email??"").trim();
+     if(!nama)return;
+     const eid=String(x.uid??d.id).trim();
+     map.set(eid,{uid:eid,nama,kode:String(x.kodeKaryawan??x.kode??x.employeeCode??"").trim(),email:String(x.email??"").trim()});
    });
- });
-
- employees=[...map.values()].sort((a,b)=>a.nama.localeCompare(b.nama,"id"));
-
+ }catch(e){console.error("load users ownerUid",e);throw Error("Gagal membaca users employee: "+(e?.message||e));}
+ employees=[...map.values()].sort((a,b)=>a.nama.localeCompare(b.nama,"id",{sensitivity:"base"}));
  renderEmployees();
 }
-
 function renderEmployees(){
  const box=$("employees");
-
- if(!employees.length){
-   box.innerHTML='<div class="empty">Employee tidak ditemukan pada users milik Owner ini.</div>';
-   return;
- }
-
- box.innerHTML=employees.map((e,i)=>`
-   <button class="employee ${selectedEmployee?.uid===e.uid?"active":""}" data-uid="${esc(e.uid)}">
-     ${esc(e.nama)}${e.kode?" — "+esc(e.kode):""}
-   </button>
- `).join("");
-
- box.querySelectorAll(".employee").forEach(btn=>{
-   btn.onclick=()=>{
-     const e=employees.find(x=>x.uid===btn.dataset.uid);
-     if(!e)return;
-     selectedEmployee=e;
-     renderEmployees();
-     renderOrders();
-   };
+ if(!employees.length){box.innerHTML='<div class="empty">Employee milik Owner tidak ditemukan.</div>';$("employeeStatus").textContent="0 employee";return;}
+ box.innerHTML=employees.map((e,i)=>`<button class="employee-btn ${selected&&selected.uid===e.uid?"active":""}" data-eid="${esc(e.uid)}">${esc(e.nama)}${e.kode?`<small>${esc(e.kode)}</small>`:""}</button>`).join("");
+ box.querySelectorAll(".employee-btn").forEach(b=>b.onclick=()=>{
+   selected=employees.find(e=>e.uid===b.dataset.eid)||null;
+   renderEmployees();renderOrders();
  });
+ $("employeeStatus").textContent=`${employees.length} employee tersedia`;
 }
-
-/*
- * LOAD ORDER
- * Order dicari berdasarkan owner terlebih dahulu.
- * Setelah itu dicocokkan dengan UID employee.
- * Tidak membuat employee dari data order.
- */
 async function loadOrders(){
  orders=[];
  const map=new Map();
-
  for(const field of ["ownerUid","ownerId"]){
    try{
-     const snap=await getDocs(
-       query(collection(db,"penjualan"),where(field,"==",ownerUid))
-     );
-
-     snap.forEach(d=>{
-       const x={id:d.id,...d.data()};
-       const status=String(x.status||x.approvalStatus||"").toLowerCase();
-
-       if(!["menunggu_approval","pending","menunggu approval"].includes(status))return;
-
-       if(!map.has(d.id))map.set(d.id,x);
-     });
-   }catch(e){
-     console.warn("Load order "+field,e);
-   }
+     const snap=await getDocs(query(collection(db,"penjualan"),where(field,"==",ownerUid)));
+     snap.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+   }catch(e){console.warn("penjualan "+field,e?.message||e)}
  }
-
- orders=[...map.values()];
+ orders=[...map.values()].filter(o=>{
+   const s=normStatus(o.status||o.approvalStatus);
+   return ["menunggu_approval","pending","menunggu_approval_member"].includes(s) ||
+          String(o.status||"").toLowerCase()==="menunggu approval";
+ }).sort((a,b)=>{
+   const av=a.createdAt?.toMillis?a.createdAt.toMillis():new Date(a.createdAt||a.tanggal||0).getTime();
+   const bv=b.createdAt?.toMillis?b.createdAt.toMillis():new Date(b.createdAt||b.tanggal||0).getTime();
+   return bv-av;
+ });
+ renderOrders();
 }
-
-function employeeUidFromOrder(o){
- const k=o.karyawan;
- const e=o.employee;
-
- if(k&&typeof k==="object")
-   return String(k.uid||k.userUid||k.id||"").trim();
-
- if(e&&typeof e==="object")
-   return String(e.uid||e.userUid||e.id||"").trim();
-
- return String(
-   o.karyawanUid||
-   o.employeeUid||
-   o.employeeId||
-   ""
- ).trim();
-}
-
-function employeeNameFromOrder(o){
- const k=o.karyawan;
- const e=o.employee;
-
- if(typeof k==="string")return k.trim();
- if(k&&typeof k==="object")return String(k.namaKaryawan||k.nama||k.name||"").trim();
-
- if(typeof e==="string")return e.trim();
- if(e&&typeof e==="object")return String(e.namaKaryawan||e.nama||e.name||"").trim();
-
- return String(o.karyawanNama||o.namaKaryawan||o.employeeName||"").trim();
-}
-
-function itemsOf(o){
- return Array.isArray(o.items)?o.items:
-        Array.isArray(o.produkList)?o.produkList:[];
-}
-
 function renderOrders(){
- const box=$("orders");
-
- if(!selectedEmployee){
-   box.innerHTML='<div class="empty">Pilih employee terlebih dahulu.</div>';
+ if(!selected){
+   $("orderCount").textContent="Pilih employee untuk menampilkan order.";
+   $("list").innerHTML='<div class="card empty">👆 Pilih nama employee terlebih dahulu.</div>';
    return;
  }
-
- const uid=selectedEmployee.uid.toLowerCase();
-
- const list=orders.filter(o=>{
-   const euid=employeeUidFromOrder(o).toLowerCase();
-   return euid===uid;
- });
-
- if(!list.length){
-   box.innerHTML=`<div class="empty">Tidak ada order menunggu approval untuk ${esc(selectedEmployee.nama)}.</div>`;
-   return;
- }
-
- box.innerHTML=list.map(renderOrder).join("");
+ const list=orders.filter(orderEmployeeMatches);
+ $("orderCount").textContent=`${list.length} order menunggu approval • Employee: ${selected.nama}`;
+ $("list").innerHTML=list.length?list.map(renderOrder).join(""):`<div class="card empty">Tidak ada order menunggu approval untuk ${esc(selected.nama)}.</div>`;
 }
-
 function renderOrder(o){
- const items=itemsOf(o);
- const nota=o.nomorNota||o.id;
- const member=o.member||o.pelanggan||{};
- let totalQty=0,total=0;
-
- const itemHtml=items.map((x,i)=>{
-   const qty=Number(x.qty||x.jumlah||0)||0;
-   const harga=Number(x.harga||x.hargaJual||x.hargaMemberPerPcs||0)||0;
-   const jumlah=Number(x.total||x.totalTagihanItem||harga*qty)||0;
-   totalQty+=qty; total+=jumlah;
-
-   return `<div class="item">
-     <b>${i+1}. ${esc(x.nama||x.namaProduk||"-")}</b><br>
-     <span class="meta">Kode: ${esc(x.kode||x.kodeProduk||"-")} • Qty: <b>${qty} pcs</b> • ${rupiah(harga)}/pcs</span>
-   </div>`;
- }).join("");
-
- return `<article class="order">
-   <div class="orderhead">
-     <div class="row">
-       <div>
-         <b>${esc(nota)}</b>
-         <div class="meta">Employee: ${esc(employeeNameFromOrder(o)||selectedEmployee.nama)}</div>
-       </div>
-       <span class="badge">MENUNGGU APPROVAL</span>
-     </div>
+ const m=member(o),items=itemsOf(o);
+ const total=Number(o.total??o.subtotal??items.reduce((a,x)=>a+x.total,0))||0;
+ const qty=items.reduce((a,x)=>a+x.qty,0);
+ const dp=Number(o.dp??o.uangMuka??0)||0;
+ const due=o.jatuhTempo||o.tanggalJatuhTempo||"-";
+ const tempo=Number(o.tempoHari??0)||0;
+ return `<div class="order" data-id="${esc(o.id)}">
+  <div class="order-head">
+   <div><div class="order-title">${esc(o.nomorNota||o.nomorOrder||o.id)}</div>
+   <div class="meta">Employee: <b>${esc(selected.nama)}</b></div></div>
+   <span class="badge">MENUNGGU APPROVAL</span>
+  </div>
+  <div class="order-body">
+   <div class="meta"><b>👤 Member:</b> ${esc(m.nama)}${m.kode?` • ${esc(m.kode)}`:""}<br>
+   <b>🆔 Order ID:</b> ${esc(o.id)}</div>
+   <div>${items.map((x,i)=>`<div class="item"><div class="item-name">${i+1}. ${esc(x.nama)}</div><div class="item-meta">Kode: ${esc(x.kode||"-")} • Qty: <b>${x.qty} pcs</b> • ${rp(x.harga)}/pcs</div></div>`).join("")}</div>
+   <div class="summary">📦 Total Produk: <b>${qty} pcs</b><br>💰 Total Order: <b>${rp(total)}</b><br>${o.jenisHarga==="cash"?"💵 CASH / TUNAI":`💵 DP: <b>${rp(dp)}</b><br>📅 Jatuh Tempo: <b>${esc(due)}</b>${tempo?`<br>📅 Tempo: <b>${tempo} hari</b>`:""}`}</div>
+   <div class="actions">
+    <button class="btn approve" onclick="approveOrder('${esc(o.id)}')">✅ APPROVE</button>
+    <button class="btn reject" onclick="rejectOrder('${esc(o.id)}')">❌ TOLAK</button>
+    <button class="btn wa" onclick="sendWA('${esc(o.id)}')">📲 WA</button>
    </div>
-   <div class="orderbody">
-     <div class="member">👤 ${esc(member.nama||o.memberNama||"Member")}</div>
-     <div class="meta">Order ID: ${esc(o.orderMemberId||o.id||"-")}</div>
-     <div class="items">${itemHtml||'<div class="empty">Tidak ada produk.</div>'}</div>
-     <div class="summary">
-       📦 Total Produk: <b>${totalQty} pcs</b><br>
-       💰 Total Order: <b>${rupiah(Number(o.total||o.subtotal||total))}</b><br>
-       📅 Jatuh Tempo: <b>${esc(o.jatuhTempo||o.tanggalJatuhTempo||"-")}</b>
-     </div>
-   </div>
- </article>`;
+  </div>
+ </div>`;
 }
-
-async function start(u){
- currentUid=u.uid;
- $("email").textContent=u.email||"-";
-
- const me=await getDocs(
-   query(collection(db,"users"),where("uid","==",currentUid))
- );
-
- let profile=null;
- me.forEach(d=>{if(!profile)profile=d.data()||{};});
-
- if(!profile){
-   // fallback dokumen users/{uid}
-   const {getDoc,doc}=await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js");
-   const d=await getDoc(doc(db,"users",currentUid));
-   if(d.exists())profile=d.data()||{};
- }
-
- const role=String(profile?.role||"").trim().toLowerCase();
- if(role!=="owner"){
-   notice("Akses hanya untuk Owner.","err");
-   return;
- }
-
- ownerUid=String(profile.ownerUid||profile.ownerId||currentUid).trim();
- if(!ownerUid)throw Error("ownerUid tidak ditemukan.");
-
- await loadEmployees();
- await loadOrders();
-
- notice("Employee dan order berhasil dimuat dari Firebase.","ok");
-}
-
-onAuthStateChanged(auth,u=>{
- if(!u){
-   notice("Sesi Firebase tidak ditemukan. Silakan login dari halaman utama FIXZY.","err");
-   return;
- }
- start(u).catch(e=>{
-   console.error(e);
-   notice("Gagal memuat data: "+(e?.message||e),"err");
- });
+window.approveOrder=async id=>{
+ const local=orders.find(x=>x.id===id);if(!local)return;
+ if(!confirm(`Approve order ${local.nomorNota||id}?`))return;
+ try{
+   msg("Memproses approval...","ok");
+   const ref=doc(db,"penjualan",id);
+   const result=await runTransaction(db,async tx=>{
+     const snap=await tx.get(ref);if(!snap.exists())throw Error("Order tidak ditemukan.");
+     const d=snap.data()||{};
+     if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
+     if(!["menunggu_approval","pending"].includes(normStatus(d.status||d.approvalStatus)))throw Error("Order sudah diproses.");
+     const its=itemsOf(d),total=Number(d.total??d.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
+     const omRef=String(d.orderMemberId||"").trim()?doc(db,"order_member",String(d.orderMemberId)):doc(collection(db,"order_member"));
+     const order={
+       ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
+       nomorNota:d.nomorNota||id,tipeOrder:String(d.jenisHarga||"").toLowerCase()==="cash"?"member_cash":"member_tempo",
+       status:"order_member",revisionRequired:false,
+       member:d.member||d.pelanggan||{},
+       items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
+       dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
+       sisa:Math.max(0,total-Number(d.dp??d.uangMuka??0)),piutang:Math.max(0,total-Number(d.dp??d.uangMuka??0)),
+       tempoHari:Number(d.tempoHari??0)||0,jatuhTempo:d.jatuhTempo||d.tanggalJatuhTempo||"",
+       approvedAt:serverTimestamp(),updatedAt:serverTimestamp()
+     };
+     tx.set(omRef,order,{merge:true});
+     tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:its,approvedTotal:total,orderMemberId:omRef.id,updatedAt:serverTimestamp()});
+     return omRef.id;
+   });
+   msg("Order berhasil di-approve dan masuk order_member.","ok");
+   await loadOrders();
+ }catch(e){console.error(e);msg("Gagal approval: "+(e?.message||e),"err")}
+};
+window.rejectOrder=async id=>{
+ const r=orders.find(x=>x.id===id);if(!r)return;
+ const alasan=prompt("Alasan penolakan:","Produk/harga perlu direvisi");if(alasan===null)return;
+ try{
+   const ref=doc(db,"penjualan",id);
+   await runTransaction(db,async tx=>{
+     const s=await tx.get(ref);if(!s.exists())throw Error("Order tidak ditemukan.");
+     const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
+     tx.update(ref,{status:"ditolak",approvalStatus:"ditolak",alasanApproval:alasan,approvedBy:uid,updatedAt:serverTimestamp()});
+   });
+   msg("Order ditolak.","ok");await loadOrders();
+ }catch(e){console.error(e);msg("Gagal menolak: "+(e?.message||e),"err")}
+};
+function waNum(v){let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;return s}
+window.sendWA=id=>{
+ const r=orders.find(x=>x.id===id);if(!r)return;const m=member(r),its=itemsOf(r);
+ let t=`Halo Kak ${m.nama||""} 👋\n\n📋 *ORDER MEMBER*\n🧾 No: *${r.nomorNota||id}*\n👨‍🔧 Employee: *${employeeName(r)||selected?.nama||"-"}*\n\n`;
+ its.forEach((x,i)=>t+=`${i+1}. *${x.nama}* — ${x.qty} pcs — ${rp(x.harga)}\n`);
+ const total=Number(r.total??r.subtotal??its.reduce((a,x)=>a+x.total,0))||0;t+=`\n💰 Total: *${rp(total)}*\n\nMohon cek kembali orderan ini.`;
+ const n=waNum(m.wa);if(n)window.open(`https://wa.me/${n}?text=${encodeURIComponent(t)}`,"_blank");else msg("Nomor WhatsApp member tidak tersedia.","err");
+};
+$("refresh").onclick=async()=>{if(!ready)return;msg("Memuat ulang...");try{await loadEmployees();await loadOrders();msg("Data berhasil diperbarui.","ok")}catch(e){msg(e.message,"err")}};
+onAuthStateChanged(auth,async u=>{
+ if(!u){msg("Belum login. Buka dari sesi login FIXZY.","err");return}
+ try{
+   uid=u.uid;$("email").textContent=u.email||"-";
+   const s=await getDoc(doc(db,"users",uid));
+   if(!s.exists())throw Error("Profil akun tidak ditemukan di users/{uid}.");
+   profile=s.data()||{};
+   const role=String(profile.role||"").trim().toLowerCase();
+   if(role!=="owner")throw Error("Akun yang sedang login bukan Owner.");
+   ownerUid=uid;
+   ready=true;
+   await loadEmployees();
+   await loadOrders();
+   msg(`Owner aktif • ${employees.length} employee dimuat dari users.`,"ok");
+ }catch(e){console.error(e);msg("Gagal memuat: "+(e?.message||e),"err")}
 });
 </script>
 </body>
