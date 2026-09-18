@@ -152,15 +152,28 @@ function memberOf(r){return r.member||r.pelanggan||{}}
 
 function itemsOf(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
- return a.map(x=>({
-  produkId:x.produkId||x.id||"",
-  nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
-  kode:String(x.kode||x.kodeProduk||""),
-  qty:Number(x.qty||x.jumlah||0)||0,
-  harga:Number(x.harga||x.hargaJual||0)||0,
-  diskon:Number(x.diskon||0)||0,
-  total:Number(x.total??((Number(x.harga||x.hargaJual||0)*Number(x.qty||x.jumlah||0))-Number(x.diskon||0)))||0
- }));
+ return a.map(x=>{
+  const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
+  const harga=Number(x.harga??x.hargaJual??0)||0;
+  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabunganMember??0)||0;
+  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
+  let hargaDasar=Number(x.hargaDasar??x.hargaAwal??0)||0;
+  if(hargaDasar<=0 && harga>0) hargaDasar=Math.max(0,harga-tab-up);
+  const diskon=Math.max(0,Number(x.diskon??0)||0);
+  const nilaiBarang=Math.max(0,hargaDasar*qty-diskon);
+  const totalTabungan=tab*qty;
+  const totalUP=up*qty;
+  const total=Math.max(0,Number(x.total??(harga*qty-diskon))||0);
+  return {
+   produkId:x.produkId||x.id||"",
+   nama:String(x.nama||x.namaProduk||x.kode||x.kodeProduk||"-"),
+   kode:String(x.kode||x.kodeProduk||""),
+   qty,harga,hargaDasar,diskon,nilaiBarang,
+   tabunganPerPcs:tab,totalTabungan,
+   upPengelolaPerPcs:up,totalUP,
+   total
+  };
+ });
 }
 
 function orderStatus(r){
@@ -548,17 +561,56 @@ window.restoreTagihan=async id=>{
 };
 
 function buildWA(r){
- const m=memberOf(r),items=itemsOf(r),total=Number(r.totalBayar??r.total??0)||0;
- const dp=Number(r.dp??r.uangMuka??0)||0,paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
- const sisa=Math.max(0,total-paid),st=orderStatus(r);
+ const m=memberOf(r),items=itemsOf(r);
+ const totalOrder=Number(r.totalBayar??r.total??0)||0;
+ const dp=Number(r.dp??r.uangMuka??0)||0;
+ const paid=Number(r.totalDibayar??r.pembayaran??dp)||0;
+ const sisa=Math.max(0,totalOrder-paid);
+ const st=orderStatus(r);
+ const kas=Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??0)||0);
+
+ const totalNilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
+ const totalTabungan=items.reduce((a,x)=>a+x.totalTabungan,0);
+ const totalUP=items.reduce((a,x)=>a+x.totalUP,0);
+
  let t=`Halo Kak ${m.nama||""} 👋\n\n`;
  t+=`Update pesanan member *${r.nomorNota||r.id}* di *${profile.namaKonter||profile.namaToko||"FIXZY"}*.\n\n`;
- t+=`Detail pesanan:\n`;
- items.forEach(x=>t+=`• ${x.nama} x${x.qty} — ${rp(x.total)}\n`);
- t+=`\nTotal: ${rp(total)}\n`;
+ t+=`📋 *RINCIAN HARGA PESANAN*\n`;
+ t+=`━━━━━━━━━━━━━━━━━━\n\n`;
+
+ items.forEach((x,i)=>{
+  t+=`${i+1}. *${x.nama}*\n`;
+  t+=`   Kode: ${x.kode||"-"}\n`;
+  t+=`   Qty: *${x.qty} pcs*\n`;
+  t+=`   Harga barang: ${rp(x.hargaDasar)}/pcs\n`;
+  t+=`   Nilai barang: *${rp(x.nilaiBarang)}*\n`;
+  t+=`   Tabungan Member: ${rp(x.tabunganPerPcs)}/pcs × ${x.qty} = *${rp(x.totalTabungan)}*\n`;
+  t+=`   UP Pengelola: ${rp(x.upPengelolaPerPcs)}/pcs × ${x.qty} = *${rp(x.totalUP)}*\n`;
+  if(x.diskon>0)t+=`   Diskon: -${rp(x.diskon)}\n`;
+  t+=`   Harga member: ${rp(x.harga)}/pcs\n`;
+  t+=`   Jumlah item: *${rp(x.total)}*\n\n`;
+ });
+
+ t+=`━━━━━━━━━━━━━━━━━━\n`;
+ t+=`📊 *RINGKASAN*\n`;
+ t+=`Nilai barang: *${rp(totalNilaiBarang)}*\n`;
+ t+=`Tabungan Member: *${rp(totalTabungan)}*\n`;
+ t+=`UP Pengelola: *${rp(totalUP)}*\n`;
+ if(kas>0)t+=`Kas Bulanan: *${rp(kas)}*\n`;
+ t+=`💰 Total Order: *${rp(totalOrder)}*\n`;
+ if(kas>0)t+=`💵 Total + Kas: *${rp(totalOrder+kas)}*\n`;
  t+=`DP: ${rp(dp)}\n`;
  t+=`Total dibayar: ${rp(paid)}\n`;
- t+=st==="lunas"?`\n✅ Status: *LUNAS*\n`:`\n📌 Status: *TAGIHAN*\nSisa tagihan: ${rp(sisa)}\n📅 Jatuh tempo: ${r.jatuhTempo||r.tanggalJatuhTempo||"-"}\n`;
+
+ if(st==="lunas"){
+  t+=`\n✅ Status: *LUNAS*\n`;
+  t+=`📌 Sisa tagihan: *Rp 0*\n`;
+ }else{
+  t+=`\n📌 Status: *TAGIHAN*\n`;
+  t+=`Sisa tagihan: *${rp(sisa)}*\n`;
+  t+=`📅 Jatuh tempo: *${r.jatuhTempo||r.tanggalJatuhTempo||"-"}*\n`;
+ }
+
  t+=`\nTerima kasih 🙏\n*${profile.namaKonter||profile.namaToko||"FIXZY"}*`;
  return t;
 }
