@@ -273,19 +273,30 @@ function itemList(r){
   const item={...si,...x};
   const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
 
-  // Tabungan dan UP adalah milik ORDER/MEMBER masing-masing.
+  // Tabungan dan UP harus mengikuti DATA ORDER/ITEM masing-masing.
+  // Data lama bisa menyimpan angka per PCS ATAU total item.
+  // Jangan mengubah data yang sudah terurai.
+  const itemUPTotal=has(item,"totalUPPengelola")?numv(item.totalUPPengelola):
+    has(item,"totalUpPengelola")?numv(item.totalUpPengelola):0;
+  const itemTabTotal=has(item,"totalTabunganMember")?numv(item.totalTabunganMember):
+    has(item,"totalTabungan")?numv(item.totalTabungan):0;
+
   const up=Math.max(0,
     has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
     has(item,"upPengelola")?numv(item.upPengelola):
+    (itemUPTotal>0&&qty>0)?itemUPTotal/qty:
     has(r,"upPengelolaPerPcs")?numv(r.upPengelolaPerPcs):
-    has(r,"upPengelola")?numv(r.upPengelola):0
+    has(r,"upPengelola")?numv(r.upPengelola):
+    0
   );
 
   const tabungan=Math.max(0,
     has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
     has(item,"tabungan")?numv(item.tabungan):
+    (itemTabTotal>0&&qty>0)?itemTabTotal/qty:
     has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
-    has(r,"tabungan")?numv(r.tabungan):0
+    has(r,"tabungan")?numv(r.tabungan):
+    0
   );
 
   const diskon=Math.max(0,numv(item.diskon??item.discount??0));
