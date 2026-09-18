@@ -1,448 +1,731 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="theme-color" content="#111111">
-<title>FIXZY | Produk Spreadsheet</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#f5f7fb;--card:#fff;--line:#e5e7eb;--y:#ffc107;--txt:#172033;--muted:#64748b;--green:#16a34a;--red:#dc2626}
-html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:Arial,Helvetica,sans-serif}
-body{background:linear-gradient(180deg,#fff 0,#f5f7fb 250px)}
-button,input{font:inherit}button{cursor:pointer}
-.header{position:sticky;top:0;z-index:20;background:#111827;border-bottom:1px solid #111827;box-shadow:0 2px 12px #17203322}
-.header-in{max-width:1180px;margin:auto;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}.logo{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#fff}
-.brand h1{font-size:18px;font-weight:900;color:#fff}.brand p{font-size:10px;color:#cbd5e1;margin-top:3px}
-.head-btn{height:40px;border:0;border-radius:10px;background:#fff;color:#111827;padding:0 12px;font-size:13px;font-weight:800}.head-btn.refresh{background:var(--y)}
-.container{width:min(1180px,100%);margin:auto;padding:16px 14px 70px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px;box-shadow:0 5px 18px #17203308}
-.title{font-size:15px;font-weight:900;margin-bottom:5px}.sub{font-size:11px;color:var(--muted);line-height:1.5}
-.sheetbox{display:grid;grid-template-columns:1fr auto;gap:9px;margin-top:12px}
-.sheetbox input{height:46px;width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:0 13px;outline:none}
-.sheetbox input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px #f59e0b18}
-.btn{min-height:44px;border:0;border-radius:11px;padding:10px 15px;font-weight:900}.primary{background:linear-gradient(135deg,#ffc107,#f59e0b);color:#111827}.dark{background:#111827;color:#fff}.green{background:var(--green);color:#fff}
-.msg{display:none;margin-top:10px;padding:10px;border-radius:10px;font-size:11px;white-space:pre-line;line-height:1.5;overflow-wrap:anywhere}.msg.show{display:block}.msg.ok{color:#166534;background:#f0fdf4;border:1px solid #bbf7d0}.msg.err{color:#b91c1c;background:#fef2f2;border:1px solid #fecaca}.msg.info{color:#92400e;background:#fffbeb;border:1px solid #fde68a}
-.saved{margin-top:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);font-size:10px;color:#475569;overflow-wrap:anywhere}
-.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.search{flex:1;min-width:210px;height:43px;border:1px solid #cbd5e1;border-radius:11px;padding:0 12px;outline:none}
-.count{font-size:11px;color:var(--muted);font-weight:800}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
-table{width:100%;min-width:760px;border-collapse:collapse}th{padding:11px;background:#f8fafc;color:#475569;font-size:10px;text-align:left;position:sticky;top:0}td{padding:10px;border-bottom:1px solid #edf0f3;font-size:11px;vertical-align:middle}.price{font-weight:900;color:#b45309}.supplier{font-weight:800;color:#475569}
-.mobile-list{display:none;gap:9px}.m-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 4px 12px #17203308}.m-name{font-size:12px;font-weight:900;line-height:1.35}.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.m-grid div{background:#f8fafc;border-radius:8px;padding:8px;font-size:10px}.m-grid b{display:block;color:#94a3b8;font-size:8px;margin-bottom:2px}
-.loading{display:none;position:fixed;inset:0;z-index:100;background:#11182766;align-items:center;justify-content:center}.loading.show{display:flex}.loader{background:#fff;border-radius:16px;padding:23px;text-align:center}.spin{width:30px;height:30px;border:4px solid #e5e7eb;border-top-color:#f59e0b;border-radius:50%;animation:s .8s linear infinite;margin:auto auto 10px}@keyframes s{to{transform:rotate(360deg)}}
-@media(max-width:600px){.header-in{padding:9px 10px}.brand h1{font-size:16px}.brand p{font-size:9px}.head-btn{height:38px;padding:0 9px}.container{padding:10px}.sheetbox{grid-template-columns:1fr}.table-wrap{display:none}.mobile-list{display:grid}.toolbar{display:grid;grid-template-columns:1fr}.search{width:100%}.modal-actions{grid-template-columns:1fr}.card{padding:12px}}
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FIXZY | Rekap Order Member</title><style>
+*{box-sizing:border-box}
+:root{--b:#0b0f14;--b2:#111827;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626;--blue:#2563eb;--orange:#f59e0b}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:var(--b);color:#fff;border-bottom:3px solid var(--y);display:flex;align-items:center}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
+.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
+.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}
+.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:88px 12px 30px}
+.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
+.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
+.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
+input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
 
-.multilinks{display:grid;gap:9px;margin-top:12px}
-.linkrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-.linkrow input{height:44px;width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:0 12px;outline:none}
-.linkrow input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px #f59e0b18}
-.linknum{font-size:10px;font-weight:900;color:#64748b;margin-bottom:3px}
-.link-remove{height:44px;border:0;border-radius:10px;padding:0 12px;background:#fee2e2;color:#b91c1c;font-weight:900}
-@media(max-width:600px){.linkrow{grid-template-columns:1fr auto}}
-</style>
-</head>
-<body>
-<header class="header">
-  <div class="header-in">
-    <div class="brand">
-      <img src="logo.png" class="logo" onerror="this.style.display='none'">
-      <div><h1>FIXZY</h1><p>Produk dari Spreadsheet</p></div>
+/* RINCIAN TOTAL */
+.money-total{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fffbeb}
+.rekap-rincian{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.rekap-item{border:2px solid #111827;border-radius:8px;padding:9px 7px;background:#fff;min-width:0}
+.rekap-item .label{display:block;font-size:10px;font-weight:900;color:#4b5563;margin-bottom:5px}
+.rekap-item .value{display:block;font-size:13px;font-weight:900;color:#111827;word-break:break-word}
+.rekap-item.tagihan{background:#fef3c7}
+.rekap-item.tagihan .value{color:#b45309}
+
+
+.rekap-jatuh-tempo{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fff}
+.jt-title{font-size:13px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:8px;margin-bottom:9px}
+.jt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.jt-item{border:2px solid #111827;border-radius:8px;padding:10px;background:#fffbeb;min-width:0}
+.jt-item .jt-date{font-size:10px;font-weight:900;color:#92400e;margin-bottom:5px}
+.jt-item .jt-nominal{font-size:15px;font-weight:900;color:#b45309;word-break:break-word}
+.jt-item .jt-count{font-size:10px;color:#64748b;margin-top:4px}
+.jt-empty{text-align:center;padding:10px;color:#64748b;font-size:11px}
+body.dark .rekap-jatuh-tempo{background:#111827;border-color:#475569}
+body.dark .jt-title{border-color:#475569}
+body.dark .jt-item{background:#292211;border-color:#475569}
+body.dark .jt-item .jt-date{color:#fbbf24}
+body.dark .jt-item .jt-nominal{color:#f59e0b}
+
+.jt-card{border:2px solid #111827;border-radius:10px;padding:12px;background:#fffbeb;min-width:0}
+.jt-date{font-size:12px;font-weight:900;color:#92400e;margin-bottom:3px}
+.jt-tempo{font-size:10px;font-weight:900;color:#64748b;margin-bottom:8px}
+.jt-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:11px;border-bottom:1px dashed #d1d5db}
+.jt-row span{color:#475569}
+.jt-row b{white-space:nowrap}
+.jt-total{border-bottom:0;border-top:2px solid #111827;margin-top:4px;padding-top:8px;font-weight:900}
+.jt-foot{font-size:10px;color:#64748b;margin-top:8px}
+body.dark .jt-card{background:#292211;border-color:#475569}
+body.dark .jt-date{color:#fbbf24}
+body.dark .jt-row{border-color:#475569}
+body.dark .jt-row span,body.dark .jt-tempo,body.dark .jt-foot{color:#9ca3af}
+
+@media(max-width:650px){.jt-grid{grid-template-columns:1fr 1fr}.jt-item:last-child:nth-child(odd){grid-column:1/-1}}
+
+.table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
+table{width:100%;border-collapse:collapse;min-width:0}
+@media(max-width:650px){
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:680px}
+  th,td{padding:8px 7px;font-size:10px}
+  th{font-size:9px}
+  .rekap-rincian{grid-template-columns:1fr 1fr}
+  .rekap-item:last-child{grid-column:1/-1}
+  .rekap-item .value{font-size:12px}
+}
+th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
+th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
+td.num{text-align:right;font-weight:800}
+tr:last-child td{border-bottom:0}
+.total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
+.badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
+.empty{text-align:center;padding:25px;color:#64748b;font-size:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.primary{background:#111827;color:#fff}
+.secondary{background:#e5e7eb;color:#111827}
+body.dark{background:#0b1220;color:#e5e7eb}
+body.dark .card{background:#111827;color:#e5e7eb;border-color:#475569}
+body.dark .title{border-color:#475569}
+body.dark label{color:#9ca3af}
+body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}
+body.dark .money-total{background:#1c1917}
+body.dark .rekap-item{background:#0f172a;border-color:#475569}
+body.dark .rekap-item .label{color:#9ca3af}
+body.dark .rekap-item .value{color:#fff}
+body.dark .rekap-item.tagihan{background:#292211}
+body.dark th{background:#020617}
+body.dark td{border-color:#334155}
+@media(max-width:850px){.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
+@media(max-width:650px){
+  header{height:68px}
+  .hi h1{font-size:16px}
+  main{padding:80px 8px 24px}
+  .filters{grid-template-columns:1fr}
+  .acts .btn{padding:8px}
+  .card{padding:12px}
+}
+</style></head><body>
+<header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Rekap Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
+<main><div id="notice" class="notice">Menunggu akun...</div>
+
+<div class="card"><div class="title">REKAPAN ORDERAN</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
+
+<div class="card"><div class="title">DAFTAR ORDER SEMUA MEMBER</div>
+<div class="money-total">
+  <div class="rekap-rincian">
+    <div class="rekap-item">
+      <span class="label">NILAI BARANG</span>
+      <span class="value" id="totalNilaiBarang">Rp 0</span>
     </div>
-    <button class="head-btn refresh" id="refreshBtn" onclick="location.reload()">↻ Refresh</button>
+    <div class="rekap-item">
+      <span class="label">PENGELOLA</span>
+      <span class="value" id="totalPengelola">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">TABUNGAN</span>
+      <span class="value" id="totalTabungan">Rp 0</span>
+    </div>
+    <div class="rekap-item">
+      <span class="label">KAS</span>
+      <span class="value" id="totalKas">Rp 0</span>
+    </div>
+    <div class="rekap-item tagihan">
+      <span class="label">TAGIHAN</span>
+      <span class="value" id="sisaTotal">Rp 0</span>
+    </div>
   </div>
-</header>
+</div>
+<div class="rekap-jatuh-tempo">
+  <div class="jt-title">📅 TAGIHAN BERDASARKAN TANGGAL JATUH TEMPO</div>
+  <div id="jatuhTempoSummary" class="jt-grid">
+    <div class="jt-empty">Memuat...</div>
+  </div>
+</div>
+<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-<main class="container">
-  <section class="card">
-    <div class="title">🔗 Hubungkan Spreadsheet Produk</div>
-    <div class="sub">Firebase hanya menyimpan link spreadsheet. Nama produk, harga, supplier, dan stok dibaca langsung dari Spreadsheet.</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn dark" id="addLinkBtn" onclick="addLinkRow()">＋ Tambah Link</button>
-      <button class="btn primary" id="saveBtn" onclick="saveSpreadsheet()">💾 SIMPAN SEMUA LINK</button>
-    </div>
-    <div id="linkRows" class="multilinks" style="display:none"></div>
-    <div id="msg" class="msg"></div>
-    <div id="saved" class="saved" style="display:none"></div>
-  </section>
-
-  <section class="card">
-    <div class="toolbar">
-      <input id="search" class="search" placeholder="🔎 Cari nama produk / supplier...">
-      <span id="count" class="count">0 produk</span>
-      <button class="btn dark" onclick="loadSpreadsheet()">↻ RELOAD DATA</button>
-    </div>
-    <div id="listMsg" class="sub">Belum ada Spreadsheet yang dihubungkan.</div>
-
-    <div class="table-wrap" style="margin-top:11px">
-      <table>
-        <thead><tr>
-          <th>Nama Produk</th><th>Supplier</th><th>Harga Tunai</th><th>Harga Tempo</th><th>Stok</th>
-        </tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div id="mobileList" class="mobile-list" style="margin-top:11px"></div>
-  </section>
-</main>
-
-<div class="loading" id="loading"><div class="loader"><div class="spin"></div><b id="loadingText">Memuat...</b></div></div>
-
-<script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
-const firebaseConfig={
-  apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
-  authDomain:"fixzy-update.firebaseapp.com",
-  projectId:"fixzy-update",
-  storageBucket:"fixzy-update.firebasestorage.app",
-  messagingSenderId:"995892519622",
-  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
+const cfg={
+ apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",
+ authDomain:"fixzy-update.firebaseapp.com",
+ projectId:"fixzy-update",
+ storageBucket:"fixzy-update.firebasestorage.app",
+ messagingSenderId:"995892519622",
+ appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-let uid=null,products=[];
-
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
-const money=n=>"Rp "+Number(n||0).toLocaleString("id-ID");
-const clean=s=>String(s??"").trim().toLowerCase().replace(/[\s_\-()./]+/g,"");
-const num=s=>{
-  if(typeof s==="number")return s;
-  let x=String(s??"").trim().replace(/[^\d,.-]/g,"");
-  if(!x)return 0;
-  const dots=(x.match(/\./g)||[]).length;
-  const commas=(x.match(/,/g)||[]).length;
-  if(dots&&commas){
-    const lastDot=x.lastIndexOf(".");
-    const lastComma=x.lastIndexOf(",");
-    if(lastComma>lastDot){
-      const dec=x.length-lastComma-1;
-      x=dec<=2?x.replace(/\./g,"").replace(",","."):x.replace(/,/g,"").replace(/\./g,"");
+const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>Number(v)||0;
+function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
+let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
+
+function ownerOf(d){
+ const role=String(d.role||"").toLowerCase();
+ if(role==="owner")return uid;
+ if(role==="superadmin"||role==="super_admin")return "";
+ return String(d.ownerUid||d.ownerId||"").trim()||uid;
+}
+
+function isCashOrder(r){
+ const vals=[r.tipeOrder,r.tipeTransaksi,r.jenisHarga,r.paymentType,r.metodePembayaran,r.jenisPembayaran,r.caraBayar]
+   .map(v=>String(v??"").trim().toLowerCase());
+ return vals.some(v=>["member_cash","cash","tunai","cash/tunai","cash_tunai","member cash"].includes(v));
+}
+
+function orderStatus(r){
+ const calc=calculateOrder(r);
+ return isCashOrder(r)|| (calc.totalTagihan>0&&calc.sisa<=0) ? "lunas" : "tagihan";
+}
+
+function normalisasiHargaMember(item, order, sourceItem={}){
+ const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+ const has=(o,k)=>o && Object.prototype.hasOwnProperty.call(o,k) &&
+   o[k]!==undefined && o[k]!==null && o[k]!=="";
+
+ const qty=Math.max(1,num(item.qty??item.jumlah??item.quantity??1));
+
+ // Harga normal adalah harga stok/reload stok. Cari dari item/order/source.
+ // Nama field dibuat fleksibel karena data lama bisa memakai struktur berbeda.
+ const stokKeys=[
+   "hargaStok","hargaReload","hargaReloadStok","hargaAwal","hargaNormal",
+   "hargaModal","modalStok","hargaBeli","hargaDasarStok","hargaAsli"
+ ];
+
+ let hargaNormal=0;
+ for(const obj of [item,sourceItem,order]){
+   for(const k of stokKeys){
+     if(has(obj,k) && num(obj[k])>0){ hargaNormal=num(obj[k]); break; }
+   }
+   if(hargaNormal>0) break;
+ }
+
+ // Jika ada harga stok yang jelas, jadikan itu patokan nilai barang murni.
+ if(hargaNormal>0){
+   const hargaTersimpan=num(item.harga??item.hargaJual??item.hargaTempo??item.hargaMemberPerPcs);
+   const nilaiTersimpan=has(item,"nilaiBarang")?num(item.nilaiBarang):0;
+
+   // nilaiBarang lama kadang berupa total, sedangkan harga stok berupa per PCS.
+   const nilaiPerPcs=nilaiTersimpan>0 ? nilaiTersimpan/qty : 0;
+
+   // Jika harga Firebase lebih tinggi dari harga normal, anggap komponen
+   // tambahan sudah menempel pada harga tersebut. Rekap memakai harga normal.
+   if(hargaTersimpan>0 && hargaTersimpan!==hargaNormal){
+     return {hargaNormal, sumber:"stok", tergabung:true};
+   }
+   if(nilaiPerPcs>0 && nilaiPerPcs!==hargaNormal){
+     return {hargaNormal, sumber:"stok", tergabung:true};
+   }
+   return {hargaNormal, sumber:"stok", tergabung:false};
+ }
+
+ return {hargaNormal:0,sumber:"firebase",tergabung:false};
+}
+
+function basePriceOfItem(x,r={}){
+ const cash=isCashOrder(r);
+ const has=(obj,k)=>obj && Object.prototype.hasOwnProperty.call(obj,k) &&
+   obj[k]!==undefined && obj[k]!==null && obj[k]!=="";
+ const numv=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+
+ const up=has(x,"upPengelolaPerPcs")?numv(x.upPengelolaPerPcs):
+   has(x,"upPengelola")?numv(x.upPengelola):
+   has(r,"upPengelolaPerPcs")?numv(r.upPengelolaPerPcs):
+   has(r,"upPengelola")?numv(r.upPengelola):0;
+
+ const tab=has(x,"tabunganPerPcs")?numv(x.tabunganPerPcs):
+   has(x,"tabungan")?numv(x.tabungan):
+   has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
+   has(r,"tabungan")?numv(r.tabungan):0;
+
+ // hargaDasar = nilai barang murni per PCS yang sudah terurai.
+ if(has(x,"hargaDasar")) return Math.max(0,numv(x.hargaDasar));
+
+ // Jika nilaiBarang tersedia, field ini sudah merupakan TOTAL nilai barang item.
+ // Pemanggil itemList menangani nilai total tersebut secara langsung.
+ if(has(x,"nilaiBarang")){
+   const qty=Math.max(1,numv(x.qty??x.jumlah??x.quantity??1));
+   return Math.max(0,numv(x.nilaiBarang)/qty);
+ }
+
+ // Jika Firebase hanya menyimpan harga gabungan, uraikan Tabungan + UP.
+ const candidates=cash
+   ? ["hargaCash","modalSatuan","harga"]
+   : ["hargaTempo","hargaJual","harga"];
+
+ for(const k of candidates){
+   if(has(x,k)){
+     const v=numv(x[k]);
+     if(v>0)return Math.max(0,v-up-tab);
+   }
+ }
+ return 0;
+}
+
+function itemList(r){
+ const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
+ const src=r._paymentSource||{};
+ const sourceItems=Array.isArray(src.items)?src.items:(Array.isArray(src.produkList)?src.produkList:[]);
+ const has=(obj,k)=>obj && Object.prototype.hasOwnProperty.call(obj,k) &&
+   obj[k]!==undefined && obj[k]!==null && obj[k]!=="";
+ const numv=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+
+ return a.map((x,i)=>{
+  const si=sourceItems[i]||{};
+  const item={...si,...x};
+  const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
+
+  // Hanya ambil UP yang memang tersimpan PER ITEM/PER PCS.
+  // UP level order tidak boleh dikalikan lagi ke setiap item.
+  const up=Math.max(0,
+    has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
+    has(item,"upPerPcs")?numv(item.upPerPcs):0
+  );
+
+  // Hanya ambil Tabungan yang memang tersimpan PER ITEM/PER PCS.
+  // Total Tabungan level order diproses satu kali di calculateOrder().
+  const tabungan=Math.max(0,
+    has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
+    has(item,"tabunganPerPCS")?numv(item.tabunganPerPCS):
+    0
+  );
+
+  const diskon=Math.max(0,numv(item.diskon??item.discount??0));
+
+  let nilaiBarang=0;
+  let hargaAwal=0;
+
+  // PRIORITAS 1: nilaiBarang yang sudah dipisahkan di order_member.
+  // Jangan diganti oleh harga stok/reload.
+  if(has(item,"nilaiBarang")){
+    nilaiBarang=Math.max(0,numv(item.nilaiBarang));
+    hargaAwal=qty>0?nilaiBarang/qty:0;
+
+  // PRIORITAS 2: hargaDasar yang memang merupakan nilai barang murni.
+  }else if(has(item,"hargaDasar") && numv(item.hargaDasar)>0){
+    hargaAwal=numv(item.hargaDasar);
+    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+
+  // PRIORITAS 3: harga stok hanya dipakai bila order_member tidak
+  // menyediakan nilai barang/harga dasar.
+  }else{
+    const norm=normalisasiHargaMember(item,r,si);
+    if(norm.hargaNormal>0){
+      hargaAwal=norm.hargaNormal;
+      nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
     }else{
-      const dec=x.length-lastDot-1;
-      x=dec<=2?x.replace(/,/g,""):x.replace(/,/g,"").replace(/\./g,"");
+      hargaAwal=basePriceOfItem(item,r);
+      nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
     }
-  }else if(commas){
-    const parts=x.split(",");
-    x=parts.length===2 && parts[1].length<=2 ? x.replace(",",".") : x.replace(/,/g,"");
-  }else if(dots){
-    const parts=x.split(".");
-    x=parts.length===2 && parts[1].length<=2 ? x : x.replace(/\./g,"");
-  }
-  const n=parseFloat(x);
-  return Number.isFinite(n)?n:0;
-};
-function pick(o,keys){for(const k of keys){const v=o[clean(k)];if(v!==undefined&&String(v).trim()!=="")return v}return""}
-function showLoading(v,t="Memuat..."){$("loadingText").textContent=t;$("loading").classList.toggle("show",v)}
-function message(t,type="info"){$("msg").textContent=t;$("msg").className="msg show "+type}
-function parseCSV(text){
-  const out=[];let row=[],cell="",q=false;text=text.replace(/^\uFEFF/,"");
-  for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
-    if(c==='"'){if(q&&n==='"'){cell+='"';i++}else q=!q}
-    else if(c===","&&!q){row.push(cell);cell=""}
-    else if((c==="\n"||c==="\r")&&!q){if(c==="\r"&&n==="\n")i++;row.push(cell);cell="";if(row.some(v=>String(v).trim()))out.push(row);row=[]}
-    else cell+=c;
-  }
-  if(cell!==""||row.length){row.push(cell);if(row.some(v=>String(v).trim()))out.push(row)}
-  return out;
-}
-function normalize(rows){
-  if(!rows.length)throw Error("Spreadsheet kosong.");
-  const h=rows[0].map(clean),data=[];
-  for(let i=1;i<rows.length;i++){
-    const r=rows[i],o={};h.forEach((k,j)=>o[k]=r[j]??"");
-    const nama=pick(o,["nama barang","nama produk","nama","produk","product","barang"]);
-    if(!nama)continue;
-
-    // Struktur Spreadsheet A Yudi:
-    // A = Barang/kode, B = Nama Barang, C = kosong,
-    // D = modal, E = jual, F = supplier, G = stock.
-    // Utamakan nama kolom; posisi kolom menjadi fallback agar
-    // harga tetap terbaca walaupun header CSV berubah sedikit.
-    const modalValue=pick(o,["modal","harga modal","harga beli","harga modal produk","hpp","harga pokok"]);
-    const jualValue=pick(o,["jual","harga jual","harga jual produk","harga penjualan"]);
-    const supplier=pick(o,["supplier","suplier","nama supplier","nama suplier","vendor"]);
-    const stokValue=pick(o,["stock","stok","sisa stok","sisa","jumlah stok"]);
-
-    const modal=num(modalValue!==""?modalValue:(r[3]??""));
-    const jual=num(jualValue!==""?jualValue:(r[4]??""));
-    const stok=num(stokValue!==""?stokValue:(r[6]??""));
-    const kode=pick(o,["kode","sku","kode produk","id"]);
-    data.push({id:crypto.randomUUID(),kode,nama:String(nama).trim(),supplier:String(supplier||"").trim(),modal,jual,stok:Math.max(0,stok)});
-  }
-  if(!data.length)throw Error("Tidak ada produk yang dikenali. Pastikan ada kolom Nama Produk.");
-  return data;
-}
-function csvUrlFromSheet(url){
-  const u=new URL(url);
-  const host=u.hostname.toLowerCase();
-  if(!host.includes("docs.google.com")||!u.pathname.includes("/spreadsheets/"))return url;
-
-  const gid=u.searchParams.get("gid") ||
-    (url.match(/[?#&]gid=([^&#]+)/i)||[])[1] || "0";
-
-  // Link Publish to web: /spreadsheets/d/e/2PACX-.../pubhtml
-  const pub=u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)\/pub(?:html)?/i);
-  if(pub){
-    return `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
   }
 
-  // Link spreadsheet biasa: /spreadsheets/d/FILE_ID/edit
-  const id=u.pathname.match(/\/spreadsheets\/d\/([^/]+)/i);
-  if(id){
-    return `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${encodeURIComponent(gid)}`;
-  }
-
-  return url;
-}
-async function readSheet(url){
-  const csv=csvUrlFromSheet(url);
-  let res;
-  try{
-    res=await fetch(csv,{cache:"no-store"});
-  }catch(e){
-    throw Error("Tidak bisa mengakses Google Sheets. Pastikan link sudah Publish to web dan dapat dibuka tanpa login.");
-  }
-  if(!res.ok)throw Error("Google Sheets mengembalikan HTTP "+res.status);
-  const text=await res.text();
-  if(!text||text.trim().length<2)throw Error("Data spreadsheet kosong.");
-  if(/<html|<!doctype/i.test(text.slice(0,500))){
-    throw Error("Google tidak mengirim data CSV. Pastikan Spreadsheet sudah Publish to web.");
-  }
-  return normalize(parseCSV(text));
-}
-function getLinkInputs(){
-  return [...document.querySelectorAll("#linkRows .sheet-link")];
-}
-
-function addLinkRow(value=""){
-  const box=$("linkRows");
-  box.style.display="grid";
-
-  const row=document.createElement("div");
-  row.className="linkrow";
-
-  const wrap=document.createElement("div");
-  const num=document.createElement("div");
-  num.className="linknum";
-  num.textContent="Spreadsheet "+(box.children.length+1);
-
-  const input=document.createElement("input");
-  input.className="sheet-link";
-  input.type="url";
-  input.placeholder="Tempel link Google Sheets / link Publish CSV";
-  input.value=value||"";
-
-  wrap.appendChild(num);
-  wrap.appendChild(input);
-
-  const del=document.createElement("button");
-  del.className="link-remove";
-  del.type="button";
-  del.textContent="Hapus";
-  del.onclick=()=>{
-    row.remove();
-    renumberLinks();
-    if(!box.children.length)box.style.display="none";
+  return{
+    produkId:String(item.produkId||item.id||""),
+    nama:String(item.nama||item.namaProduk||item.kode||item.kodeProduk||"-"),
+    kode:String(item.kode||item.kodeProduk||""),
+    qty,hargaAwal,diskon,nilaiBarang,
+    upPengelolaPerPcs:up,
+    tabunganPerPcs:tabungan,
+    total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)
   };
-
-  row.appendChild(wrap);
-  row.appendChild(del);
-  box.appendChild(row);
-  renumberLinks();
+ });
 }
 
-function renumberLinks(){
-  [...document.querySelectorAll("#linkRows .linkrow")].forEach((row,i)=>{
-    const n=row.querySelector(".linknum");
-    if(n)n.textContent="Spreadsheet "+(i+1);
-  });
+
+function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
+function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
+
+function calculateOrder(r){
+ const items=itemList(r);
+ const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
+
+ // =========================================================
+ // UP PENGELOLA
+ // 1. Jika item memiliki UP per-PCS, jumlahkan per item.
+ // 2. Jika tidak, gunakan total UP level order SATU KALI.
+ // Tidak pernah menggandakan UP order ke semua item.
+ // =========================================================
+ const itemUp=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
+ const hasItemUP=items.some(x=>x.upPengelolaPerPcs>0);
+
+ const orderUPTotal=Math.max(0,num(
+   r.totalUPPengelola ??
+   r.totalUpPengelola ??
+   r.totalUp ??
+   r.upPengelolaTotal ??
+   0
+ ));
+
+ const singleOrderUP = !hasItemUP && orderUPTotal>0
+   ? orderUPTotal
+   : itemUp;
+
+ const up = singleOrderUP;
+
+ // =========================================================
+ // TABUNGAN MEMBER
+ // 1. Jika item memiliki Tabungan per-PCS, jumlahkan per item.
+ // 2. Jika tidak, gunakan total Tabungan level order SATU KALI.
+ // Tidak pernah menggandakan total Tabungan ke setiap item.
+ // =========================================================
+ const itemTab=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
+ const hasItemTab=items.some(x=>x.tabunganPerPcs>0);
+
+ const orderTabTotal=Math.max(0,num(
+   r.totalTabunganMember ??
+   r.totalTabungan ??
+   r.tabunganTotal ??
+   0
+ ));
+
+ const singleOrderTab = !hasItemTab && orderTabTotal>0
+   ? orderTabTotal
+   : itemTab;
+
+ const tabungan = singleOrderTab;
+
+ const kas=kasOf(r);
+ const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
+ const paid=paidOf(r);
+ const cash=isCashOrder(r);
+ const sisa=cash?0:Math.max(0,totalTagihan-paid);
+
+ return{items,nilaiBarang,up,tabungan,kas,totalTagihan,paid,sisa,cash};
 }
 
-window.addLinkRow=addLinkRow;
 
-async function saveSpreadsheet(){
-  if(!uid){message("Belum login Firebase.","err");return}
+function dueDate(r){
+ if(isCashOrder(r))return null;
+ const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
+ if(!raw)return null;
+ if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
+ const s=String(raw);
+ if(/^\d{4}-\d{2}-\d{2}$/.test(s)){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+ if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,y]=s.split("/").map(Number);return new Date(y,m-1,d);}
+ const d=new Date(s);return isNaN(d.getTime())?null:d;
+}
 
-  const inputs=getLinkInputs();
-  const links=inputs.map(x=>x.value.trim()).filter(Boolean);
+function inPeriod(r){
+ const p=$("periode").value;if(p==="all")return true;
+ const raw=r.approvedAt||r.createdAt||r.tanggal||"";let d=null;
+ if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
+ else if(String(raw).match(/^\d{4}-\d{2}-\d{2}$/))d=new Date(String(raw)+"T00:00:00");
+ else if(raw)d=new Date(raw);
+ if(!d||isNaN(d.getTime()))return true;
+ const now=new Date();
+ if(p==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+ if(p==="year")return d.getFullYear()===now.getFullYear();
+ return true;
+}
 
-  if(!links.length){
-    message("Belum ada link Spreadsheet. Tekan ＋ Tambah Link terlebih dahulu.","err");
-    return;
-  }
-
-  const invalid=links.find(x=>!/^https?:\/\//i.test(x));
-  if(invalid){
-    message("Ada link Spreadsheet yang tidak valid.","err");
-    return;
-  }
-
-  showLoading(true,"Menyimpan semua link...");
+async function loadStock(){
+ const map=new Map();
+ const qs=[
+   query(collection(db,"stok"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"stok"),where("ownerId","==",ownerUid)),
+   query(collection(db,"stok"),where("uid","==",uid))
+ ];
+ for(const q of qs){
   try{
-    // spreadsheetLinks adalah format baru multi-link.
-    // spreadsheetUrl tetap disimpan agar data lama tidak hilang.
-    await setDoc(
-      doc(db,"pengaturan_spreadsheet",uid),
-      {
-        uid,
-        spreadsheetLinks:links,
-        spreadsheetUrl:links[0],
-        updatedAt:serverTimestamp()
-      },
-      {merge:true}
-    );
+   const s=await getDocs(q);
+   s.forEach(d=>{if(!map.has(d.id))map.set(d.id,{id:d.id,...d.data()});});
+  }catch(e){console.warn("Query stok:",e.message);}
+ }
+ stockProducts=[...map.values()];
+ stockByKey=new Map();
+ stockProducts.forEach(p=>{
+  const keys=[p.id,p.produkId,p.kode,p.kodeProduk,p.sku,p.nama,p.namaProduk]
+   .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
+  keys.forEach(k=>{if(!stockByKey.has(k))stockByKey.set(k,p);});
+ });
+}
 
-    message(
-      `${links.length} link Spreadsheet berhasil disimpan di Firebase.\n`+
-      "Semua produk dari link yang tersimpan akan dibaca saat Reload Data.",
+function findStockForItem(x){
+ const keys=[x.produkId,x.id,x.kode,x.kodeProduk,x.sku,x.nama,x.namaProduk]
+   .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
+ for(const k of keys){const p=stockByKey.get(k);if(p)return p;}
+ return null;
+}
+
+async function loadOrders(){
+ const map=new Map();
+ const qs=[
+   query(collection(db,"order_member"),where("ownerUid","==",ownerUid)),
+   query(collection(db,"order_member"),where("ownerId","==",ownerUid))
+ ];
+
+ for(const q of qs){
+  try{
+   const snap=await getDocs(q);
+   snap.forEach(d=>{
+     const x={id:d.id,...d.data()};
+     if(!map.has(d.id))map.set(d.id,x);
+   });
+  }catch(e){
+   console.warn("Query order_member:",e.message);
+  }
+ }
+
+ // REKAP WAJIB memakai data dari order_member.
+ // Tidak membaca/menggabungkan koleksi penjualan.
+ orders=[...map.values()];
+}
+function kasMemberDueKey(r){
+ const m=r.member||r.pelanggan||{};
+ const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
+ const due=dueDate(r);
+ const dueKey=due
+   ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
+   : "tanpa-tanggal";
+ return memberId+"|"+dueKey;
+}
+
+function renderRekap(){
+ const search=$("search").value.trim().toLowerCase();
+ const data=orders.filter(inPeriod).filter(r=>{
+  const m=r.member||r.pelanggan||{};
+  return !search||
+    String(r.nomorNota||r.id||"").toLowerCase().includes(search)||
+    String(m.nama||"").toLowerCase().includes(search);
+ });
+
+ // =========================================================
+ // SATU SUMBER DATA PER ORDER
+ // Setiap order dihitung sekali, lalu hasil yang sama dipakai
+ // untuk tabel dan panel jatuh tempo. Tidak ada hitung ulang.
+ // =========================================================
+ const calcRows=data.map(r=>({
+   r,
+   calc:calculateOrder(r),
+   due:dueDate(r),
+   kasKey:kasMemberDueKey(r)
+ }));
+
+ // Kas: satu kali per MEMBER + TANGGAL JATUH TEMPO. Jadi Kas mengikuti jatuh tempo.
+ const kasBulananMap=new Map();
+ calcRows.forEach(({r,kasKey})=>{
+   const raw=Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas));
+   if(raw>(kasBulananMap.get(kasKey)||0))kasBulananMap.set(kasKey,raw);
+ });
+
+ // Tentukan nilai Kas yang benar satu kali, lalu simpan hasil finalnya.
+ const kasAssigned=new Set();
+ const viewRows=calcRows.map(({r,calc,due,kasKey})=>{
+   const kasRow=!kasAssigned.has(kasKey)
+      ? (kasBulananMap.get(kasKey)||calc.kas)
+      : 0;
+   kasAssigned.add(kasKey);
+
+   const qty=calc.items.reduce((a,x)=>a+num(x.qty),0);
+   const totalAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
+   const sisa=calc.cash?0:Math.max(0,totalAwal-calc.paid);
+
+   return {r,calc,due,kasKey,qty,kasRow,totalAwal,sisa};
+ });
+
+ let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
+ const rows=viewRows.map(v=>{
+   qty+=v.qty;
+   nilai+=v.calc.nilaiBarang;
+   up+=v.calc.up;
+   tabungan+=v.calc.tabungan;
+   kas+=v.kasRow;
+   sisaTotal+=v.sisa;
+
+   const m=v.r.member||v.r.pelanggan||{};
+   const st=v.sisa<=0?"lunas":"tagihan";
+   const jenis=v.calc.cash?"CASH":"TEMPO";
+
+   return `<tr>
+    <td><b>${esc(v.r.nomorNota||v.r.id)}</b></td>
+    <td>${esc(m.nama||"-")}</td>
+    <td><span class="badge ${v.calc.cash?"lunas":"tagihan"}">${jenis}</span></td>
+    <td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td>
+    <td>${v.due?v.due.toLocaleDateString("id-ID"):"-"}</td>
+    <td class="num">${v.qty.toLocaleString("id-ID")}</td>
+    <td class="num">${rp(v.calc.nilaiBarang)}</td>
+    <td class="num">${rp(v.calc.up)}</td>
+    <td class="num">${rp(v.calc.tabungan)}</td>
+    <td class="num">${rp(v.kasRow)}</td>
+    <td class="num">${rp(v.sisa)}</td>
+  </tr>`;
+ }).join("");
+
+ // =========================================================
+ // PANEL JATUH TEMPO
+ // Setiap nominal berasal dari ORDER yang mempunyai tanggal jatuh tempo
+ // tersebut. Tidak memakai total global dan tidak mengambil nominal dari
+ // tempo/jatuh tempo lain.
+ // =========================================================
+ const panelMap=new Map();
+
+ // =========================================================
+ // PANEL PER TANGGAL JATUH TEMPO
+ // Semua order dari order_member yang memiliki tanggal tersebut
+ // digabung menjadi SATU panel. Status LUNAS tidak membuat panel baru.
+ //
+ // NILAI BARANG = nilai barang ORIGINAL seluruh order pada tanggal.
+ // PEMBAYARAN hanya mengurangi SISA TAGIHAN.
+ // =========================================================
+ viewRows.forEach(v=>{
+   const due=v.due;
+   if(!due)return;
+
+   const key=`${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`;
+
+   if(!panelMap.has(key)){
+     panelMap.set(key,{
+       due,
+       nilai:0,
+       up:0,
+       tab:0,
+       kas:0,
+       totalAwal:0,
+       paid:0,
+       sisa:0,
+       orders:0,
+       pcs:0,
+       tempos:new Set()
+     });
+   }
+
+   const g=panelMap.get(key);
+
+   // Nilai barang asli: selalu ditambahkan penuh.
+   g.nilai += num(v.calc.nilaiBarang);
+
+   // Komponen tagihan.
+   g.up  += num(v.calc.up);
+   g.tab += num(v.calc.tabungan);
+   g.kas += num(v.kasRow);
+
+   // Total sebelum pembayaran.
+   const totalAwal=num(v.calc.nilaiBarang)+num(v.calc.up)+num(v.calc.tabungan)+num(v.kasRow);
+   g.totalAwal += totalAwal;
+
+   // Pembayaran dicatat terpisah dan TIDAK mengubah nilai barang.
+   g.paid += num(v.calc.paid);
+
+   // Sisa hanya untuk rincian tagihan.
+   g.sisa += Math.max(0,totalAwal-num(v.calc.paid));
+
+   g.orders++;
+   g.pcs += v.qty;
+
+   const tempoHari=Math.max(0,Number(v.r.tempoHari||0)||0);
+   if(tempoHari)g.tempos.add(tempoHari);
+ });
+
+ const panelData=[...panelMap.values()].sort((a,b)=>a.due-b.due);
+ $("totalNilaiBarang").textContent=rp(nilai);
+ $("totalPengelola").textContent=rp(up);
+ $("totalTabungan").textContent=rp(tabungan);
+ $("totalKas").textContent=rp(kas);
+ $("sisaTotal").textContent=rp(sisaTotal);
+
+ $("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+
+ $("jatuhTempoSummary").innerHTML=panelData.length
+   ? panelData.map(g=>{
+       const tanggal=g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+       const tempoList=[...g.tempos].sort((a,b)=>a-b);
+       const tempoLabel=tempoList.length
+         ? `TEMPO ${tempoList.join(" / ")} HARI`
+         : "TEMPO";
+
+       return `<div class="jt-card">
+         <div class="jt-date">📅 ${esc(tanggal)}</div>
+         <div class="jt-tempo">${esc(tempoLabel)}</div>
+
+         <div class="jt-row"><span>NILAI BARANG ASLI</span><b>${rp(g.nilai)}</b></div>
+
+         <div style="margin-top:10px;padding-top:8px;border-top:2px solid #111827;font-weight:900;font-size:11px">
+           RINCIAN TAGIHAN
+         </div>
+         <div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div>
+         <div class="jt-row"><span>UP Pengelola</span><b>${rp(g.up)}</b></div>
+         <div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div>
+         <div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div>
+         <div class="jt-row"><span>Total Tagihan Awal</span><b>${rp(g.totalAwal)}</b></div>
+         <div class="jt-row"><span>Sudah Dibayar</span><b>${rp(g.paid)}</b></div>
+         <div class="jt-row jt-total"><span>Sisa Tagihan</span><b>${rp(g.sisa)}</b></div>
+         <div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div>
+       </div>`;
+     }).join("")
+   : '<div class="jt-empty">Tidak ada order dengan tanggal jatuh tempo.</div>';
+}
+
+function renderAll(){
+ if(!ready)return;
+ renderRekap();
+}
+
+$("periode").onchange=renderAll;
+$("search").oninput=renderAll;
+
+$("dark").onclick=()=>{
+ document.body.classList.toggle("dark");
+ $("dark").textContent=
+   document.body.classList.contains("dark")?"☀️":"🌙";
+};
+
+async function bacaSesiIndex(){
+  try{
+    const s=window.parent===window ? window.fixzySession : window.parent.fixzySession;
+
+    if(!s){
+      notice("Menunggu data Owner/Karyawan dari INDEX...","err");
+      return false;
+    }
+
+    uid=String(s.uid||"").trim();
+    profile=s.profile||{};
+    const role=String(s.role||profile.role||"").trim().toLowerCase();
+
+    if(!uid)return false;
+
+    if(role==="owner"){
+      ownerUid=String(s.ownerUid||uid).trim();
+    }else if(["employee","karyawan","kasir","kurir","reseller"].includes(role)){
+      ownerUid=String(s.ownerUid||profile.ownerUid||profile.ownerId||"").trim();
+    }else{
+      ownerUid=String(s.ownerUid||profile.ownerUid||profile.ownerId||"").trim();
+    }
+
+    if(!ownerUid){
+      notice("Owner UID dari INDEX tidak ditemukan.","err");
+      return false;
+    }
+
+    $("email").textContent=profile.email||s.email||"-";
+
+    await loadStock();
+    await loadOrders();
+
+    ready=true;
+    renderAll();
+    notice(
+      `Akun aktif dari INDEX • ${role.toUpperCase()} • ${orders.length} order member.`,
       "ok"
     );
-
-    await loadSpreadsheet();
+    return true;
   }catch(e){
-    message("Gagal menyimpan link:\n"+e.message,"err");
-  }finally{
-    showLoading(false);
+    console.error(e);
+    notice("Gagal membaca data dari INDEX: "+e.message,"err");
+    return false;
   }
 }
 
-async function getSavedLinks(){
-  const snap=await getDoc(doc(db,"pengaturan_spreadsheet",uid));
-  if(!snap.exists())return [];
-
-  const d=snap.data()||{};
-  let links=Array.isArray(d.spreadsheetLinks)
-    ? d.spreadsheetLinks.map(x=>String(x||"").trim()).filter(Boolean)
-    : [];
-
-  // Kompatibilitas data lama: spreadsheetUrl tetap dibaca.
-  if(!links.length && d.spreadsheetUrl){
-    links=[String(d.spreadsheetUrl).trim()].filter(Boolean);
+// INDEX adalah satu-satunya halaman untuk login.
+// Rekap hanya membaca fixzySession milik INDEX.
+// Auth Firebase tetap diinisialisasi agar query Firestore memakai akun
+// Firebase yang sedang login, tetapi halaman ini tidak meminta login.
+let percobaan=0;
+const tungguIndex=setInterval(async()=>{
+  percobaan++;
+  if(await bacaSesiIndex()){
+    clearInterval(tungguIndex);
+  }else if(percobaan>=20){
+    clearInterval(tungguIndex);
   }
-
-  return [...new Set(links)];
-}
-
-async function loadSpreadsheet(){
-  if(!uid){
-    $("listMsg").textContent="Menunggu login Firebase...";
-    return;
-  }
-
-  showLoading(true,"Membaca semua Spreadsheet...");
-
-  try{
-    const links=await getSavedLinks();
-
-    if(!links.length){
-      products=[];
-      render();
-      $("listMsg").textContent="Belum ada Spreadsheet yang dihubungkan.";
-      return;
-    }
-
-    // Tampilkan kembali link yang tersimpan.
-    $("linkRows").innerHTML="";
-    $("linkRows").style.display="grid";
-    links.forEach(link=>addLinkRow(link));
-
-    const results=[];
-    const errors=[];
-
-    for(let i=0;i<links.length;i++){
-      try{
-        const rows=await readSheet(links[i]);
-
-        // Supplier tetap mengikuti kolom supplier dari masing-masing Spreadsheet.
-        // Jika suatu sheet tidak mengisi supplier, gunakan label sumber sheet.
-        const sourceLabel=`Spreadsheet ${i+1}`;
-
-        rows.forEach(p=>{
-          if(!p.supplier)p.supplier=sourceLabel;
-          p.sourceSpreadsheet=links[i];
-          p.sourceIndex=i+1;
-          results.push(p);
-        });
-      }catch(e){
-        errors.push(`Spreadsheet ${i+1}: ${e.message}`);
-      }
-    }
-
-    products=results;
-    render();
-
-    if(errors.length){
-      $("listMsg").textContent=
-        `Berhasil membaca ${results.length} produk dari ${links.length} Spreadsheet, `+
-        `tetapi ada ${errors.length} link yang gagal dibaca.\n`+
-        errors.join("\n");
-      message(
-        "Sebagian Spreadsheet gagal dibaca:\n"+errors.join("\n")+
-        "\n\nPastikan setiap Spreadsheet sudah dipublish sebagai CSV dan dapat dibuka tanpa login.",
-        "err"
-      );
-    }else{
-      $("listMsg").textContent=
-        `Semua ${links.length} Spreadsheet berhasil dibaca. `+
-        `${results.length} produk digabung dalam satu daftar. `+
-        "Data tetap dibaca langsung dari Spreadsheet.";
-    }
-  }catch(e){
-    products=[];
-    render();
-    $("listMsg").textContent="Gagal membaca Spreadsheet: "+e.message;
-    message("Gagal membaca data:\n"+e.message,"err");
-  }finally{
-    showLoading(false);
-  }
-}
-
-function render(){
-  const q=$("search").value.toLowerCase().trim();
-  const arr=products.filter(p=>[p.nama,p.supplier,p.kode].join(" ").toLowerCase().includes(q));
-  $("count").textContent=`${arr.length} produk`;
-  $("tbody").innerHTML=arr.map(rowHTML).join("")||'<tr><td colspan="5" style="text-align:center;padding:25px;color:#777">Tidak ada produk.</td></tr>';
-  $("mobileList").innerHTML=arr.map(mobileHTML).join("")||'<div class="sub">Tidak ada produk.</div>';
-}
-function rowHTML(p){
-  return `<tr>
-    <td><b>${esc(p.nama)}</b><div style="font-size:9px;color:#94a3b8">${esc(p.kode||"")}</div></td>
-    <td class="supplier">${esc(p.supplier||"-")}</td>
-    <td class="price">${money(p.modal)}</td>
-    <td class="price">${money(p.jual)}</td>
-    <td>${p.stok}</td>
-  </tr>`;
-}
-function mobileHTML(p){
-  return `<div class="m-card">
-    <div class="m-name">${esc(p.nama)}</div><div style="font-size:9px;color:#94a3b8">${esc(p.supplier||"-")}</div>
-    <div class="m-grid"><div><b>Harga Tunai</b><span class="price">${money(p.modal)}</span></div><div><b>Harga Tempo</b><span class="price">${money(p.jual)}</span></div><div><b>Stok</b>${p.stok}</div><div><b>Kode</b>${esc(p.kode||"-")}</div></div>
-  </div>`;
-}
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-$("search").addEventListener("input",render);
-onAuthStateChanged(auth,async user=>{
-  if(!user){
-    message("Session akun FIXZY belum aktif. Halaman ini tidak meminta login ulang. Buka Halaman 1 dari aplikasi FIXZY yang sudah login.","err");
-    return;
-  }
-  uid=user.uid;
-  const akunInfo=user.email ? `Akun aktif: ${user.email}` : `Akun aktif: ${user.uid}`;
-  $("saved").style.display="block";
-  $("saved").textContent=akunInfo;
-  const links=await getSavedLinks().catch(()=> []);
-  if(links.length){
-    $("linkRows").innerHTML="";
-    $("linkRows").style.display="grid";
-    links.forEach(link=>addLinkRow(link));
-    $("saved").style.display="block";
-    $("saved").textContent=`${links.length} Spreadsheet tersimpan`;
-    loadSpreadsheet();
-  }
-});
-window.saveSpreadsheet=saveSpreadsheet;window.loadSpreadsheet=loadSpreadsheet;
-</script>
-</body>
-</html>
+},300);
+bacaSesiIndex();
+</script></body></html>
