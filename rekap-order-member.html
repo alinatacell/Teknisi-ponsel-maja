@@ -179,14 +179,8 @@ function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
  return a.map(x=>{
   const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
-  const rawTabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
-  const rawUp=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0);
-
-  // UP Pengelola mengikuti PCS yang benar-benar dikenai iuran.
-  // Jika Tabungan/pcs = 0, PCS tersebut tidak ikut dihitung sebagai PCS iuran.
-  const tabungan=rawTabungan;
-  const up=rawTabungan>0 ? rawUp : 0;
-
+  const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0);
+  const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
   const hargaAwal=basePriceOfItem(x,r);
   const diskon=Math.max(0,Number(x.diskon??x.discount??0)||0);
   const nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
@@ -194,68 +188,13 @@ function itemList(r){
  });
 }
 
-function firstPositive(...vals){
- for(const v of vals){
-  const n=Number(v);
-  if(Number.isFinite(n)&&n>0)return n;
- }
- return 0;
-}
-function kasOf(r){
- const src=r._paymentSource||{};
- return firstPositive(
-  r.kasBulanan,r.uangKasBulanan,r.kasBulananMember,r.uangKas,
-  src.kasBulanan,src.uangKasBulanan,src.kasBulananMember,src.uangKas
- );
-}
-function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??r.uangMuka??0)||0)}
-
-/* RINCIAN RESMI ORDER MEMBER
-   Untuk order yang sudah APPROVED, rincian diambil dari order_member.items.
-   _paymentSource hanya menjadi FALLBACK jika field rincian memang kosong. */
-function detailTotalsOf(r){
- const src=r._paymentSource||{};
- const items=Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]);
- const sourceItems=Array.isArray(src.items)?src.items:(Array.isArray(src.produkList)?src.produkList:[]);
- let nilai=0,up=0,tab=0;
- items.forEach((x,i)=>{
-  const si=sourceItems[i]||{};
-  const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??si.qty??1)||0);
-  const hargaDasar=firstPositive(x.hargaAwal,x.hargaDasar,si.hargaAwal,si.hargaDasar);
-  const diskon=Math.max(0,Number(x.diskon??x.discount??si.diskon??si.discount??0)||0);
-  if(hargaDasar>0)nilai+=Math.max(0,hargaDasar*qty-diskon);
-  up+=firstPositive(
-    x.upPengelolaPerPcs,x.upPengelola, x.upPengelolaPcs,x.upPerPcs, x.up,
-    si.upPengelolaPerPcs,si.upPengelola,si.upPengelolaPcs,si.upPerPcs,si.up
-  )*qty;
-  tab+=firstPositive(
-    x.tabunganPerPcs,x.tabungan, x.tabunganPcs,x.tabunganPerItem,
-    si.tabunganPerPcs,si.tabungan,si.tabunganPcs,si.tabunganPerItem
-  )*qty;
- });
- const agg=(keys)=>firstPositive(...keys.flatMap(k=>[r[k],src[k]]));
- const totalNilai=agg([
-  "totalNilaiBarang","nilaiBarangTotal","totalNilaiProduk"
- ]);
- const totalUp=agg([
-  "totalUPPengelola","totalUpPengelola","upPengelolaTotal","totalUP","totalUp"
- ]);
- const totalTab=agg([
-  "totalTabunganMember","totalTabungan","tabunganMemberTotal","tabunganTotal"
- ]);
- return {
-  nilai: nilai>0?nilai:totalNilai,
-  up: up>0?up:totalUp,
-  tab: tab>0?tab:totalTab
- };
-}
-
+function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
+function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
 function calculateOrder(r){
  const items=itemList(r);
- const d=detailTotalsOf(r);
- const nilaiBarang=d.nilai;
- const up=d.up;
- const tabungan=d.tab;
+ const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
+ const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
+ const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
  const kas=kasOf(r);
  const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
  const paid=paidOf(r);
@@ -263,6 +202,7 @@ function calculateOrder(r){
  const sisa=cash?0:Math.max(0,totalTagihan-paid);
  return{items,nilaiBarang,up,tabungan,kas,totalTagihan,paid,sisa,cash};
 }
+
 function dueDate(r){
  if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
@@ -330,81 +270,35 @@ async function loadOrders(){
  }
  const arr=[...map.values()];
  await Promise.all(arr.map(async x=>{
-   let p=null;
-   const sid=String(x.sourcePenjualanId||"").trim();
-   try{
-     // 1. Cara utama: sourcePenjualanId.
-     if(sid){
-       const ps=await getDoc(doc(db,"penjualan",sid));
-       if(ps.exists())p=ps.data()||{};
-     }
-     // 2. Untuk approval lama yang tidak membawa sourcePenjualanId,
-     //    cari penjualan berdasarkan nomor nota.
-     if(!p && x.nomorNota){
-       for(const field of ["nomorNota","orderMemberId"]){
-         try{
-           const q=field==="nomorNota"
-             ? query(collection(db,"penjualan"),where(field,"==",x.nomorNota))
-             : query(collection(db,"penjualan"),where(field,"==",x.id));
-           const ss=await getDocs(q);
-           const hit=ss.docs.find(d=>{
-             const z=d.data()||{},own=String(z.ownerUid||z.ownerId||"").trim();
-             return !own||own===ownerUid;
-           });
-           if(hit){p=hit.data()||{};x.sourcePenjualanId=hit.id;break;}
-         }catch(e){console.warn("Fallback penjualan",field,x.id,e?.message||e);}
-       }
-     }
-     if(!p)return;
-     const own=String(p.ownerUid||p.ownerId||"").trim();
-     if(own&&own!==ownerUid)return;
-     x._paymentSource=p;
-
-     const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
-     const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
-
-     // Cocokkan item dengan beberapa kunci. Ini penting untuk data lama yang
-     // mempunyai produkId berbeda tetapi kode/nama sama.
-     const norm=v=>String(v??"").trim().toLowerCase();
-     const keysOf=o=>[o?.produkId,o?.id,o?.kode,o?.kodeProduk,o?.sku,o?.nama,o?.namaProduk].map(norm).filter(Boolean);
-     const findSource=oi=>{
-       const ok=new Set(keysOf(oi));
-       return sourceItems.find(si=>keysOf(si).some(k=>ok.has(k)))||null;
+  const sid=String(x.sourcePenjualanId||"").trim();
+  if(!sid)return;
+  try{
+   const ps=await getDoc(doc(db,"penjualan",sid));
+   if(!ps.exists())return;
+   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();
+   if(own&&own!==ownerUid)return;
+   x._paymentSource=p;
+   const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
+   const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
+   if(sourceItems.length){
+    const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));
+    x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{
+     const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};
+     return{
+      ...si,...oi,
+      upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,
+      tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0
      };
-
-     if(sourceItems.length){
-       const base=orderItems.length?orderItems:sourceItems;
-       x.items=base.map((oi,idx)=>{
-         const si=findSource(oi)||sourceItems[idx]||{};
-         const positive=(...vals)=>{
-           for(const v of vals){const n=Number(v);if(Number.isFinite(n)&&n>0)return n;}
-           return 0;
-         };
-         return {
-           ...si,...oi,
-           // order_member adalah sumber utama. Source penjualan hanya fallback.
-           hargaAwal:positive(oi.hargaAwal,oi.hargaDasar,si.hargaAwal,si.hargaDasar),
-           diskon:positive(oi.diskon,oi.discount,si.diskon,si.discount),
-           upPengelolaPerPcs:positive(oi.upPengelolaPerPcs,oi.upPengelola,si.upPengelolaPerPcs,si.upPengelola),
-           tabunganPerPcs:positive(oi.tabunganPerPcs,oi.tabungan,si.tabunganPerPcs,si.tabungan)
-         };
-       });
-     }
-
-     // Salin agregat sumber bila order_member lama belum memilikinya.
-     for(const k of [
-       "totalNilaiBarang","totalUPPengelola","totalUpPengelola",
-       "totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan",
-       "kasBulananMember","uangKas"
-     ]){
-       const xv=Number(x[k]);
-       const pv=Number(p[k]);
-       if((!Number.isFinite(xv)||xv===0)&&Number.isFinite(pv)&&pv!==0)x[k]=p[k];
-     }
-   }catch(e){console.warn("Sinkron rincian order",x.id,e?.message||e);}
+    });
+   }
+   for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){
+    if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k];
+   }
+  }catch(e){console.warn("Sinkron pembayaran order",x.id,e.message);}
  }));
  orders=arr;
 }
+
 function kasMemberMonthKey(r){
  const m=r.member||r.pelanggan||{};
  const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
@@ -419,174 +313,103 @@ function renderRekap(){
  const search=$("search").value.trim().toLowerCase();
  const data=orders.filter(inPeriod).filter(r=>{
   const m=r.member||r.pelanggan||{};
-  return!search||
+  return !search||
     String(r.nomorNota||r.id||"").toLowerCase().includes(search)||
     String(m.nama||"").toLowerCase().includes(search);
  });
 
+ // =========================================================
+ // SATU SUMBER PERHITUNGAN
+ // Setiap order dihitung SEKALI. Setelah itu hasil yang sama
+ // dipakai untuk tabel utama dan pengelompokan jatuh tempo.
+ // Tabungan/UP selalu mengikuti order tersebut, jadi tempo 17
+ // tidak mengambil atau mencampur nominal dari tempo 31.
+ // =========================================================
+ const calcRows=data.map(r=>({r,calc:calculateOrder(r),due:dueDate(r),kasKey:kasMemberMonthKey(r)}));
+
  let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
 
- // Kas bulanan tetap hanya dihitung satu kali untuk setiap member + bulan.
+ // Kas bulanan hanya sekali untuk member + bulan.
  const kasBulananMap=new Map();
-
- data.forEach(r=>{
-  const raw=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0;
-  const key=kasMemberMonthKey(r);
-  const prev=kasBulananMap.get(key)||0;
-  if(raw>prev)kasBulananMap.set(key,raw);
+ calcRows.forEach(({r,kasKey})=>{
+   const raw=Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas));
+   if(raw>(kasBulananMap.get(kasKey)||0))kasBulananMap.set(kasKey,raw);
  });
 
- const kasSudahDitampilkan=new Set();
+ const kasAssigned=new Set();
+ const rows=calcRows.map(({r,calc,due,kasKey})=>{
+  const q=calc.items.reduce((a,x)=>a+x.qty,0);
+  const kasRow=!kasAssigned.has(kasKey)?(kasBulananMap.get(kasKey)||calc.kas):0;
+  kasAssigned.add(kasKey);
 
- const rows=data.map(r=>{
-  const calc=calculateOrder(r);
-  const items=calc.items;
-  const q=items.reduce((a,x)=>a+x.qty,0);
-  const value=calc.nilaiBarang;
-  const upRow=calc.up;
-  const tabRow=calc.tabungan;
-  const cash=calc.cash;
-  const kasKey=kasMemberMonthKey(r);
-  const kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
-  kasSudahDitampilkan.add(kasKey);
-  // Satu-satunya rumus tagihan yang dipakai Rekap.
-  const totalTagihanAwal=value+upRow+tabRow+kasRow;
-  const paid=calc.paid;
-  const sisa=cash?0:Math.max(0,totalTagihanAwal-paid);
-  // Total Sisa Tagihan harus merupakan penjumlahan seluruh baris yang tampil.
+  const totalTagihanAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
+  const sisa=calc.cash?0:Math.max(0,totalTagihanAwal-calc.paid);
+
+  qty+=q;
+  nilai+=calc.nilaiBarang;
+  up+=calc.up;
+  tabungan+=calc.tabungan;
+  kas+=kasRow;
   sisaTotal+=sisa;
-  qty+=q; nilai+=value; up+=upRow; tabungan+=tabRow; kas+=kasRow;
 
   const m=r.member||r.pelanggan||{};
-  const due=dueDate(r);
   const st=sisa<=0?"lunas":"tagihan";
-  const jenis=cash?"CASH":"TEMPO";
+  const jenis=calc.cash?"CASH":"TEMPO";
 
   return `<tr>
     <td><b>${esc(r.nomorNota||r.id)}</b></td>
     <td>${esc(m.nama||"-")}</td>
-    <td><span class="badge ${cash?"lunas":"tagihan"}">${jenis}</span></td>
+    <td><span class="badge ${calc.cash?"lunas":"tagihan"}">${jenis}</span></td>
     <td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td>
     <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
     <td class="num">${q.toLocaleString("id-ID")}</td>
-    <td class="num">${rp(value)}</td>
-    <td class="num">${rp(upRow)}</td>
-    <td class="num">${rp(tabRow)}</td>
+    <td class="num">${rp(calc.nilaiBarang)}</td>
+    <td class="num">${rp(calc.up)}</td>
+    <td class="num">${rp(calc.tabungan)}</td>
     <td class="num">${rp(kasRow)}</td>
     <td class="num">${rp(sisa)}</td>
   </tr>`;
  }).join("");
 
-
- // Pisahkan sisa tagihan berdasarkan tanggal jatuh tempo.
- const jatuhTempoMap=new Map();
- const kasJtShown=new Set();
- data.forEach(r=>{
-   const calc=calculateOrder(r);
-   const kasKey=kasMemberMonthKey(r);
-   const kasRow=!kasJtShown.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
-   kasJtShown.add(kasKey);
-   const totalTagihanAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
-   const sisa=calc.cash?0:Math.max(0,totalTagihanAwal-calc.paid);
-   if(sisa<=0)return;
-
-   const due=dueDate(r);
-   const key=due
-     ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
-     : "tanpa-tanggal";
-
-   const old=jatuhTempoMap.get(key)||{date:due,total:0,count:0};
-   old.total+=sisa;
-   old.count++;
-   jatuhTempoMap.set(key,old);
- });
-
- const jtRows=[...jatuhTempoMap.values()].sort((a,b)=>{
-   if(!a.date&&!b.date)return 0;
-   if(!a.date)return 1;
-   if(!b.date)return -1;
-   return a.date-b.date;
- });
-
- $("jatuhTempoSummary").innerHTML=jtRows.length
-   ? jtRows.map(x=>{
-       const label=x.date
-         ? x.date.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"})
-         : "Tanggal belum diisi";
-       return `<div class="jt-item">
-         <div class="jt-date">JATUH TEMPO ${esc(label)}</div>
-         <div class="jt-nominal">${rp(x.total)}</div>
-         <div class="jt-count">${x.count} order</div>
-       </div>`;
-     }).join("")
-   : '<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
-
- $("totalNilaiBarang").textContent=rp(nilai);
- $("totalPengelola").textContent=rp(up);
- $("totalTabungan").textContent=rp(tabungan);
- $("totalKas").textContent=rp(kas);
- $("sisaTotal").textContent=rp(sisaTotal);
-
- $("orderTable").innerHTML=
-   rows||
-   '<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
-
- // RINCIAN NOMINAL PANEL — dikelompokkan per tanggal jatuh tempo.
+ // =========================================================
+ // RINCIAN JATUH TEMPO
+ // Gunakan calcRows yang sama seperti tabel utama.
+ // Tidak ada perhitungan Tabungan kedua yang bisa mencampur
+ // order/tempo lain.
+ // =========================================================
  const panelMap=new Map();
- const panelKasShown=new Set();
+ const panelKasAssigned=new Set();
 
- // Ambil nilai kas terbesar per bulan/member, mengikuti sumber data rekap.
- const panelKasMap=new Map();
- data.forEach(r=>{
-   const k=kasMemberMonthKey(r);
-   const raw=num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas);
-   if(raw>(panelKasMap.get(k)||0))panelKasMap.set(k,raw);
- });
-
- data.forEach(r=>{
-   const calc=calculateOrder(r);
+ calcRows.forEach(({r,calc,due,kasKey})=>{
    if(calc.cash)return;
 
-   const kasKey=kasMemberMonthKey(r);
-   const kasRow=!panelKasShown.has(kasKey)
-      ? (panelKasMap.get(kasKey)||calc.kas)
+   const kasRow=!panelKasAssigned.has(kasKey)
+      ? (kasBulananMap.get(kasKey)||calc.kas)
       : 0;
-   panelKasShown.add(kasKey);
+   panelKasAssigned.add(kasKey);
 
    const nilai=num(calc.nilaiBarang);
-   const up=num(calc.up);
+   const upNominal=num(calc.up);
    const tab=num(calc.tabungan);
-   const kas=num(kasRow);
-   const totalTambahan=up+tab+kas;
+   const kasNominal=num(kasRow);
+   const totalTambahan=upNominal+tab+kasNominal;
    const totalAwal=nilai+totalTambahan;
    const sisa=Math.max(0,totalAwal-num(calc.paid));
-
    if(sisa<=0)return;
 
-   const due=dueDate(r);
    const key=due
       ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
       : "tanpa-tanggal";
 
    if(!panelMap.has(key)){
-     panelMap.set(key,{
-       due,
-       nilai:0,
-       up:0,
-       tab:0,
-       kas:0,
-       tambahan:0,
-       tagihan:0,
-       orders:0,
-       pcs:0
-     });
+     panelMap.set(key,{due,nilai:0,up:0,tab:0,kas:0,tambahan:0,tagihan:0,orders:0,pcs:0});
    }
 
    const g=panelMap.get(key);
    g.nilai+=nilai;
-   g.up+=up;
+   g.up+=upNominal;
    g.tab+=tab;
-   g.kas+=kas;
+   g.kas+=kasNominal;
    g.tambahan+=totalTambahan;
    g.tagihan+=sisa;
    g.orders++;
@@ -599,6 +422,14 @@ function renderRekap(){
    return a.due-b.due;
  });
 
+ $("totalNilaiBarang").textContent=rp(nilai);
+ $("totalPengelola").textContent=rp(up);
+ $("totalTabungan").textContent=rp(tabungan);
+ $("totalKas").textContent=rp(kas);
+ $("sisaTotal").textContent=rp(sisaTotal);
+
+ $("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+
  $("jatuhTempoSummary").innerHTML=panelData.length
    ? panelData.map(g=>{
        const tanggal=g.due
@@ -607,42 +438,16 @@ function renderRekap(){
 
        return `<div class="jt-card">
          <div class="jt-date">📅 ${esc(tanggal)}</div>
-
-         <div class="jt-row">
-           <span>Nilai Barang</span>
-           <b>${rp(g.nilai)}</b>
-         </div>
-
-         <div class="jt-row jt-extra">
-           <span>UP Pengelola</span>
-           <b>${rp(g.up)}</b>
-         </div>
-
-         <div class="jt-row">
-           <span>Tabungan Member</span>
-           <b>${rp(g.tab)}</b>
-         </div>
-
-         <div class="jt-row">
-           <span>Uang Kas</span>
-           <b>${rp(g.kas)}</b>
-         </div>
-
-         <div class="jt-row jt-extra">
-           <span>Total Tambahan</span>
-           <b>${rp(g.tambahan)}</b>
-         </div>
-
-         <div class="jt-row jt-total">
-           <span>Total Tagihan</span>
-           <b>${rp(g.tagihan)}</b>
-         </div>
-
+         <div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div>
+         <div class="jt-row jt-extra"><span>UP Pengelola</span><b>${rp(g.up)}</b></div>
+         <div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div>
+         <div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div>
+         <div class="jt-row jt-extra"><span>Total Tambahan</span><b>${rp(g.tambahan)}</b></div>
+         <div class="jt-row jt-total"><span>Total Tagihan</span><b>${rp(g.tagihan)}</b></div>
          <div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div>
        </div>`;
      }).join("")
    : '<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
-
 }
 
 function renderAll(){
