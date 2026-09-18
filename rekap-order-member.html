@@ -40,6 +40,20 @@ body.dark .jt-title{border-color:#475569}
 body.dark .jt-item{background:#292211;border-color:#475569}
 body.dark .jt-item .jt-date{color:#fbbf24}
 body.dark .jt-item .jt-nominal{color:#f59e0b}
+
+.jt-card{border:2px solid #111827;border-radius:10px;padding:12px;background:#fffbeb;min-width:0}
+.jt-date{font-size:12px;font-weight:900;color:#92400e;margin-bottom:3px}
+.jt-tempo{font-size:10px;font-weight:900;color:#64748b;margin-bottom:8px}
+.jt-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:11px;border-bottom:1px dashed #d1d5db}
+.jt-row span{color:#475569}
+.jt-row b{white-space:nowrap}
+.jt-total{border-bottom:0;border-top:2px solid #111827;margin-top:4px;padding-top:8px;font-weight:900}
+.jt-foot{font-size:10px;color:#64748b;margin-top:8px}
+body.dark .jt-card{background:#292211;border-color:#475569}
+body.dark .jt-date{color:#fbbf24}
+body.dark .jt-row{border-color:#475569}
+body.dark .jt-row span,body.dark .jt-tempo,body.dark .jt-foot{color:#9ca3af}
+
 @media(max-width:650px){.jt-grid{grid-template-columns:1fr 1fr}.jt-item:last-child:nth-child(odd){grid-column:1/-1}}
 
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
@@ -319,107 +333,115 @@ function renderRekap(){
  });
 
  // =========================================================
- // SATU SUMBER PERHITUNGAN
- // Setiap order dihitung SEKALI. Setelah itu hasil yang sama
- // dipakai untuk tabel utama dan pengelompokan jatuh tempo.
- // Tabungan/UP selalu mengikuti order tersebut, jadi tempo 17
- // tidak mengambil atau mencampur nominal dari tempo 31.
+ // SATU SUMBER DATA PER ORDER
+ // Setiap order dihitung sekali, lalu hasil yang sama dipakai
+ // untuk tabel dan panel jatuh tempo. Tidak ada hitung ulang.
  // =========================================================
- const calcRows=data.map(r=>({r,calc:calculateOrder(r),due:dueDate(r),kasKey:kasMemberMonthKey(r)}));
+ const calcRows=data.map(r=>({
+   r,
+   calc:calculateOrder(r),
+   due:dueDate(r),
+   kasKey:kasMemberMonthKey(r)
+ }));
 
- let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
-
- // Kas bulanan hanya sekali untuk member + bulan.
+ // Kas bulanan: satu kali per MEMBER + BULAN, bukan per tempo.
  const kasBulananMap=new Map();
  calcRows.forEach(({r,kasKey})=>{
    const raw=Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas));
    if(raw>(kasBulananMap.get(kasKey)||0))kasBulananMap.set(kasKey,raw);
  });
 
+ // Tentukan nilai Kas yang benar satu kali, lalu simpan hasil finalnya.
  const kasAssigned=new Set();
- const rows=calcRows.map(({r,calc,due,kasKey})=>{
-  const q=calc.items.reduce((a,x)=>a+x.qty,0);
-  const kasRow=!kasAssigned.has(kasKey)?(kasBulananMap.get(kasKey)||calc.kas):0;
-  kasAssigned.add(kasKey);
+ const viewRows=calcRows.map(({r,calc,due,kasKey})=>{
+   const kasRow=!kasAssigned.has(kasKey)
+      ? (kasBulananMap.get(kasKey)||calc.kas)
+      : 0;
+   kasAssigned.add(kasKey);
 
-  const totalTagihanAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
-  const sisa=calc.cash?0:Math.max(0,totalTagihanAwal-calc.paid);
+   const qty=calc.items.reduce((a,x)=>a+num(x.qty),0);
+   const totalAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
+   const sisa=calc.cash?0:Math.max(0,totalAwal-calc.paid);
 
-  qty+=q;
-  nilai+=calc.nilaiBarang;
-  up+=calc.up;
-  tabungan+=calc.tabungan;
-  kas+=kasRow;
-  sisaTotal+=sisa;
+   return {r,calc,due,kasKey,qty,kasRow,totalAwal,sisa};
+ });
 
-  const m=r.member||r.pelanggan||{};
-  const st=sisa<=0?"lunas":"tagihan";
-  const jenis=calc.cash?"CASH":"TEMPO";
+ let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
+ const rows=viewRows.map(v=>{
+   qty+=v.qty;
+   nilai+=v.calc.nilaiBarang;
+   up+=v.calc.up;
+   tabungan+=v.calc.tabungan;
+   kas+=v.kasRow;
+   sisaTotal+=v.sisa;
 
-  return `<tr>
-    <td><b>${esc(r.nomorNota||r.id)}</b></td>
+   const m=v.r.member||v.r.pelanggan||{};
+   const st=v.sisa<=0?"lunas":"tagihan";
+   const jenis=v.calc.cash?"CASH":"TEMPO";
+
+   return `<tr>
+    <td><b>${esc(v.r.nomorNota||v.r.id)}</b></td>
     <td>${esc(m.nama||"-")}</td>
-    <td><span class="badge ${calc.cash?"lunas":"tagihan"}">${jenis}</span></td>
+    <td><span class="badge ${v.calc.cash?"lunas":"tagihan"}">${jenis}</span></td>
     <td><span class="badge ${st}">${st==="lunas"?"LUNAS":"TAGIHAN"}</span></td>
-    <td>${due?due.toLocaleDateString("id-ID"):"-"}</td>
-    <td class="num">${q.toLocaleString("id-ID")}</td>
-    <td class="num">${rp(calc.nilaiBarang)}</td>
-    <td class="num">${rp(calc.up)}</td>
-    <td class="num">${rp(calc.tabungan)}</td>
-    <td class="num">${rp(kasRow)}</td>
-    <td class="num">${rp(sisa)}</td>
+    <td>${v.due?v.due.toLocaleDateString("id-ID"):"-"}</td>
+    <td class="num">${v.qty.toLocaleString("id-ID")}</td>
+    <td class="num">${rp(v.calc.nilaiBarang)}</td>
+    <td class="num">${rp(v.calc.up)}</td>
+    <td class="num">${rp(v.calc.tabungan)}</td>
+    <td class="num">${rp(v.kasRow)}</td>
+    <td class="num">${rp(v.sisa)}</td>
   </tr>`;
  }).join("");
 
  // =========================================================
- // RINCIAN JATUH TEMPO
- // Gunakan calcRows yang sama seperti tabel utama.
- // Tidak ada perhitungan Tabungan kedua yang bisa mencampur
- // order/tempo lain.
+ // PANEL JATUH TEMPO — TIDAK BOLEH MENGGABUNG TEMPO BERBEDA
+ // Kunci grup = tempoHari + tanggal jatuh tempo.
+ // Contoh: Tempo 17 / 17-10-2026 berbeda dari Tempo 31 / 31-10-2026.
  // =========================================================
  const panelMap=new Map();
- const panelKasAssigned=new Set();
+ viewRows.forEach(v=>{
+   if(v.calc.cash || v.sisa<=0)return;
 
- calcRows.forEach(({r,calc,due,kasKey})=>{
-   if(calc.cash)return;
-
-   const kasRow=!panelKasAssigned.has(kasKey)
-      ? (kasBulananMap.get(kasKey)||calc.kas)
-      : 0;
-   panelKasAssigned.add(kasKey);
-
-   const nilai=num(calc.nilaiBarang);
-   const upNominal=num(calc.up);
-   const tab=num(calc.tabungan);
-   const kasNominal=num(kasRow);
-   const totalTambahan=upNominal+tab+kasNominal;
-   const totalAwal=nilai+totalTambahan;
-   const sisa=Math.max(0,totalAwal-num(calc.paid));
-   if(sisa<=0)return;
-
-   const key=due
+   const tempoHari=Math.max(0,Number(v.r.tempoHari||0)||0);
+   const due=v.due;
+   const tanggalKey=due
       ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
       : "tanpa-tanggal";
+   const key=`${tempoHari}|${tanggalKey}`;
 
    if(!panelMap.has(key)){
-     panelMap.set(key,{due,nilai:0,up:0,tab:0,kas:0,tambahan:0,tagihan:0,orders:0,pcs:0});
+     panelMap.set(key,{
+       due,
+       tempoHari,
+       nilai:0,
+       up:0,
+       tab:0,
+       kas:0,
+       tambahan:0,
+       tagihan:0,
+       orders:0,
+       pcs:0
+     });
    }
 
    const g=panelMap.get(key);
-   g.nilai+=nilai;
-   g.up+=upNominal;
-   g.tab+=tab;
-   g.kas+=kasNominal;
-   g.tambahan+=totalTambahan;
-   g.tagihan+=sisa;
+   g.nilai+=num(v.calc.nilaiBarang);
+   g.up+=num(v.calc.up);
+   g.tab+=num(v.calc.tabungan);
+   g.kas+=num(v.kasRow);
+   g.tambahan+=num(v.calc.up)+num(v.calc.tabungan)+num(v.kasRow);
+   g.tagihan+=num(v.sisa);
    g.orders++;
-   g.pcs+=calc.items.reduce((a,x)=>a+num(x.qty),0);
+   g.pcs+=v.qty;
  });
 
  const panelData=[...panelMap.values()].sort((a,b)=>{
+   if(!a.due&&!b.due)return a.tempoHari-b.tempoHari;
    if(!a.due)return 1;
    if(!b.due)return -1;
-   return a.due-b.due;
+   const d=a.due-b.due;
+   return d!==0?d:a.tempoHari-b.tempoHari;
  });
 
  $("totalNilaiBarang").textContent=rp(nilai);
@@ -435,14 +457,17 @@ function renderRekap(){
        const tanggal=g.due
          ? g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})
          : "Tanpa Tanggal Jatuh Tempo";
+       const tempoLabel=g.tempoHari>0?`TEMPO ${g.tempoHari} HARI`:`TEMPO`;
 
        return `<div class="jt-card">
          <div class="jt-date">📅 ${esc(tanggal)}</div>
+         <div class="jt-tempo">${esc(tempoLabel)}</div>
+
          <div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div>
-         <div class="jt-row jt-extra"><span>UP Pengelola</span><b>${rp(g.up)}</b></div>
+         <div class="jt-row"><span>UP Pengelola</span><b>${rp(g.up)}</b></div>
          <div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div>
          <div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div>
-         <div class="jt-row jt-extra"><span>Total Tambahan</span><b>${rp(g.tambahan)}</b></div>
+         <div class="jt-row"><span>Total Tambahan</span><b>${rp(g.tambahan)}</b></div>
          <div class="jt-row jt-total"><span>Total Tagihan</span><b>${rp(g.tagihan)}</b></div>
          <div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div>
        </div>`;
