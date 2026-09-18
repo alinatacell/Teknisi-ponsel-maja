@@ -337,7 +337,6 @@ function calculateOrder(r){
 }
 
 function dueDate(r){
- if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
  if(!raw)return null;
  if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
