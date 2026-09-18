@@ -60,7 +60,7 @@ body.dark .jt-row span,body.dark .jt-tempo,body.dark .jt-foot{color:#9ca3af}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:680px}
+  table{min-width:760px}
   th,td{padding:8px 7px;font-size:10px}
   th{font-size:9px}
   .rekap-rincian{grid-template-columns:1fr 1fr}
@@ -137,7 +137,7 @@ body.dark td{border-color:#334155}
     <div class="jt-empty">Memuat...</div>
   </div>
 </div>
-<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Pembayaran</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="12" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -264,69 +264,56 @@ function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
  const src=r._paymentSource||{};
  const sourceItems=Array.isArray(src.items)?src.items:(Array.isArray(src.produkList)?src.produkList:[]);
- const has=(obj,k)=>obj && Object.prototype.hasOwnProperty.call(obj,k) &&
-   obj[k]!==undefined && obj[k]!==null && obj[k]!=="";
- const numv=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+ const has=(o,k)=>o && Object.prototype.hasOwnProperty.call(o,k) &&
+   o[k]!==undefined && o[k]!==null && o[k]!=="";
+ const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
 
  return a.map((x,i)=>{
   const si=sourceItems[i]||{};
   const item={...si,...x};
-  const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
+  const qty=Math.max(0,n(item.qty??item.jumlah??item.quantity??0));
 
-  // Tabungan dan UP selalu milik item/order tersebut.
-  const up=Math.max(0,
-    has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
-    has(item,"upPengelola")?numv(item.upPengelola):
-    has(r,"upPengelolaPerPcs")?numv(r.upPengelolaPerPcs):
-    has(r,"upPengelola")?numv(r.upPengelola):0
-  );
-
-  const totalTabStored =
-    has(item,"totalTabunganMember") ? numv(item.totalTabunganMember) :
-    has(item,"totalTabungan") ? numv(item.totalTabungan) :
-    has(r,"totalTabunganMember") ? numv(r.totalTabunganMember) :
-    has(r,"totalTabungan") ? numv(r.totalTabungan) : 0;
-
-  const tabungan=Math.max(0,
-    has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
-    has(item,"tabungan")?numv(item.tabungan):
-    (totalTabStored>0&&qty>0)?totalTabStored/qty:
-    has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
-    has(r,"tabungan")?numv(r.tabungan):0
-  );
-
-  const diskon=Math.max(0,numv(item.diskon??item.discount??0));
-  const norm=normalisasiHargaMember(item,r,si);
-
+  // NILAI BARANG:
+  // Pakai nilai barang yang memang tersimpan di order_member.
+  // Jangan mengambil harga stok untuk mengganti nilai yang sudah ada.
   let nilaiBarang=0;
-  let hargaAwal=0;
-
-  if(norm.hargaNormal>0){
-    // Harga stok/reload = harga asli. Jangan tambahkan Tabungan/UP/Kas lagi.
-    hargaAwal=norm.hargaNormal;
-    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-  }else if(has(item,"nilaiBarang")){
-    // NILAI BARANG ORIGINAL dari order_member.
-    // Jangan dikurangi diskon, pembayaran, pelunasan, tabungan, UP, atau kas.
-    nilaiBarang=Math.max(0,numv(item.nilaiBarang));
-    hargaAwal=qty>0?nilaiBarang/qty:0;
+  if(has(item,"nilaiBarang")){
+    nilaiBarang=Math.max(0,n(item.nilaiBarang));
+  }else if(has(item,"nilaiBarangAsli")){
+    nilaiBarang=Math.max(0,n(item.nilaiBarangAsli));
+  }else if(has(item,"hargaDasar")){
+    nilaiBarang=Math.max(0,n(item.hargaDasar)*qty-n(item.diskon??item.discount??0));
   }else{
-    // Tidak ada harga stok: hanya di sini harga Firebase boleh diuraikan.
-    hargaAwal=basePriceOfItem(item,r);
-    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+    // Hanya fallback bila order_member memang tidak mempunyai nilai barang.
+    const norm=normalisasiHargaMember(item,r,si);
+    if(norm.hargaNormal>0) nilaiBarang=Math.max(0,norm.hargaNormal*qty-n(item.diskon??item.discount??0));
+    else nilaiBarang=Math.max(0,basePriceOfItem(item,r)*qty-n(item.diskon??item.discount??0));
   }
+
+  // UP: bedakan field PER PCS dengan TOTAL.
+  let upPerPcs=0;
+  if(has(item,"upPengelolaPerPcs")) upPerPcs=n(item.upPengelolaPerPcs);
+  else if(has(item,"upPerPcs")) upPerPcs=n(item.upPerPcs);
+
+  // TABUNGAN: bedakan field PER PCS dengan TOTAL.
+  let tabPerPcs=0;
+  if(has(item,"tabunganPerPcs")) tabPerPcs=n(item.tabunganPerPcs);
+  else if(has(item,"tabunganPerPCS")) tabPerPcs=n(item.tabunganPerPCS);
 
   return{
     produkId:String(item.produkId||item.id||""),
     nama:String(item.nama||item.namaProduk||item.kode||item.kodeProduk||"-"),
     kode:String(item.kode||item.kodeProduk||""),
-    qty,hargaAwal,diskon,nilaiBarang,
-    upPengelolaPerPcs:up,
-    tabunganPerPcs:tabungan,
-    total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)
+    qty,
+    hargaAwal:qty?nilaiBarang/qty:0,
+    diskon:Math.max(0,n(item.diskon??item.discount??0)),
+    nilaiBarang,
+    upPengelolaPerPcs:Math.max(0,upPerPcs),
+    tabunganPerPcs:Math.max(0,tabPerPcs),
+    total:Math.max(0,nilaiBarang+upPerPcs*qty+tabPerPcs*qty)
   };
- });
 }
+
 
 function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
 function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
@@ -335,28 +322,42 @@ function calculateOrder(r){
  const items=itemList(r);
  const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
 
- // UP Pengelola: utamakan UP per-item/per-Pcs.
- // Jika data lama hanya menyimpan totalUPPengelola di level order,
- // gunakan total tersebut sekali agar tidak ada UP yang hilang/terhitung ganda.
+ // UP PENGELOLA: jika tersimpan per-PCS, jumlahkan per item.
+ // Jika tersimpan sebagai TOTAL di order_member, ambil sekali saja.
  const itemUp=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
- const hasItemUP=items.some(x=>x.upPengelolaPerPcs>0);
- const orderUPTotal=Math.max(0,num(
+ const orderUp=Math.max(0,num(
    r.totalUPPengelola ??
    r.totalUpPengelola ??
    r.totalUp ??
    r.upPengelolaTotal ??
    0
  ));
- const up=(hasItemUP || orderUPTotal<=0) ? itemUp : orderUPTotal;
+ const up=items.some(x=>x.upPengelolaPerPcs>0) ? itemUp : orderUp;
 
- const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
+ // TABUNGAN MEMBER: jika tersimpan per-PCS, jumlahkan per item.
+ // Jika tersimpan sebagai TOTAL di order_member, ambil sekali saja.
+ const itemTab=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
+ const orderTab=Math.max(0,num(
+   r.totalTabunganMember ??
+   r.totalTabungan ??
+   r.tabunganTotal ??
+   0
+ ));
+ const tabungan=items.some(x=>x.tabunganPerPcs>0) ? itemTab : orderTab;
+
+ // KAS adalah komponen terpisah dan tidak boleh masuk ke nilai barang.
  const kas=kasOf(r);
+
+ // Total tagihan = empat komponen terpisah.
  const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
+
  const paid=paidOf(r);
  const cash=isCashOrder(r);
  const sisa=cash?0:Math.max(0,totalTagihan-paid);
+
  return{items,nilaiBarang,up,tabungan,kas,totalTagihan,paid,sisa,cash};
 }
+
 
 function dueDate(r){
  if(isCashOrder(r))return null;
@@ -511,6 +512,7 @@ function renderRekap(){
     <td class="num">${rp(v.calc.up)}</td>
     <td class="num">${rp(v.calc.tabungan)}</td>
     <td class="num">${rp(v.kasRow)}</td>
+    <td class="num">${rp(v.calc.paid)}</td>
     <td class="num">${rp(v.sisa)}</td>
   </tr>`;
  }).join("");
