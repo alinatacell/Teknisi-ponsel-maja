@@ -260,66 +260,138 @@ function basePriceOfItem(x,r={}){
  return 0;
 }
 
-function itemList(r){
- const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
+
+function hasField(o,k){
+ return !!o && Object.prototype.hasOwnProperty.call(o,k) &&
+   o[k]!==undefined && o[k]!==null && o[k]!=="";
+}
+function positiveFrom(...vals){
+ for(const v of vals){
+  const n=Number(v);
+  if(Number.isFinite(n)&&n>0)return n;
+ }
+ return 0;
+}
+function memberInfo(r){
+ const m=r.member||r.pelanggan||{};
+ return {
+  tabunganPerPcs:positiveFrom(
+   m.tabunganPerPcs,m.tabunganMember,m.tabunganMemberPerPcs,
+   r.tabunganPerPcs,r.tabunganMember,r.tabunganMemberPerPcs
+  ),
+  kasBulanan:positiveFrom(
+   m.kasBulanan,m.uangKasBulanan,m.kas,
+   r.kasBulanan,r.uangKasBulanan,r.kasBulananMember,r.uangKas
+  )
+ };
+}
+function findSourceItem(r,index,item){
  const src=r._paymentSource||{};
- const sourceItems=Array.isArray(src.items)?src.items:(Array.isArray(src.produkList)?src.produkList:[]);
- const has=(obj,k)=>obj && Object.prototype.hasOwnProperty.call(obj,k) &&
-   obj[k]!==undefined && obj[k]!==null && obj[k]!=="";
- const numv=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+ const a=Array.isArray(src.items)?src.items:(Array.isArray(src.produkList)?src.produkList:[]);
+ const key=v=>String(v??"").trim().toLowerCase();
+ const keys=[item?.produkId,item?.id,item?.kode,item?.kodeProduk,item?.nama,item?.namaProduk]
+  .map(key).filter(Boolean);
+ const byKey=a.find(si=>{
+  const ks=[si?.produkId,si?.id,si?.kode,si?.kodeProduk,si?.nama,si?.namaProduk]
+   .map(key).filter(Boolean);
+  return keys.some(k=>ks.includes(k));
+ });
+ return byKey||a[index]||{};
+}
 
- return a.map((x,i)=>{
-  const si=sourceItems[i]||{};
-  const item={...si,...x};
-  const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
+function itemList(r){
+ const a=Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]);
+ const member=memberInfo(r);
 
-  // Tabungan dan UP selalu milik item/order tersebut.
-  const up=Math.max(0,
-    has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
-    has(item,"upPengelola")?numv(item.upPengelola):
-    has(r,"upPengelolaPerPcs")?numv(r.upPengelolaPerPcs):
-    has(r,"upPengelola")?numv(r.upPengelola):0
+ return a.map((raw,index)=>{
+  const sourceItem=findSourceItem(r,index,raw);
+  const item={...sourceItem,...raw};
+  const qty=Math.max(0,num(item.qty??item.jumlah??item.quantity??1));
+
+  // FIELD KUNCI DARI FIREBASE:
+  // jika order_member menyimpan 0/kosong, ambil nilai yang masih ada
+  // di penjualan.items atau data member/order.
+  const tabungan=positiveFrom(
+   item.tabunganPerPcs,
+   item.tabungan,
+   sourceItem.tabunganPerPcs,
+   sourceItem.tabungan,
+   r.tabunganPerPcs,
+   r.tabunganMember,
+   r.tabunganMemberPerPcs,
+   member.tabunganPerPcs
   );
 
-  const tabungan=Math.max(0,
-    has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
-    has(item,"tabungan")?numv(item.tabungan):
-    has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
-    has(r,"tabungan")?numv(r.tabungan):0
+  const up=positiveFrom(
+   item.upPengelolaPerPcs,
+   item.upPengelola,
+   sourceItem.upPengelolaPerPcs,
+   sourceItem.upPengelola,
+   r.upPengelolaPerPcs,
+   r.upPengelola
   );
 
-  const diskon=Math.max(0,numv(item.diskon??item.discount??0));
-  const norm=normalisasiHargaMember(item,r,si);
+  const diskon=Math.max(0,num(item.diskon??item.discount??sourceItem.diskon??0));
 
-  let nilaiBarang=0;
-  let hargaAwal=0;
+  // Nilai barang murni.
+  // Prioritas: hargaDasar tersimpan -> harga stok/modal -> harga tempo/jual
+  // -> harga gabungan dikurangi Tabungan + UP.
+  let hargaDasar=positiveFrom(
+   item.hargaDasar,
+   sourceItem.hargaDasar,
+   item.hargaAwal,
+   sourceItem.hargaAwal
+  );
 
-  if(norm.hargaNormal>0){
-    // Harga stok/reload = harga asli. Jangan tambahkan Tabungan/UP/Kas lagi.
-    hargaAwal=norm.hargaNormal;
-    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-  }else if(has(item,"nilaiBarang")){
-    // Data lama yang sudah terurai: biarkan nilaiBarang sebagaimana tersimpan.
-    nilaiBarang=Math.max(0,numv(item.nilaiBarang)-diskon);
-    hargaAwal=qty>0?nilaiBarang/qty:0;
-  }else{
-    // Tidak ada harga stok: hanya di sini harga Firebase boleh diuraikan.
-    hargaAwal=basePriceOfItem(item,r);
-    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+  if(!hargaDasar){
+   if(isCashOrder(r)){
+    hargaDasar=positiveFrom(
+     item.hargaCash,sourceItem.hargaCash,
+     item.modalSatuan,sourceItem.modalSatuan,
+     item.hargaModal,sourceItem.hargaModal
+    );
+   }else{
+    hargaDasar=positiveFrom(
+     item.hargaTempo,sourceItem.hargaTempo,
+     item.hargaJual,sourceItem.hargaJual
+    );
+   }
   }
 
+  if(!hargaDasar){
+   const hargaGabungan=positiveFrom(
+    item.hargaMemberPerPcs,
+    sourceItem.hargaMemberPerPcs,
+    item.harga,
+    sourceItem.harga,
+    r.hargaMemberPerPcs,
+    r.harga
+   );
+   if(hargaGabungan>0)hargaDasar=Math.max(0,hargaGabungan-tabungan-up);
+  }
+
+  const nilaiBarang=Math.max(0,hargaDasar*qty-diskon);
+  const totalTabungan=tabungan*qty;
+  const totalUP=up*qty;
+
   return{
-    produkId:String(item.produkId||item.id||""),
-    nama:String(item.nama||item.namaProduk||item.kode||item.kodeProduk||"-"),
-    kode:String(item.kode||item.kodeProduk||""),
-    qty,hargaAwal,diskon,nilaiBarang,
-    upPengelolaPerPcs:up,
-    tabunganPerPcs:tabungan,
-    total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)
+   ...item,
+   produkId:String(item.produkId||item.id||""),
+   nama:String(item.nama||item.namaProduk||item.kode||item.kodeProduk||"-"),
+   kode:String(item.kode||item.kodeProduk||""),
+   qty,
+   hargaAwal:hargaDasar,
+   hargaDasar,
+   diskon,
+   nilaiBarang,
+   upPengelolaPerPcs:up,
+   tabunganPerPcs:tabungan,
+   totalTabungan,
+   totalUP,
+   total:Math.max(0,nilaiBarang+totalTabungan+totalUP)
   };
  });
 }
-
 function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
 function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
 
@@ -337,6 +409,7 @@ function calculateOrder(r){
 }
 
 function dueDate(r){
+ if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
  if(!raw)return null;
  if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
@@ -430,7 +503,8 @@ async function loadOrders(){
     });
    }
    for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){
-    if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k];
+    const cur=Number(x[k]), srcVal=Number(p[k]);
+    if((!Number.isFinite(cur)||cur<=0)&&Number.isFinite(srcVal)&&srcVal>0)x[k]=p[k];
    }
   }catch(e){console.warn("Sinkron pembayaran order",x.id,e.message);}
  }));
