@@ -313,14 +313,14 @@ async function loadOrders(){
  orders=arr;
 }
 
-function kasMemberMonthKey(r){
+function kasMemberDueKey(r){
  const m=r.member||r.pelanggan||{};
  const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
- const raw=r.approvedAt||r.createdAt||r.tanggal||r.tanggalOrder||r.waktu||"";let d=null;
- if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
- else if(raw){const x=new Date(raw);if(!isNaN(x.getTime()))d=x;}
- const ym=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`:"tanpa-bulan";
- return memberId+"|"+ym;
+ const due=dueDate(r);
+ const dueKey=due
+   ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
+   : "tanpa-tanggal";
+ return memberId+"|"+dueKey;
 }
 
 function renderRekap(){
@@ -341,10 +341,10 @@ function renderRekap(){
    r,
    calc:calculateOrder(r),
    due:dueDate(r),
-   kasKey:kasMemberMonthKey(r)
+   kasKey:kasMemberDueKey(r)
  }));
 
- // Kas bulanan: satu kali per MEMBER + BULAN, bukan per tempo.
+ // Kas: satu kali per MEMBER + TANGGAL JATUH TEMPO. Jadi Kas mengikuti jatuh tempo.
  const kasBulananMap=new Map();
  calcRows.forEach(({r,kasKey})=>{
    const raw=Math.max(0,num(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas));
@@ -396,7 +396,7 @@ function renderRekap(){
 
  // =========================================================
  // PANEL JATUH TEMPO — TIDAK BOLEH MENGGABUNG TEMPO BERBEDA
- // Kunci grup = tempoHari + tanggal jatuh tempo.
+ // Kunci grup = tempoHari + tanggal jatuh tempo. Tabungan, UP, dan Kas mengikuti grup ini.
  // Contoh: Tempo 17 / 17-10-2026 berbeda dari Tempo 31 / 31-10-2026.
  // =========================================================
  const panelMap=new Map();
