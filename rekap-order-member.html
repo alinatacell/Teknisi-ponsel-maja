@@ -139,7 +139,6 @@ body.dark td{border-color:#334155}
 </div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Pembayaran</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="12" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -150,7 +149,7 @@ const cfg={
  messagingSenderId:"995892519622",
  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const app=initializeApp(cfg),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -637,26 +636,34 @@ $("dark").onclick=()=>{
 
 async function bacaSesiIndex(){
   try{
-    const s=window.parent===window ? window.fixzySession : window.parent.fixzySession;
+    // REKAP TIDAK LOGIN DAN TIDAK MENGUBAH SESI.
+    // Hanya membaca fixzySession yang SUDAH dibuat oleh INDEX.
+    const parentWin = window.parent && window.parent !== window
+      ? window.parent : window;
+    const s = parentWin.fixzySession;
 
     if(!s){
-      notice("Menunggu data Owner/Karyawan dari INDEX...","err");
+      notice("Menunggu data Owner/Karyawan dari INDEX...");
       return false;
     }
 
     uid=String(s.uid||"").trim();
-    profile=s.profile||{};
+    profile=(s.profile && typeof s.profile==="object") ? s.profile : {};
     const role=String(s.role||profile.role||"").trim().toLowerCase();
 
-    if(!uid)return false;
-
-    if(role==="owner"){
-      ownerUid=String(s.ownerUid||uid).trim();
-    }else if(["employee","karyawan","kasir","kurir","reseller"].includes(role)){
-      ownerUid=String(s.ownerUid||profile.ownerUid||profile.ownerId||"").trim();
-    }else{
-      ownerUid=String(s.ownerUid||profile.ownerUid||profile.ownerId||"").trim();
+    if(!uid){
+      notice("UID dari INDEX belum tersedia.");
+      return false;
     }
+
+    // Owner/Karyawan mengambil ownerUid dari sesi INDEX.
+    // Tidak meminta login ulang dan tidak membuat sesi baru.
+    ownerUid=String(
+      s.ownerUid ||
+      profile.ownerUid ||
+      profile.ownerId ||
+      (role==="owner" ? uid : "")
+    ).trim();
 
     if(!ownerUid){
       notice("Owner UID dari INDEX tidak ditemukan.","err");
@@ -671,7 +678,7 @@ async function bacaSesiIndex(){
     ready=true;
     renderAll();
     notice(
-      `Akun aktif dari INDEX • ${role.toUpperCase()} • ${orders.length} order member.`,
+      `Data dari INDEX • ${role.toUpperCase()} • ${orders.length} order member.`,
       "ok"
     );
     return true;
@@ -683,17 +690,15 @@ async function bacaSesiIndex(){
 }
 
 // INDEX adalah satu-satunya halaman untuk login.
-// Rekap hanya membaca fixzySession milik INDEX.
-// Auth Firebase tetap diinisialisasi agar query Firestore memakai akun
-// Firebase yang sedang login, tetapi halaman ini tidak meminta login.
+// Rekap HANYA membaca fixzySession milik INDEX.
+// Halaman ini tidak melakukan login/logout dan tidak membuat sesi baru.
 let percobaan=0;
 const tungguIndex=setInterval(async()=>{
   percobaan++;
-  if(await bacaSesiIndex()){
-    clearInterval(tungguIndex);
-  }else if(percobaan>=20){
-    clearInterval(tungguIndex);
-  }
-},300);
+  const ok=await bacaSesiIndex();
+  if(ok || percobaan>=40) clearInterval(tungguIndex);
+},500);
+
+// Satu pembacaan awal. Tidak ada login/session Firebase di sini.
 bacaSesiIndex();
 </script></body></html>
