@@ -183,6 +183,15 @@ function normalisasiHargaMember(item, order, sourceItem={}){
 
  const qty=Math.max(1,num(item.qty??item.jumlah??item.quantity??1));
 
+ // Jika Firebase sudah menyimpan NILAI BARANG terurai, gunakan nilai tersebut
+ // sebagai sumber utama. Jangan menimpa dengan harga stok yang sedang aktif.
+ if(has(item,"nilaiBarang") && num(item.nilaiBarang)>0){
+   return {hargaNormal:Math.max(0,num(item.nilaiBarang)/qty), sumber:"firebase_nilaiBarang", tergabung:false};
+ }
+ if(has(item,"hargaDasar") && num(item.hargaDasar)>0){
+   return {hargaNormal:Math.max(0,num(item.hargaDasar)), sumber:"firebase_hargaDasar", tergabung:false};
+ }
+
  // Harga normal adalah harga stok/reload stok. Cari dari item/order/source.
  // Nama field dibuat fleksibel karena data lama bisa memakai struktur berbeda.
  const stokKeys=[
