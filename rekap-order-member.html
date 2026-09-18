@@ -179,8 +179,14 @@ function itemList(r){
  const a=Array.isArray(r.items)?r.items:Array.isArray(r.produkList)?r.produkList:[];
  return a.map(x=>{
   const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??0)||0);
-  const up=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0);
-  const tabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
+  const rawTabungan=Math.max(0,Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0);
+  const rawUp=Math.max(0,Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0);
+
+  // UP Pengelola mengikuti PCS yang benar-benar dikenai iuran.
+  // Jika Tabungan/pcs = 0, PCS tersebut tidak ikut dihitung sebagai PCS iuran.
+  const tabungan=rawTabungan;
+  const up=rawTabungan>0 ? rawUp : 0;
+
   const hargaAwal=basePriceOfItem(x,r);
   const diskon=Math.max(0,Number(x.diskon??x.discount??0)||0);
   const nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
