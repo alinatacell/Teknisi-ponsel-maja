@@ -91,13 +91,38 @@ function member(x){
 }
 function itemsOf(x){
  const a=Array.isArray(x?.items)?x.items:Array.isArray(x?.produkList)?x.produkList:[];
- return a.map(i=>({
-   nama:String(i.nama??i.namaProduk??i.name??"-"),
-   kode:String(i.kode??i.kodeProduk??""),
-   qty:Number(i.qty??i.jumlah??1)||0,
-   harga:Number(i.harga??i.hargaJual??i.price??0)||0,
-   total:Number(i.total??i.jumlahHarga??((Number(i.qty??i.jumlah??0)||0)*(Number(i.harga??i.hargaJual??0)||0)))||0
- }));
+ return a.map(i=>{
+   const qty=Number(i.qty??i.jumlah??i.quantity??1)||0;
+   const harga=Number(i.harga??i.hargaJual??i.price??0)||0;
+   const up=Number(i.upPengelolaPerPcs??i.upPengelola??0)||0;
+   const tab=Number(i.tabunganPerPcs??i.tabungan??0)||0;
+   const hargaAwal=Number(i.hargaAwal??i.hargaDasar??0)||0;
+   const diskon=Number(i.diskon??i.discount??0)||0;
+   const total=Number(i.total??i.jumlahHarga??(qty*harga))||0;
+   return {
+     ...i,
+     nama:String(i.nama??i.namaProduk??i.name??"-"),
+     kode:String(i.kode??i.kodeProduk??""),
+     qty,harga,total,
+     hargaAwal,diskon,
+     upPengelolaPerPcs:up,
+     tabunganPerPcs:tab,
+     upPengelola:up,
+     tabungan:tab
+   };
+ });
+}
+function rincianOrder(d,its){
+ const nilaiBarang=its.reduce((a,i)=>{
+   const q=Number(i.qty)||0, h=Number(i.hargaAwal)||0, disk=Number(i.diskon)||0;
+   if(h>0)return a+Math.max(0,h*q-disk);
+   const harga=Number(i.harga)||0, up=Number(i.upPengelolaPerPcs)||0, tab=Number(i.tabunganPerPcs)||0;
+   return a+Math.max(0,harga*q-up*q-tab*q-disk);
+ },0);
+ const upPengelola=its.reduce((a,i)=>a+(Number(i.upPengelolaPerPcs)||0)*(Number(i.qty)||0),0);
+ const tabunganMember=its.reduce((a,i)=>a+(Number(i.tabunganPerPcs)||0)*(Number(i.qty)||0),0);
+ const kasBulanan=Number(d.kasBulanan??d.uangKasBulanan??d.kasBulananMember??d.uangKas??0)||0;
+ return {nilaiBarang,upPengelola,tabunganMember,kasBulanan};
 }
 function orderEmployeeMatches(o){
  if(!selected)return false;
@@ -293,6 +318,7 @@ window.approveOrder=async id=>{
      if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
      if(!["menunggu_approval","pending"].includes(normStatus(d.status||d.approvalStatus)))throw Error("Order sudah diproses.");
      const its=itemsOf(d),total=Number(d.total??d.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
+     const rincian=rincianOrder(d,its);
      const omRef=String(d.orderMemberId||"").trim()?doc(db,"order_member",String(d.orderMemberId)):doc(collection(db,"order_member"));
      const order={
        ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
@@ -302,6 +328,13 @@ window.approveOrder=async id=>{
        employeeUid:selected?.uid||"",employeeName:selected?.nama||"",
        member:d.member||d.pelanggan||{},
        items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
+       totalNilaiBarang:rincian.nilaiBarang,
+       totalUPPengelola:rincian.upPengelola,
+       totalUpPengelola:rincian.upPengelola,
+       totalTabunganMember:rincian.tabunganMember,
+       totalTabungan:rincian.tabunganMember,
+       kasBulanan:rincian.kasBulanan,
+       uangKasBulanan:rincian.kasBulanan,
        dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
        sisa:Math.max(0,total-Number(d.dp??d.uangMuka??0)),piutang:Math.max(0,total-Number(d.dp??d.uangMuka??0)),
        tempoHari:Number(d.tempoHari??0)||0,jatuhTempo:d.jatuhTempo||d.tanggalJatuhTempo||"",
@@ -324,6 +357,7 @@ window.rejectOrder=async id=>{
      const s=await tx.get(ref);if(!s.exists())throw Error("Order tidak ditemukan.");
      const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
      const its=itemsOf(d),total=Number(d.total??d.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
+     const rincian=rincianOrder(d,its);
      const existingId=String(d.orderMemberId||"").trim();
      const omRef=existingId?doc(db,"order_member",existingId):doc(collection(db,"order_member"));
      const order={
@@ -333,6 +367,13 @@ window.rejectOrder=async id=>{
        approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",
        employeeUid:selected?.uid||"",employeeName:selected?.nama||"",
        member:d.member||d.pelanggan||{},items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
+       totalNilaiBarang:rincian.nilaiBarang,
+       totalUPPengelola:rincian.upPengelola,
+       totalUpPengelola:rincian.upPengelola,
+       totalTabunganMember:rincian.tabunganMember,
+       totalTabungan:rincian.tabunganMember,
+       kasBulanan:rincian.kasBulanan,
+       uangKasBulanan:rincian.kasBulanan,
        dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
        sisa:Math.max(0,total-Number(d.dp??d.uangMuka??0)),piutang:Math.max(0,total-Number(d.dp??d.uangMuka??0)),
        tempoHari:Number(d.tempoHari??0)||0,jatuhTempo:d.jatuhTempo||d.tanggalJatuhTempo||"",
