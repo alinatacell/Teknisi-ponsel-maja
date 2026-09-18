@@ -132,12 +132,8 @@ body.dark td{border-color:#334155}
     </div>
   </div>
 </div>
-<div class="panel-original">
-  <div class="jt-title">📦 NILAI BARANG ASLI PER JATUH TEMPO</div>
-  <div id="nilaiBarangJatuhTempo" class="jt-grid"><div class="jt-empty">Memuat...</div></div>
-</div>
 <div class="rekap-jatuh-tempo detail-panel">
-  <div class="jt-title">📅 RINCIAN TAGIHAN PER JATUH TEMPO</div>
+  <div class="jt-title">📅 REKAP PER TANGGAL JATUH TEMPO</div>
   <div id="jatuhTempoSummary" class="jt-grid"><div class="jt-empty">Memuat...</div></div>
 </div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
@@ -643,17 +639,12 @@ function renderRekap(){
  $("totalKas").textContent=rp(kas);
  $("sisaTotal").textContent=rp(sisaTotal);
  $("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
- // PANEL ATAS: nilai barang original, termasuk order yang sudah lunas.
- $("nilaiBarangJatuhTempo").innerHTML=panelData.length ? panelData.map(g=>{
-   const tanggal=g.due?g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}):"Tanpa Tanggal Jatuh Tempo";
-   return `<div class="original-card"><div class="original-date">📅 ${esc(tanggal)}</div><div class="original-value">${rp(g.nilai)}</div><div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS • NILAI BARANG MURNI</div></div>`;
- }).join("") : '<div class="jt-empty">Belum ada nilai barang.</div>';
  // PANEL BAWAH: rincian tagihan dan pembayaran.
  $("jatuhTempoSummary").innerHTML=panelData.length ? panelData.map(g=>{
    const tanggal=g.due?g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}):"Tanpa Tanggal Jatuh Tempo";
    const tempoList=[...g.tempos].sort((a,b)=>a-b);
    const tempoLabel=tempoList.length?`TEMPO ${tempoList.join(" / ")} HARI`:"TEMPO";
-   return `<div class="jt-card"><div class="jt-date">📅 ${esc(tanggal)}</div><div class="jt-tempo">${esc(tempoLabel)}</div><div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div><div class="jt-row"><span>UP Pengelola</span><b>${rp(g.up)}</b></div><div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div><div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div><div class="jt-row"><span>Total Tagihan Awal</span><b>${rp(g.tagihanAwal)}</b></div><div class="jt-row"><span>Sudah Dibayar</span><b>${rp(g.payment)}</b></div><div class="jt-row jt-total"><span>Sisa Tagihan</span><b>${rp(g.sisa)}</b></div><div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div></div>`;
+   return `<div class="jt-card"><div class="jt-date">📅 ${esc(tanggal)}</div><div class="jt-tempo">${esc(tempoLabel)}</div><div class="original-value" style="font-size:20px;margin:6px 0 10px">${rp(g.nilai)}</div><div class="jt-foot" style="margin-bottom:8px">NILAI BARANG ORIGINAL • ${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div><div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div><div class="jt-row"><span>UP Pengelola</span><b>${rp(g.up)}</b></div><div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div><div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div><div class="jt-row"><span>Total Tagihan Awal</span><b>${rp(g.tagihanAwal)}</b></div><div class="jt-row"><span>Sudah Dibayar / Pembayaran</span><b>${rp(g.payment)}</b></div><div class="jt-row jt-total"><span>Sisa Tagihan</span><b>${rp(g.sisa)}</b></div><div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div></div>`;
  }).join("") : '<div class="jt-empty">Belum ada rincian tagihan.</div>';
 }
 
