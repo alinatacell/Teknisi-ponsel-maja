@@ -60,7 +60,7 @@ body.dark .jt-row span,body.dark .jt-tempo,body.dark .jt-foot{color:#9ca3af}
 table{width:100%;border-collapse:collapse;min-width:0}
 @media(max-width:650px){
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:680px}
+  table{min-width:740px}
   th,td{padding:8px 7px;font-size:10px}
   th{font-size:9px}
   .rekap-rincian{grid-template-columns:1fr 1fr}
@@ -137,7 +137,7 @@ body.dark td{border-color:#334155}
     <div class="jt-empty">Memuat...</div>
   </div>
 </div>
-<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
+<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Pembayaran</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="12" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -156,7 +156,7 @@ const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number(v)||0;
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
-let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
+let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),reloadStockProducts=[],reloadStockByKey=new Map(),ready=false;
 
 function ownerOf(d){
  const role=String(d.role||"").toLowerCase();
@@ -273,7 +273,7 @@ function itemList(r){
   const item={...si,...x};
   const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
 
-  // Tabungan dan UP selalu milik item/order tersebut.
+  // Tabungan dan UP adalah milik ORDER/MEMBER masing-masing.
   const up=Math.max(0,
     has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
     has(item,"upPengelola")?numv(item.upPengelola):
@@ -281,36 +281,48 @@ function itemList(r){
     has(r,"upPengelola")?numv(r.upPengelola):0
   );
 
-  const totalTabStored =
-    has(item,"totalTabunganMember") ? numv(item.totalTabunganMember) :
-    has(item,"totalTabungan") ? numv(item.totalTabungan) :
-    has(r,"totalTabunganMember") ? numv(r.totalTabunganMember) :
-    has(r,"totalTabungan") ? numv(r.totalTabungan) : 0;
-
   const tabungan=Math.max(0,
     has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
     has(item,"tabungan")?numv(item.tabungan):
-    (totalTabStored>0&&qty>0)?totalTabStored/qty:
     has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
     has(r,"tabungan")?numv(r.tabungan):0
   );
 
   const diskon=Math.max(0,numv(item.diskon??item.discount??0));
-  const norm=normalisasiHargaMember(item,r,si);
 
-  let nilaiBarang=0;
+  // ============================================================
+  // SUMBER HARGA ASLI:
+  // Reload Stok Spreadsheet -> harga normal/asli.
+  // Jadi tidak peduli harga Firebase lama sudah ditempeli
+  // Tabungan + UP + Kas atau belum.
+  // ============================================================
+  const reloadProduct=reloadStockForItem(item);
+  const reloadPrice=normalPriceFromReloadStock(reloadProduct);
+
+  // Fallback kedua: dokumen stok Firebase.
+  const firebaseStock=findStockForItem(item);
+  const firebaseStockPrice=normalPriceFromReloadStock(firebaseStock);
+
   let hargaAwal=0;
+  let nilaiBarang=0;
 
-  if(norm.hargaNormal>0){
-    // Harga stok/reload = harga asli. Jangan tambahkan Tabungan/UP/Kas lagi.
-    hargaAwal=norm.hargaNormal;
+  if(reloadPrice>0){
+    hargaAwal=reloadPrice;
+    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+  }else if(firebaseStockPrice>0){
+    hargaAwal=firebaseStockPrice;
+    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+  }else if(has(item,"hargaDasar")){
+    // Data lama yang jelas sudah terurai.
+    hargaAwal=Math.max(0,numv(item.hargaDasar));
     nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
   }else if(has(item,"nilaiBarang")){
-    // Data lama yang sudah terurai: biarkan nilaiBarang sebagaimana tersimpan.
+    // Jika tidak ada sumber stok, hormati nilaiBarang yang tersimpan.
     nilaiBarang=Math.max(0,numv(item.nilaiBarang)-diskon);
     hargaAwal=qty>0?nilaiBarang/qty:0;
   }else{
-    // Tidak ada harga stok: hanya di sini harga Firebase boleh diuraikan.
+    // Terakhir: Firebase hanya punya harga gabungan.
+    // Uraikan Tabungan + UP satu kali.
     hargaAwal=basePriceOfItem(item,r);
     nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
   }
@@ -324,7 +336,6 @@ function itemList(r){
     tabunganPerPcs:tabungan,
     total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)
   };
- });
 }
 
 function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
@@ -333,28 +344,7 @@ function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??
 function calculateOrder(r){
  const items=itemList(r);
  const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
-
- // UP Pengelola: utamakan UP per-item/per-Pcs.
- // Jika data lama hanya menyimpan totalUPPengelola di level order,
- // gunakan total tersebut sekali agar tidak ada UP yang hilang/terhitung ganda.
- const itemUp=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
- const hasItemUP=items.some(x=>x.upPengelolaPerPcs>0);
- const orderUPTotal=Math.max(0,num(
-   r.totalUPPengelola ??
-   r.totalUpPengelola ??
-   r.totalUp ??
-   r.upPengelolaTotal ??
-   0
- ));
- // UP Pengelola:
- // 1. Jika ada UP per-item, gunakan data tersebut.
- // 2. Jika tidak ada per-item tetapi ada total UP di order, gunakan total tersebut.
- // 3. Jika Firebase belum menyimpan UP sama sekali, gunakan default Rp 300/PCS.
- const qtyTotal=items.reduce((a,x)=>a+Math.max(0,num(x.qty)),0);
- const up=hasItemUP
-   ? itemUp
-   : (orderUPTotal>0 ? orderUPTotal : qtyTotal*300);
-
+ const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
  const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
  const kas=kasOf(r);
  const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
@@ -410,6 +400,50 @@ async function loadStock(){
  });
 }
 
+function loadReloadStockCache(){
+ reloadStockProducts=[];
+ reloadStockByKey=new Map();
+ try{
+  const raw=localStorage.getItem("FIXZY_STOK_MEMBER_SPREADSHEET_V1");
+  const data=JSON.parse(raw||"{}");
+  const list=Array.isArray(data.products)?data.products:[];
+  reloadStockProducts=list;
+  list.forEach(p=>{
+   const keys=[
+    p.id,p.produkId,p.kode,p.kodeProduk,p.sku,
+    p.nama,p.namaProduk,p.kodeBarang,p.namaBarang
+   ].map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
+   keys.forEach(k=>{if(!reloadStockByKey.has(k))reloadStockByKey.set(k,p)});
+  });
+ }catch(e){
+  console.warn("Cache Reload Stok tidak terbaca:",e.message);
+ }
+}
+
+function reloadStockForItem(x){
+ const keys=[
+  x.produkId,x.id,x.kode,x.kodeProduk,x.sku,
+  x.nama,x.namaProduk,x.kodeBarang,x.namaBarang
+ ].map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
+
+ for(const k of keys){
+  const p=reloadStockByKey.get(k);
+  if(p)return p;
+ }
+ return null;
+}
+
+function normalPriceFromReloadStock(p){
+ if(!p)return 0;
+ // Reload Stok Spreadsheet menyimpan kolom harga normal pada field `harga`.
+ // Field lain dipakai hanya untuk kompatibilitas cache lama.
+ for(const k of ["harga","hargaDasar","hargaJual","hargaTempo","hargaNormal","hargaStok"]){
+  const n=Number(p[k]);
+  if(Number.isFinite(n)&&n>0)return n;
+ }
+ return 0;
+}
+
 function findStockForItem(x){
  const keys=[x.produkId,x.id,x.kode,x.kodeProduk,x.sku,x.nama,x.namaProduk]
    .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
@@ -451,13 +485,10 @@ async function loadOrders(){
         Number(oi.upPengelola)>0?Number(oi.upPengelola):
         Number(si.upPengelolaPerPcs)>0?Number(si.upPengelolaPerPcs):
         Number(si.upPengelola)>0?Number(si.upPengelola):0),
-      tabunganPerPcs:(
-        oi.tabunganPerPcs!==undefined && oi.tabunganPerPcs!==null && oi.tabunganPerPcs!=="" ? Number(oi.tabunganPerPcs) :
-        oi.tabungan!==undefined && oi.tabungan!==null && oi.tabungan!=="" ? Number(oi.tabungan) :
-        si.tabunganPerPcs!==undefined && si.tabunganPerPcs!==null && si.tabunganPerPcs!=="" ? Number(si.tabunganPerPcs) :
-        si.tabungan!==undefined && si.tabungan!==null && si.tabungan!=="" ? Number(si.tabungan) :
-        undefined
-      )
+      tabunganPerPcs:(Number(oi.tabunganPerPcs)>0?Number(oi.tabunganPerPcs):
+        Number(oi.tabungan)>0?Number(oi.tabungan):
+        Number(si.tabunganPerPcs)>0?Number(si.tabunganPerPcs):
+        Number(si.tabungan)>0?Number(si.tabungan):0)
      };
     });
    }
@@ -546,6 +577,7 @@ function renderRekap(){
     <td class="num">${rp(v.calc.up)}</td>
     <td class="num">${rp(v.calc.tabungan)}</td>
     <td class="num">${rp(v.kasRow)}</td>
+    <td class="num">${rp(v.calc.paid)}</td>
     <td class="num">${rp(v.sisa)}</td>
   </tr>`;
  }).join("");
@@ -559,7 +591,7 @@ function renderRekap(){
  const panelMap=new Map();
 
  viewRows.forEach(v=>{
-   if(v.calc.cash || v.sisa<=0)return;
+   if(v.calc.cash)return;
 
    const due=v.due;
    const key=due
@@ -621,7 +653,7 @@ function renderRekap(){
  $("totalKas").textContent=rp(kas);
  $("sisaTotal").textContent=rp(sisaTotal);
 
- $("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
+ $("orderTable").innerHTML=rows||'<tr><td colspan="12" class="empty">Belum ada order member pada periode ini.</td></tr>';
 
  $("jatuhTempoSummary").innerHTML=panelData.length
    ? panelData.map(g=>{
@@ -693,6 +725,8 @@ async function bacaSesiIndex(){
 
     $("email").textContent=profile.email||s.email||"-";
 
+    // Harga normal dari Reload Stok Spreadsheet menjadi acuan utama.
+    loadReloadStockCache();
     await loadStock();
     await loadOrders();
 
