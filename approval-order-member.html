@@ -94,9 +94,10 @@ function itemsOf(x){
  return a.map(i=>{
    const qty=Number(i.qty??i.jumlah??i.quantity??1)||0;
    const harga=Number(i.harga??i.hargaJual??i.price??0)||0;
-   const up=Number(i.upPengelolaPerPcs??i.upPengelola??0)||0;
-   const tab=Number(i.tabunganPerPcs??i.tabungan??0)||0;
-   const hargaAwal=Number(i.hargaAwal??i.hargaDasar??0)||0;
+   // Jika rincian ada di level dokumen penjualan, jangan hilangkan saat approval.
+   const up=Number(i.upPengelolaPerPcs??i.upPengelola??x?.upPengelolaPerPcs??x?.upPengelola??0)||0;
+   const tab=Number(i.tabunganPerPcs??i.tabungan??x?.tabunganPerPcs??x?.tabungan??0)||0;
+   const hargaAwal=Number(i.hargaAwal??i.hargaDasar??x?.hargaAwal??x?.hargaDasar??0)||0;
    const diskon=Number(i.diskon??i.discount??0)||0;
    const total=Number(i.total??i.jumlahHarga??(qty*harga))||0;
    return {
