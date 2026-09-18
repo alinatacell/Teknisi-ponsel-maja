@@ -176,6 +176,50 @@ function orderStatus(r){
  return isCashOrder(r)|| (calc.totalTagihan>0&&calc.sisa<=0) ? "lunas" : "tagihan";
 }
 
+function normalisasiHargaMember(item, order, sourceItem={}){
+ const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+ const has=(o,k)=>o && Object.prototype.hasOwnProperty.call(o,k) &&
+   o[k]!==undefined && o[k]!==null && o[k]!=="";
+
+ const qty=Math.max(1,num(item.qty??item.jumlah??item.quantity??1));
+
+ // Harga normal adalah harga stok/reload stok. Cari dari item/order/source.
+ // Nama field dibuat fleksibel karena data lama bisa memakai struktur berbeda.
+ const stokKeys=[
+   "hargaStok","hargaReload","hargaReloadStok","hargaAwal","hargaNormal",
+   "hargaModal","modalStok","hargaBeli","hargaDasarStok","hargaAsli"
+ ];
+
+ let hargaNormal=0;
+ for(const obj of [item,sourceItem,order]){
+   for(const k of stokKeys){
+     if(has(obj,k) && num(obj[k])>0){ hargaNormal=num(obj[k]); break; }
+   }
+   if(hargaNormal>0) break;
+ }
+
+ // Jika ada harga stok yang jelas, jadikan itu patokan nilai barang murni.
+ if(hargaNormal>0){
+   const hargaTersimpan=num(item.harga??item.hargaJual??item.hargaTempo??item.hargaMemberPerPcs);
+   const nilaiTersimpan=has(item,"nilaiBarang")?num(item.nilaiBarang):0;
+
+   // nilaiBarang lama kadang berupa total, sedangkan harga stok berupa per PCS.
+   const nilaiPerPcs=nilaiTersimpan>0 ? nilaiTersimpan/qty : 0;
+
+   // Jika harga Firebase lebih tinggi dari harga normal, anggap komponen
+   // tambahan sudah menempel pada harga tersebut. Rekap memakai harga normal.
+   if(hargaTersimpan>0 && hargaTersimpan!==hargaNormal){
+     return {hargaNormal, sumber:"stok", tergabung:true};
+   }
+   if(nilaiPerPcs>0 && nilaiPerPcs!==hargaNormal){
+     return {hargaNormal, sumber:"stok", tergabung:true};
+   }
+   return {hargaNormal, sumber:"stok", tergabung:false};
+ }
+
+ return {hargaNormal:0,sumber:"firebase",tergabung:false};
+}
+
 function basePriceOfItem(x,r={}){
  const cash=isCashOrder(r);
  const has=(obj,k)=>obj && Object.prototype.hasOwnProperty.call(obj,k) &&
@@ -226,11 +270,10 @@ function itemList(r){
 
  return a.map((x,i)=>{
   const si=sourceItems[i]||{};
-  // order_member lebih utama; field yang tidak ada boleh memakai penjualan.
   const item={...si,...x};
-
   const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
 
+  // Tabungan dan UP selalu milik item/order tersebut.
   const up=Math.max(0,
     has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
     has(item,"upPengelola")?numv(item.upPengelola):
@@ -246,19 +289,21 @@ function itemList(r){
   );
 
   const diskon=Math.max(0,numv(item.diskon??item.discount??0));
+  const norm=normalisasiHargaMember(item,r,si);
 
-  // ATURAN UTAMA:
-  // 1. Jika Firebase sudah punya nilaiBarang, gunakan nilai tersebut.
-  // 2. Jika belum, gunakan hargaDasar.
-  // 3. Jika keduanya tidak ada, uraikan harga gabungan dengan mengurangi
-  //    Tabungan + UP satu kali.
-  let nilaiBarang;
-  let hargaAwal;
+  let nilaiBarang=0;
+  let hargaAwal=0;
 
-  if(has(item,"nilaiBarang")){
+  if(norm.hargaNormal>0){
+    // Harga stok/reload = harga asli. Jangan tambahkan Tabungan/UP/Kas lagi.
+    hargaAwal=norm.hargaNormal;
+    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
+  }else if(has(item,"nilaiBarang")){
+    // Data lama yang sudah terurai: biarkan nilaiBarang sebagaimana tersimpan.
     nilaiBarang=Math.max(0,numv(item.nilaiBarang)-diskon);
     hargaAwal=qty>0?nilaiBarang/qty:0;
   }else{
+    // Tidak ada harga stok: hanya di sini harga Firebase boleh diuraikan.
     hargaAwal=basePriceOfItem(item,r);
     nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
   }
