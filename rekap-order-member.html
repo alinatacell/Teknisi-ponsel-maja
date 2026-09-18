@@ -54,6 +54,7 @@ body.dark .jt-date{color:#fbbf24}
 body.dark .jt-row{border-color:#475569}
 body.dark .jt-row span,body.dark .jt-tempo,body.dark .jt-foot{color:#9ca3af}
 
+.panel-original{margin-top:12px;padding:12px;border:2px solid #111827;border-radius:9px;background:#fff}.panel-original .jt-title{margin-bottom:10px}.original-card{border:2px solid #111827;border-radius:10px;padding:12px;background:#f8fafc;margin-bottom:8px}.original-card:last-child{margin-bottom:0}.original-date{font-size:12px;font-weight:900;color:#111827;margin-bottom:6px}.original-value{font-size:20px;font-weight:900}.detail-panel{margin-top:12px}body.dark .panel-original{background:#111827;border-color:#475569}body.dark .original-card{background:#0f172a;border-color:#475569}body.dark .original-date{color:#e5e7eb}
 @media(max-width:650px){.jt-grid{grid-template-columns:1fr 1fr}.jt-item:last-child:nth-child(odd){grid-column:1/-1}}
 
 .table-wrap{overflow:auto;border:2px solid #111827;border-radius:9px}
@@ -71,7 +72,7 @@ th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size
 th{background:#111827;color:#fff;font-size:10px;text-transform:uppercase}
 td.num{text-align:right;font-weight:800}
 tr:last-child td{border-bottom:0}
-.total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}
+.total-row td{border-top:2px solid #111827;font-weight:900;background:#fffbeb}.payment-row td{background:#f0fdf4;color:#166534;font-size:10px}.payment-row td:first-child{padding-left:18px}
 .badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid}
 .badge.tagihan{background:#fef3c7;border-color:#f59e0b;color:#92400e}
 .badge.lunas{background:#dcfce7;border-color:#22c55e;color:#166534}
@@ -89,7 +90,7 @@ body.dark .rekap-item{background:#0f172a;border-color:#475569}
 body.dark .rekap-item .label{color:#9ca3af}
 body.dark .rekap-item .value{color:#fff}
 body.dark .rekap-item.tagihan{background:#292211}
-body.dark th{background:#020617}
+body.dark th{background:#020617}.payment-row td{background:#052e16;color:#86efac}
 body.dark td{border-color:#334155}
 @media(max-width:850px){.filters{grid-template-columns:1fr 1fr}.filters .actions{grid-column:1/-1}}
 @media(max-width:650px){
@@ -131,11 +132,13 @@ body.dark td{border-color:#334155}
     </div>
   </div>
 </div>
-<div class="rekap-jatuh-tempo">
-  <div class="jt-title">📅 TAGIHAN BERDASARKAN TANGGAL JATUH TEMPO</div>
-  <div id="jatuhTempoSummary" class="jt-grid">
-    <div class="jt-empty">Memuat...</div>
-  </div>
+<div class="panel-original">
+  <div class="jt-title">📦 NILAI BARANG ASLI PER JATUH TEMPO</div>
+  <div id="nilaiBarangJatuhTempo" class="jt-grid"><div class="jt-empty">Memuat...</div></div>
+</div>
+<div class="rekap-jatuh-tempo detail-panel">
+  <div class="jt-title">📅 RINCIAN TAGIHAN PER JATUH TEMPO</div>
+  <div id="jatuhTempoSummary" class="jt-grid"><div class="jt-empty">Memuat...</div></div>
 </div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="11" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -156,7 +159,7 @@ const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number(v)||0;
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
-let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
+let uid="",ownerUid="",profile={},orders=[],payments=[],paymentsByOrder=new Map(),stockProducts=[],stockByKey=new Map(),ready=false;
 
 function ownerOf(d){
  const role=String(d.role||"").toLowerCase();
@@ -337,7 +340,17 @@ function itemList(r){
 }
 
 function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
-function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
+function orderKey(r){
+ const m=String(r.nomorNota||r.orderId||r.id||"").trim().toLowerCase();
+ return m;
+}
+function paidOf(r){
+ // Hanya baris pembayaran APPROVED yang boleh mengurangi tagihan.
+ const key=orderKey(r);
+ return Math.max(0,(paymentsByOrder.get(key)||[]).reduce((a,p)=>a+Math.max(0,num(
+   p.nominal??p.jumlah??p.nominalPembayaran??p.totalPembayaran??p.amount??0
+ )),0));
+}
 
 function calculateOrder(r){
  const items=itemList(r);
@@ -424,6 +437,36 @@ function findStockForItem(x){
    .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
  for(const k of keys){const p=stockByKey.get(k);if(p)return p;}
  return null;
+}
+
+async function loadPayments(){
+ const map=new Map();
+ const qs=[
+  query(collection(db,"tabungan_member"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"tabungan_member"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of qs){
+  try{
+   const ss=await getDocs(q);
+   ss.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    const status=String(x.status||"").trim().toLowerCase();
+    const jenis=String(x.jenis||x.type||"").trim().toLowerCase();
+    if(status!=="approved")return;
+    // tabungan biasa bukan pembayaran tagihan.
+    if(jenis && !["cicilan_tagihan","pembayaran_tagihan","pembayaran","cicilan","pelunasan_tagihan"].includes(jenis))return;
+    if(!map.has(d.id))map.set(d.id,x);
+   });
+  }catch(e){console.warn("Query pembayaran:",e.message);}
+ }
+ payments=[...map.values()];
+ paymentsByOrder=new Map();
+ payments.forEach(p=>{
+  const key=String(p.nomorNota||p.nota||p.orderId||p.orderID||p.idOrder||p.nomorOrder||p.orderNomor||p.referensiNota||"").trim().toLowerCase();
+  if(!key)return;
+  if(!paymentsByOrder.has(key))paymentsByOrder.set(key,[]);
+  paymentsByOrder.get(key).push(p);
+ });
 }
 
 async function loadOrders(){
@@ -544,6 +587,19 @@ function renderRekap(){
    const st=v.sisa<=0?"lunas":"tagihan";
    const jenis=v.calc.cash?"CASH":"TEMPO";
 
+   const notaKey=orderKey(v.r);
+   const payRows=(paymentsByOrder.get(notaKey)||[]).map(p=>{
+    const nominal=Math.max(0,num(p.nominal??p.jumlah??p.nominalPembayaran??p.totalPembayaran??p.amount??0));
+    let tanggal=p.tanggal||p.createdAt||p.approvedAt||"";
+    if(tanggal && typeof tanggal==="object" && tanggal.seconds) tanggal=new Date(tanggal.seconds*1000);
+    else if(tanggal){const d=new Date(tanggal); tanggal=isNaN(d)?String(tanggal):d;}
+    const t=tanggal instanceof Date?tanggal.toLocaleDateString("id-ID"):String(tanggal||"-");
+    return `<tr class="payment-row">
+     <td>↳ <b>PEMBAYARAN</b></td><td>${esc(m.nama||"-")}</td>
+     <td><span class="badge lunas">BAYAR</span></td><td><span class="badge lunas">APPROVED</span></td>
+     <td>${esc(t)}</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">${rp(nominal)}</td>
+    </tr>`;
+   }).join("");
    return `<tr>
     <td><b>${esc(v.r.nomorNota||v.r.id)}</b></td>
     <td>${esc(m.nama||"-")}</td>
@@ -556,106 +612,49 @@ function renderRekap(){
     <td class="num">${rp(v.calc.tabungan)}</td>
     <td class="num">${rp(v.kasRow)}</td>
     <td class="num">${rp(v.sisa)}</td>
-  </tr>`;
+  </tr>${payRows}`;
  }).join("");
 
  // =========================================================
- // PANEL JATUH TEMPO
- // Setiap nominal berasal dari ORDER yang mempunyai tanggal jatuh tempo
- // tersebut. Tidak memakai total global dan tidak mengambil nominal dari
- // tempo/jatuh tempo lain.
- // =========================================================
+ // DUA PANEL TERPISAH:
+ // 1) Nilai Barang Asli: tidak pernah dikurangi pembayaran/UP/tabungan/kas.
+ // 2) Rincian Tagihan: nilai barang + UP + tabungan + kas - pembayaran.
  const panelMap=new Map();
-
  viewRows.forEach(v=>{
-   if(v.calc.cash || v.sisa<=0)return;
-
    const due=v.due;
-   const key=due
-      ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`
-      : "tanpa-tanggal";
-
-   if(!panelMap.has(key)){
-     panelMap.set(key,{
-       due,
-       nilai:0,
-       up:0,
-       tab:0,
-       kas:0,
-       tambahan:0,
-       tagihan:0,
-       orders:0,
-       pcs:0,
-       tempos:new Set()
-     });
-   }
-
+   const key=due ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}` : "tanpa-tanggal";
+   if(!panelMap.has(key)) panelMap.set(key,{due,nilai:0,up:0,tab:0,kas:0,payment:0,tagihanAwal:0,sisa:0,orders:0,pcs:0,tempos:new Set()});
    const g=panelMap.get(key);
-
-   // PENTING:
-   // Semua komponen diambil dari order ini saja.
-   // Tidak memakai totalTabungan/totalUP global.
    g.nilai += num(v.calc.nilaiBarang);
-   g.up    += num(v.calc.up);
-   g.tab   += num(v.calc.tabungan);
-   g.kas   += num(v.kasRow);
-
-   const tambahanOrder =
-      num(v.calc.up) +
-      num(v.calc.tabungan) +
-      num(v.kasRow);
-
-   g.tambahan += tambahanOrder;
-
-   // Tagihan panel = nilai barang + tambahan order - pembayaran order.
-   g.tagihan += num(v.sisa);
-
-   g.orders++;
-   g.pcs += v.qty;
-
+   g.up += num(v.calc.up);
+   g.tab += num(v.calc.tabungan);
+   g.kas += num(v.kasRow);
+   g.payment += num(v.calc.paid);
+   g.tagihanAwal += num(v.calc.nilaiBarang)+num(v.calc.up)+num(v.calc.tabungan)+num(v.kasRow);
+   g.sisa += num(v.sisa);
+   g.orders++; g.pcs += v.qty;
    const tempoHari=Math.max(0,Number(v.r.tempoHari||0)||0);
    if(tempoHari)g.tempos.add(tempoHari);
  });
-
- const panelData=[...panelMap.values()].sort((a,b)=>{
-   if(!a.due&&!b.due)return 0;
-   if(!a.due)return 1;
-   if(!b.due)return -1;
-   return a.due-b.due;
- });
-
+ const panelData=[...panelMap.values()].sort((a,b)=>{if(!a.due&&!b.due)return 0;if(!a.due)return 1;if(!b.due)return -1;return a.due-b.due;});
  $("totalNilaiBarang").textContent=rp(nilai);
  $("totalPengelola").textContent=rp(up);
  $("totalTabungan").textContent=rp(tabungan);
  $("totalKas").textContent=rp(kas);
  $("sisaTotal").textContent=rp(sisaTotal);
-
  $("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
-
- $("jatuhTempoSummary").innerHTML=panelData.length
-   ? panelData.map(g=>{
-       const tanggal=g.due
-         ? g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})
-         : "Tanpa Tanggal Jatuh Tempo";
-       const tempoList=[...g.tempos].sort((a,b)=>a-b);
-       const tempoLabel=tempoList.length
-         ? `TEMPO ${tempoList.join(" / ")} HARI`
-         : "TEMPO";
-
-       return `<div class="jt-card">
-         <div class="jt-date">📅 ${esc(tanggal)}</div>
-         <div class="jt-tempo">${esc(tempoLabel)}</div>
-
-         <div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div>
-         <div class="jt-row"><span>UP Pengelola</span><b>${rp(g.up)}</b></div>
-         <div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div>
-         <div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div>
-         <div class="jt-row"><span>Total Tambahan</span><b>${rp(g.tambahan)}</b></div>
-         <div class="jt-row jt-total"><span>Total Tagihan</span><b>${rp(g.tagihan)}</b></div>
-         <div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div>
-       </div>`;
-     }).join("")
-   : '<div class="jt-empty">Tidak ada tagihan tersisa.</div>';
+ // PANEL ATAS: nilai barang original, termasuk order yang sudah lunas.
+ $("nilaiBarangJatuhTempo").innerHTML=panelData.length ? panelData.map(g=>{
+   const tanggal=g.due?g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}):"Tanpa Tanggal Jatuh Tempo";
+   return `<div class="original-card"><div class="original-date">📅 ${esc(tanggal)}</div><div class="original-value">${rp(g.nilai)}</div><div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS • NILAI BARANG MURNI</div></div>`;
+ }).join("") : '<div class="jt-empty">Belum ada nilai barang.</div>';
+ // PANEL BAWAH: rincian tagihan dan pembayaran.
+ $("jatuhTempoSummary").innerHTML=panelData.length ? panelData.map(g=>{
+   const tanggal=g.due?g.due.toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}):"Tanpa Tanggal Jatuh Tempo";
+   const tempoList=[...g.tempos].sort((a,b)=>a-b);
+   const tempoLabel=tempoList.length?`TEMPO ${tempoList.join(" / ")} HARI`:"TEMPO";
+   return `<div class="jt-card"><div class="jt-date">📅 ${esc(tanggal)}</div><div class="jt-tempo">${esc(tempoLabel)}</div><div class="jt-row"><span>Nilai Barang</span><b>${rp(g.nilai)}</b></div><div class="jt-row"><span>UP Pengelola</span><b>${rp(g.up)}</b></div><div class="jt-row"><span>Tabungan Member</span><b>${rp(g.tab)}</b></div><div class="jt-row"><span>Uang Kas</span><b>${rp(g.kas)}</b></div><div class="jt-row"><span>Total Tagihan Awal</span><b>${rp(g.tagihanAwal)}</b></div><div class="jt-row"><span>Sudah Dibayar</span><b>${rp(g.payment)}</b></div><div class="jt-row jt-total"><span>Sisa Tagihan</span><b>${rp(g.sisa)}</b></div><div class="jt-foot">${g.orders} order • ${g.pcs.toLocaleString("id-ID")} PCS</div></div>`;
+ }).join("") : '<div class="jt-empty">Belum ada rincian tagihan.</div>';
 }
 
 function renderAll(){
@@ -703,6 +702,7 @@ async function bacaSesiIndex(){
     $("email").textContent=profile.email||s.email||"-";
 
     await loadStock();
+    await loadPayments();
     await loadOrders();
 
     ready=true;
