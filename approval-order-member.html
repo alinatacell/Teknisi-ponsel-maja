@@ -844,14 +844,98 @@ window.saveAddedProduct=async()=>{
  try{msg("Menyimpan produk tambahan...");const ref=doc(db,"penjualan",id);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw Error("Pesanan tidak ditemukan.");const d=snap.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");if(String(d.status||"menunggu_approval")!=="menunggu_approval")throw Error("Pesanan sudah tidak menunggu approval.");const items=Array.isArray(d.items)?d.items:(Array.isArray(d.produkList)?d.produkList:[]),cash=isCash(d),tab=Number(d.tabunganPerPcs??d.tabunganMember??d.tabunganMemberPerPcs??0)||0,up=Number(d.upPengelolaPerPcs??d.upPengelola??0)||0,hargaDasar=cash?(Number(p.modal)||0):(Number(p.jual)||0),hargaFinal=hargaDasar+tab+up,item={approvalItemId:`ADD-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,tambahanApproval:true,produkId:p.id,nama:stockName(p),kode:stockCode(p),namaProduk:stockName(p),kodeProduk:stockCode(p),supplier:p.supplier||"",qty,jumlah:qty,harga:hargaFinal,hargaJual:hargaFinal,hargaDasar,hargaTempo:Number(p.hargaTempo??p.jual??0)||0,hargaCash:Number(p.hargaCash??p.modal??0)||0,tabunganPerPcs:tab,upPengelolaPerPcs:up,tambahanTabungan:tab*qty,tambahanUpPengelola:up*qty,modalSatuan:Number(p.modal)||0,diskon:0,approvedQty:qty,stokTersedia:stock,sourceIndex:p.sourceIndex,sourceSpreadsheet:p.sourceSpreadsheet};tx.update(ref,{items:[...items,item],status:"menunggu_approval",approvalStatus:"menunggu_approval",updatedAt:serverTimestamp()})});closeAddProduct();await load();msg("Produk baru berhasil ditambahkan. Stok belum dikurangi.","ok")}catch(e){console.error(e);msg("Gagal menambah produk: "+(e.message||e),"err")}
 };
 
+function waBreakdown(r,items){
+ const list=(Array.isArray(items)?items:[]).map(x=>{
+  const qty=Math.max(0,num(x?.qty??x?.approvedQty??x?.jumlah??1));
+  const tab=firstPositive(x?.tabunganPerPcs,x?.tabungan,r?.tabunganPerPcs,r?.tabunganMember);
+  const up=firstPositive(x?.upPengelolaPerPcs,x?.upPengelola,r?.upPengelolaPerPcs,r?.upPengelola);
+  let base=firstPositive(x?.hargaDasar,x?.hargaAwal);
+  const harga=Number(x?.harga??x?.hargaJual??0)||0;
+  if(!base && harga>0)base=Math.max(0,harga-tab-up);
+  const diskon=Math.min(Math.max(0,num(x?.diskon??x?.discount)),Math.max(0,base*qty));
+  const nilai=Math.max(0,base*qty-diskon);
+  const tabTotal=tab*qty;
+  const upTotal=up*qty;
+  return {...x,qty,base,tab,up,diskon,nilai,tabTotal,upTotal,itemTotal:nilai+tabTotal+upTotal};
+ });
+ const nilaiBarang=list.reduce((a,x)=>a+x.nilai,0);
+ const tabungan=list.reduce((a,x)=>a+x.tabTotal,0);
+ const pengelola=list.reduce((a,x)=>a+x.upTotal,0);
+ const kas=firstPositive(r?.kasBulanan,r?.uangKasBulanan,r?.kasBulananMember,r?.uangKas);
+ const total=nilaiBarang+tabungan+pengelola+kas;
+ const dp=Math.max(0,num(r?.dp??r?.uangMuka));
+ const cash=isCash(r);
+ const pembayaran=Math.max(0,num(r?.totalDibayar??r?.pembayaran));
+ const sisa=cash?0:Math.max(0,total-Math.max(dp,pembayaran));
+ return {list,nilaiBarang,tabungan,pengelola,kas,total,dp,pembayaran,sisa,cash};
+}
+
 function buildMessage(r,items,statusText){
- const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id;let text=`Halo Kak ${m.nama||""} 👋\n\n`;
- if(statusText==="approved"){text+=`Pesanan member *${nota}* sudah kami cek.\n\n✅ Produk yang tersedia dan disetujui:\n`;items.forEach(x=>text+=`• ${x.nama} x${x.qty} — ${rp(x.total||x.harga*x.qty)}\n`);text+=`\n💰 Total: ${rp(r.total)}\n`;if(isCash(r))text+=`💵 CASH / TUNAI — LUNAS\n📌 Tagihan: Rp 0\n\n`;else text+=`💵 DP: ${rp(r.dp)}\n📌 Sisa: ${rp(r.sisa)}\n📅 Jatuh tempo: ${r.jatuhTempo||"-"}\n\n`;text+=`Pesanan yang sudah disetujui akan diproses di *Data Order Member*.\n\nTerima kasih 🙏\n*${nama}*`;
- }else{text+=`Pesanan member *${nota}* sudah kami cek.\n\n❌ DI BATALKAN\nAlasan pembatalan: ${r.alasanApproval||""}\n\nSilakan isi kembali keranjag order untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;}
+ const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id;
+ const b=waBreakdown(r,items);
+ let text=`Halo Kak ${m.nama||""} 👋\n\n`;
+ if(statusText==="approved"){
+  text+=`Pesanan member *${nota}* sudah kami cek.\n\n✅ *RINCIAN PESANAN*\n━━━━━━━━━━━━━━━━━━\n`;
+  b.list.forEach((x,i)=>{
+   text+=`${i+1}. *${x.nama}*\n`;
+   text+=`   Kode: ${x.kode||"-"}\n`;
+   text+=`   Qty: *${x.qty} pcs*\n`;
+   text+=`   Harga awal: ${rp(x.base)}/pcs\n`;
+   text+=`   Nilai barang: ${rp(x.nilai)}\n`;
+   text+=`   Tabungan: ${rp(x.tab)} × ${x.qty} = ${rp(x.tabTotal)}\n`;
+   text+=`   Pengelola: ${rp(x.up)} × ${x.qty} = ${rp(x.upTotal)}\n`;
+   if(x.diskon>0)text+=`   Diskon barang: -${rp(x.diskon)}\n`;
+   text+=`   Jumlah produk: *${rp(x.itemTotal)}*\n\n`;
+  });
+  text+=`━━━━━━━━━━━━━━━━━━\n📊 *RINGKASAN BIAYA*\n`;
+  text+=`Nilai barang: *${rp(b.nilaiBarang)}*\n`;
+  text+=`Tabungan member: *${rp(b.tabungan)}*\n`;
+  text+=`UP pengelola: *${rp(b.pengelola)}*\n`;
+  text+=`Uang kas: *${rp(b.kas)}*\n`;
+  text+=`💰 *TOTAL: ${rp(b.total)}*\n`;
+  if(b.cash){
+   text+=`💵 Pembayaran: *${rp(b.total)}*\n📌 Sisa tagihan: *Rp 0*\n`;
+  }else{
+   const bayar=Math.max(b.dp,b.pembayaran);
+   text+=`💵 Pembayaran/DP: *${rp(bayar)}*\n📌 Sisa tagihan: *${rp(Math.max(0,b.total-bayar))}*\n📅 Jatuh tempo: *${r.jatuhTempo||r.tanggalJatuhTempo||"-"}*\n`;
+  }
+  text+=`━━━━━━━━━━━━━━━━━━\n\nPesanan yang sudah disetujui akan diproses di *Data Order Member*.\n\nTerima kasih 🙏\n*${nama}*`;
+ }else{
+  text+=`Pesanan member *${nota}* sudah kami cek.\n\n❌ *DI BATALKAN*\nAlasan pembatalan: ${r.alasanApproval||""}\n\nSilakan isi kembali keranjang order untuk pilihan produk pengganti.\n\nTerima kasih 🙏\n*${nama}*`;
+ }
  return text;
 }
 function sendWAData(r,statusText){const m=member(r),url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(buildMessage(r,r.items||[],statusText))}`;window.open(url,"_blank")}
-window.sendWA=id=>{const r=rows.find(x=>x.id===id);if(!r)return;const st=status(r);if(st==="menunggu_approval"){const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id,items=normalizeItems(r);let total=0,totalQty=0;items.forEach(x=>{const qty=Number(x.qty)||0,harga=Number(x.harga)||0,diskon=Math.min(Number(x.diskon)||0,harga*qty),jumlah=harga*qty-diskon;totalQty+=qty;total+=jumlah});let text=`Halo Kak ${m.nama||""} 👋\n\n📋 *KONFIRMASI PESANAN*\n━━━━━━━━━━━━━━━━━━\n🧾 No. Nota: *${nota}*\n👤 Member: *${m.nama||"-"}*\n━━━━━━━━━━━━━━━━━━\n\n📦 *RINCIAN ORDERAN*\n\n`;items.forEach((x,i)=>{const qty=Number(x.qty)||0,harga=Number(x.harga)||0,diskon=Math.min(Number(x.diskon)||0,harga*qty),jumlah=harga*qty-diskon;text+=`${i+1}. *${x.nama}*\n   Kode: ${x.kode||"-"}\n   Qty: *${qty} pcs*\n   Harga: ${rp(harga)}/pcs\n   ${diskon>0?`Diskon: -${rp(diskon)}\n   `:""}Jumlah: *${rp(jumlah)}*\n\n`});text+=`━━━━━━━━━━━━━━━━━━\n📊 *RINGKASAN*\nTotal Produk: *${totalQty} pcs*\n💰 Total Pesanan: *${rp(total)}*\n━━━━━━━━━━━━━━━━━━\n\n⚠️ *MOHON CEK ULANG ORDERAN ANDA*\n\nPastikan kembali produk, kode, jumlah, harga dan total pesanan sudah benar.\n\n📦 Setelah memastikan pesanan benar, pesanan akan kami *APPROVAL* dan diteruskan ke pemasok.\n\nTerima kasih 🙏\n*${nama}*`;window.open(`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(text)}`,"_blank");return}sendWAData(r,st==="approved"?"approved":"rejected")};
+window.sendWA=id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const st=status(r);
+ if(st==="menunggu_approval"){
+  const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id,items=normalizeItems(r),b=waBreakdown(r,items);
+  let text=`Halo Kak ${m.nama||""} 👋\n\n📋 *KONFIRMASI PESANAN*\n━━━━━━━━━━━━━━━━━━\n🧾 No. Nota: *${nota}*\n👤 Member: *${m.nama||"-"}*\n━━━━━━━━━━━━━━━━━━\n\n📦 *RINCIAN ORDERAN*\n\n`;
+  b.list.forEach((x,i)=>{
+   text+=`${i+1}. *${x.nama}*\n`;
+   text+=`   Kode: ${x.kode||"-"}\n`;
+   text+=`   Qty: *${x.qty} pcs*\n`;
+   text+=`   Harga awal: ${rp(x.base)}/pcs\n`;
+   text+=`   Nilai barang: ${rp(x.nilai)}\n`;
+   text+=`   Tabungan: ${rp(x.tab)} × ${x.qty} = ${rp(x.tabTotal)}\n`;
+   text+=`   Pengelola: ${rp(x.up)} × ${x.qty} = ${rp(x.upTotal)}\n`;
+   if(x.diskon>0)text+=`   Diskon barang: -${rp(x.diskon)}\n`;
+   text+=`   Jumlah produk: *${rp(x.itemTotal)}*\n\n`;
+  });
+  text+=`━━━━━━━━━━━━━━━━━━\n📊 *RINGKASAN BIAYA*\n`;
+  text+=`Total Produk: *${b.list.reduce((a,x)=>a+x.qty,0)} pcs*\n`;
+  text+=`Nilai barang: *${rp(b.nilaiBarang)}*\n`;
+  text+=`Tabungan member: *${rp(b.tabungan)}*\n`;
+  text+=`UP pengelola: *${rp(b.pengelola)}*\n`;
+  text+=`Uang kas: *${rp(b.kas)}*\n`;
+  text+=`💰 *TOTAL PESANAN: ${rp(b.total)}*\n`;
+  text+=`━━━━━━━━━━━━━━━━━━\n\n⚠️ *MOHON CEK ULANG ORDERAN ANDA*\n\nPastikan kembali produk, kode, jumlah, harga awal, tabungan, pengelola, uang kas dan total pesanan sudah benar.\n\n📦 Setelah memastikan pesanan benar, pesanan akan kami *APPROVAL* dan diteruskan ke pemasok.\n\nTerima kasih 🙏\n*${nama}*`;
+  window.open(`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(text)}`,"_blank");
+  return;
+ }
+ sendWAData(r,st==="approved"?"approved":"rejected");
+};
 
 $("search").addEventListener("change",()=>{render();renderApprovedHistory();renderCicilanRequests();});
 $("list").addEventListener("input",e=>{const order=e.target.closest(".order");if(!order)return;if(e.target.classList.contains("product-search"))searchReplacementProducts(e.target);if(e.target.classList.contains("approved")||e.target.classList.contains("price")||e.target.classList.contains("tempo-edit")||e.target.classList.contains("due-edit"))recalcOrder(order.dataset.id)});
