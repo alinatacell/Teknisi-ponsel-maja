@@ -188,13 +188,68 @@ function itemList(r){
  });
 }
 
-function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
-function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??0)||0)}
+function firstPositive(...vals){
+ for(const v of vals){
+  const n=Number(v);
+  if(Number.isFinite(n)&&n>0)return n;
+ }
+ return 0;
+}
+function kasOf(r){
+ const src=r._paymentSource||{};
+ return firstPositive(
+  r.kasBulanan,r.uangKasBulanan,r.kasBulananMember,r.uangKas,
+  src.kasBulanan,src.uangKasBulanan,src.kasBulananMember,src.uangKas
+ );
+}
+function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??r.uangMuka??0)||0)}
+
+/* RINCIAN RESMI ORDER MEMBER
+   Untuk order yang sudah APPROVED, rincian diambil dari order_member.items.
+   _paymentSource hanya menjadi FALLBACK jika field rincian memang kosong. */
+function detailTotalsOf(r){
+ const src=r._paymentSource||{};
+ const items=Array.isArray(r.items)?r.items:(Array.isArray(r.produkList)?r.produkList:[]);
+ const sourceItems=Array.isArray(src.items)?src.items:(Array.isArray(src.produkList)?src.produkList:[]);
+ let nilai=0,up=0,tab=0;
+ items.forEach((x,i)=>{
+  const si=sourceItems[i]||{};
+  const qty=Math.max(0,Number(x.qty??x.jumlah??x.quantity??si.qty??1)||0);
+  const hargaDasar=firstPositive(x.hargaAwal,x.hargaDasar,si.hargaAwal,si.hargaDasar);
+  const diskon=Math.max(0,Number(x.diskon??x.discount??si.diskon??si.discount??0)||0);
+  if(hargaDasar>0)nilai+=Math.max(0,hargaDasar*qty-diskon);
+  up+=firstPositive(
+    x.upPengelolaPerPcs,x.upPengelola, x.upPengelolaPcs,x.upPerPcs, x.up,
+    si.upPengelolaPerPcs,si.upPengelola,si.upPengelolaPcs,si.upPerPcs,si.up
+  )*qty;
+  tab+=firstPositive(
+    x.tabunganPerPcs,x.tabungan, x.tabunganPcs,x.tabunganPerItem,
+    si.tabunganPerPcs,si.tabungan,si.tabunganPcs,si.tabunganPerItem
+  )*qty;
+ });
+ const agg=(keys)=>firstPositive(...keys.flatMap(k=>[r[k],src[k]]));
+ const totalNilai=agg([
+  "totalNilaiBarang","nilaiBarangTotal","totalNilaiProduk"
+ ]);
+ const totalUp=agg([
+  "totalUPPengelola","totalUpPengelola","upPengelolaTotal","totalUP","totalUp"
+ ]);
+ const totalTab=agg([
+  "totalTabunganMember","totalTabungan","tabunganMemberTotal","tabunganTotal"
+ ]);
+ return {
+  nilai: nilai>0?nilai:totalNilai,
+  up: up>0?up:totalUp,
+  tab: tab>0?tab:totalTab
+ };
+}
+
 function calculateOrder(r){
  const items=itemList(r);
- const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
- const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
- const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
+ const d=detailTotalsOf(r);
+ const nilaiBarang=d.nilai;
+ const up=d.up;
+ const tabungan=d.tab;
  const kas=kasOf(r);
  const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
  const paid=paidOf(r);
@@ -202,7 +257,6 @@ function calculateOrder(r){
  const sisa=cash?0:Math.max(0,totalTagihan-paid);
  return{items,nilaiBarang,up,tabungan,kas,totalTagihan,paid,sisa,cash};
 }
-
 function dueDate(r){
  if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
@@ -270,35 +324,81 @@ async function loadOrders(){
  }
  const arr=[...map.values()];
  await Promise.all(arr.map(async x=>{
-  const sid=String(x.sourcePenjualanId||"").trim();
-  if(!sid)return;
-  try{
-   const ps=await getDoc(doc(db,"penjualan",sid));
-   if(!ps.exists())return;
-   const p=ps.data()||{},own=String(p.ownerUid||p.ownerId||"").trim();
-   if(own&&own!==ownerUid)return;
-   x._paymentSource=p;
-   const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
-   const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
-   if(sourceItems.length){
-    const byKey=new Map(sourceItems.map(si=>[String(si.produkId||si.id||si.kode||si.kodeProduk||si.nama||""),si]));
-    x.items=(orderItems.length?orderItems:sourceItems).map(oi=>{
-     const key=String(oi.produkId||oi.id||oi.kode||oi.kodeProduk||oi.nama||""),si=byKey.get(key)||{};
-     return{
-      ...si,...oi,
-      upPengelolaPerPcs:Number(oi.upPengelolaPerPcs??oi.upPengelola??si.upPengelolaPerPcs??si.upPengelola??0)||0,
-      tabunganPerPcs:Number(oi.tabunganPerPcs??oi.tabungan??si.tabunganPerPcs??si.tabungan??0)||0
+   let p=null;
+   const sid=String(x.sourcePenjualanId||"").trim();
+   try{
+     // 1. Cara utama: sourcePenjualanId.
+     if(sid){
+       const ps=await getDoc(doc(db,"penjualan",sid));
+       if(ps.exists())p=ps.data()||{};
+     }
+     // 2. Untuk approval lama yang tidak membawa sourcePenjualanId,
+     //    cari penjualan berdasarkan nomor nota.
+     if(!p && x.nomorNota){
+       for(const field of ["nomorNota","orderMemberId"]){
+         try{
+           const q=field==="nomorNota"
+             ? query(collection(db,"penjualan"),where(field,"==",x.nomorNota))
+             : query(collection(db,"penjualan"),where(field,"==",x.id));
+           const ss=await getDocs(q);
+           const hit=ss.docs.find(d=>{
+             const z=d.data()||{},own=String(z.ownerUid||z.ownerId||"").trim();
+             return !own||own===ownerUid;
+           });
+           if(hit){p=hit.data()||{};x.sourcePenjualanId=hit.id;break;}
+         }catch(e){console.warn("Fallback penjualan",field,x.id,e?.message||e);}
+       }
+     }
+     if(!p)return;
+     const own=String(p.ownerUid||p.ownerId||"").trim();
+     if(own&&own!==ownerUid)return;
+     x._paymentSource=p;
+
+     const sourceItems=Array.isArray(p.items)?p.items:(Array.isArray(p.produkList)?p.produkList:[]);
+     const orderItems=Array.isArray(x.items)?x.items:(Array.isArray(x.produkList)?x.produkList:[]);
+
+     // Cocokkan item dengan beberapa kunci. Ini penting untuk data lama yang
+     // mempunyai produkId berbeda tetapi kode/nama sama.
+     const norm=v=>String(v??"").trim().toLowerCase();
+     const keysOf=o=>[o?.produkId,o?.id,o?.kode,o?.kodeProduk,o?.sku,o?.nama,o?.namaProduk].map(norm).filter(Boolean);
+     const findSource=oi=>{
+       const ok=new Set(keysOf(oi));
+       return sourceItems.find(si=>keysOf(si).some(k=>ok.has(k)))||null;
      };
-    });
-   }
-   for(const k of ["upPengelolaPerPcs","upPengelola","tabunganPerPcs","tabungan","totalUPPengelola","totalUpPengelola","totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan"]){
-    if((x[k]===undefined||x[k]===null||x[k]==="")&&p[k]!==undefined)x[k]=p[k];
-   }
-  }catch(e){console.warn("Sinkron pembayaran order",x.id,e.message);}
+
+     if(sourceItems.length){
+       const base=orderItems.length?orderItems:sourceItems;
+       x.items=base.map((oi,idx)=>{
+         const si=findSource(oi)||sourceItems[idx]||{};
+         const positive=(...vals)=>{
+           for(const v of vals){const n=Number(v);if(Number.isFinite(n)&&n>0)return n;}
+           return 0;
+         };
+         return {
+           ...si,...oi,
+           // order_member adalah sumber utama. Source penjualan hanya fallback.
+           hargaAwal:positive(oi.hargaAwal,oi.hargaDasar,si.hargaAwal,si.hargaDasar),
+           diskon:positive(oi.diskon,oi.discount,si.diskon,si.discount),
+           upPengelolaPerPcs:positive(oi.upPengelolaPerPcs,oi.upPengelola,si.upPengelolaPerPcs,si.upPengelola),
+           tabunganPerPcs:positive(oi.tabunganPerPcs,oi.tabungan,si.tabunganPerPcs,si.tabungan)
+         };
+       });
+     }
+
+     // Salin agregat sumber bila order_member lama belum memilikinya.
+     for(const k of [
+       "totalNilaiBarang","totalUPPengelola","totalUpPengelola",
+       "totalTabunganMember","totalTabungan","kasBulanan","uangKasBulanan",
+       "kasBulananMember","uangKas"
+     ]){
+       const xv=Number(x[k]);
+       const pv=Number(p[k]);
+       if((!Number.isFinite(xv)||xv===0)&&Number.isFinite(pv)&&pv!==0)x[k]=p[k];
+     }
+   }catch(e){console.warn("Sinkron rincian order",x.id,e?.message||e);}
  }));
  orders=arr;
 }
-
 function kasMemberMonthKey(r){
  const m=r.member||r.pelanggan||{};
  const memberId=String(r.memberId??r.idMember??r.pelangganId??m.id??m.uid??r.uidMember??m.email??m.wa??m.noWa??m.nama??"-").trim().toLowerCase();
