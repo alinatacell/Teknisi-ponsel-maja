@@ -281,9 +281,16 @@ function itemList(r){
     has(r,"upPengelola")?numv(r.upPengelola):0
   );
 
+  const totalTabStored =
+    has(item,"totalTabunganMember") ? numv(item.totalTabunganMember) :
+    has(item,"totalTabungan") ? numv(item.totalTabungan) :
+    has(r,"totalTabunganMember") ? numv(r.totalTabunganMember) :
+    has(r,"totalTabungan") ? numv(r.totalTabungan) : 0;
+
   const tabungan=Math.max(0,
     has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
     has(item,"tabungan")?numv(item.tabungan):
+    (totalTabStored>0&&qty>0)?totalTabStored/qty:
     has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
     has(r,"tabungan")?numv(r.tabungan):0
   );
@@ -423,10 +430,13 @@ async function loadOrders(){
         Number(oi.upPengelola)>0?Number(oi.upPengelola):
         Number(si.upPengelolaPerPcs)>0?Number(si.upPengelolaPerPcs):
         Number(si.upPengelola)>0?Number(si.upPengelola):0),
-      tabunganPerPcs:(Number(oi.tabunganPerPcs)>0?Number(oi.tabunganPerPcs):
-        Number(oi.tabungan)>0?Number(oi.tabungan):
-        Number(si.tabunganPerPcs)>0?Number(si.tabunganPerPcs):
-        Number(si.tabungan)>0?Number(si.tabungan):0)
+      tabunganPerPcs:(
+        oi.tabunganPerPcs!==undefined && oi.tabunganPerPcs!==null && oi.tabunganPerPcs!=="" ? Number(oi.tabunganPerPcs) :
+        oi.tabungan!==undefined && oi.tabungan!==null && oi.tabungan!=="" ? Number(oi.tabungan) :
+        si.tabunganPerPcs!==undefined && si.tabunganPerPcs!==null && si.tabunganPerPcs!=="" ? Number(si.tabunganPerPcs) :
+        si.tabungan!==undefined && si.tabungan!==null && si.tabungan!=="" ? Number(si.tabungan) :
+        undefined
+      )
      };
     });
    }
