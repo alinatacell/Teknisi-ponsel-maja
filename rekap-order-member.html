@@ -281,14 +281,9 @@ function itemList(r){
     has(r,"upPengelola")?numv(r.upPengelola):0
   );
 
-  const tabunganTotalOrder=
-    has(r,"totalTabunganMember")?numv(r.totalTabunganMember):
-    has(r,"totalTabungan")?numv(r.totalTabungan):0;
-
   const tabungan=Math.max(0,
-    has(item,"tabunganPerPcs") && numv(item.tabunganPerPcs)>0 ? numv(item.tabunganPerPcs):
-    has(item,"tabungan") && numv(item.tabungan)>0 ? numv(item.tabungan):
-    tabunganTotalOrder>0 && qty>0 ? tabunganTotalOrder/qty:
+    has(item,"tabunganPerPcs")?numv(item.tabunganPerPcs):
+    has(item,"tabungan")?numv(item.tabungan):
     has(r,"tabunganPerPcs")?numv(r.tabunganPerPcs):
     has(r,"tabungan")?numv(r.tabungan):0
   );
