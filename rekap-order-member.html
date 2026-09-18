@@ -346,7 +346,14 @@ function calculateOrder(r){
    r.upPengelolaTotal ??
    0
  ));
- const up=(hasItemUP || orderUPTotal<=0) ? itemUp : orderUPTotal;
+ // UP Pengelola:
+ // 1. Jika ada UP per-item, gunakan data tersebut.
+ // 2. Jika tidak ada per-item tetapi ada total UP di order, gunakan total tersebut.
+ // 3. Jika Firebase belum menyimpan UP sama sekali, gunakan default Rp 300/PCS.
+ const qtyTotal=items.reduce((a,x)=>a+Math.max(0,num(x.qty)),0);
+ const up=hasItemUP
+   ? itemUp
+   : (orderUPTotal>0 ? orderUPTotal : qtyTotal*300);
 
  const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
  const kas=kasOf(r);
