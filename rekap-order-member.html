@@ -333,7 +333,21 @@ function paidOf(r){return Math.max(0,Number(r.totalDibayar??r.pembayaran??r.dp??
 function calculateOrder(r){
  const items=itemList(r);
  const nilaiBarang=items.reduce((a,x)=>a+x.nilaiBarang,0);
- const up=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
+
+ // UP Pengelola: utamakan UP per-item/per-Pcs.
+ // Jika data lama hanya menyimpan totalUPPengelola di level order,
+ // gunakan total tersebut sekali agar tidak ada UP yang hilang/terhitung ganda.
+ const itemUp=items.reduce((a,x)=>a+x.upPengelolaPerPcs*x.qty,0);
+ const hasItemUP=items.some(x=>x.upPengelolaPerPcs>0);
+ const orderUPTotal=Math.max(0,num(
+   r.totalUPPengelola ??
+   r.totalUpPengelola ??
+   r.totalUp ??
+   r.upPengelolaTotal ??
+   0
+ ));
+ const up=(hasItemUP || orderUPTotal<=0) ? itemUp : orderUPTotal;
+
  const tabungan=items.reduce((a,x)=>a+x.tabunganPerPcs*x.qty,0);
  const kas=kasOf(r);
  const totalTagihan=Math.max(0,nilaiBarang+up+tabungan+kas);
