@@ -156,7 +156,7 @@ const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number(v)||0;
 function notice(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c;}
-let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),reloadStockProducts=[],reloadStockByKey=new Map(),ready=false;
+let uid="",ownerUid="",profile={},orders=[],stockProducts=[],stockByKey=new Map(),ready=false;
 
 function ownerOf(d){
  const role=String(d.role||"").toLowerCase();
@@ -273,7 +273,7 @@ function itemList(r){
   const item={...si,...x};
   const qty=Math.max(0,numv(item.qty??item.jumlah??item.quantity??0));
 
-  // Tabungan dan UP adalah milik ORDER/MEMBER masing-masing.
+  // Tabungan dan UP selalu milik item/order tersebut.
   const up=Math.max(0,
     has(item,"upPengelolaPerPcs")?numv(item.upPengelolaPerPcs):
     has(item,"upPengelola")?numv(item.upPengelola):
@@ -289,40 +289,21 @@ function itemList(r){
   );
 
   const diskon=Math.max(0,numv(item.diskon??item.discount??0));
+  const norm=normalisasiHargaMember(item,r,si);
 
-  // ============================================================
-  // SUMBER HARGA ASLI:
-  // Reload Stok Spreadsheet -> harga normal/asli.
-  // Jadi tidak peduli harga Firebase lama sudah ditempeli
-  // Tabungan + UP + Kas atau belum.
-  // ============================================================
-  const reloadProduct=reloadStockForItem(item);
-  const reloadPrice=normalPriceFromReloadStock(reloadProduct);
-
-  // Fallback kedua: dokumen stok Firebase.
-  const firebaseStock=findStockForItem(item);
-  const firebaseStockPrice=normalPriceFromReloadStock(firebaseStock);
-
-  let hargaAwal=0;
   let nilaiBarang=0;
+  let hargaAwal=0;
 
-  if(reloadPrice>0){
-    hargaAwal=reloadPrice;
-    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-  }else if(firebaseStockPrice>0){
-    hargaAwal=firebaseStockPrice;
-    nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
-  }else if(has(item,"hargaDasar")){
-    // Data lama yang jelas sudah terurai.
-    hargaAwal=Math.max(0,numv(item.hargaDasar));
+  if(norm.hargaNormal>0){
+    // Harga stok/reload = harga asli. Jangan tambahkan Tabungan/UP/Kas lagi.
+    hargaAwal=norm.hargaNormal;
     nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
   }else if(has(item,"nilaiBarang")){
-    // Jika tidak ada sumber stok, hormati nilaiBarang yang tersimpan.
+    // Data lama yang sudah terurai: biarkan nilaiBarang sebagaimana tersimpan.
     nilaiBarang=Math.max(0,numv(item.nilaiBarang)-diskon);
     hargaAwal=qty>0?nilaiBarang/qty:0;
   }else{
-    // Terakhir: Firebase hanya punya harga gabungan.
-    // Uraikan Tabungan + UP satu kali.
+    // Tidak ada harga stok: hanya di sini harga Firebase boleh diuraikan.
     hargaAwal=basePriceOfItem(item,r);
     nilaiBarang=Math.max(0,hargaAwal*qty-diskon);
   }
@@ -336,6 +317,7 @@ function itemList(r){
     tabunganPerPcs:tabungan,
     total:Math.max(0,nilaiBarang+up*qty+tabungan*qty)
   };
+ });
 }
 
 function kasOf(r){return Math.max(0,Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??r.uangKas??0)||0)}
@@ -398,50 +380,6 @@ async function loadStock(){
    .map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
   keys.forEach(k=>{if(!stockByKey.has(k))stockByKey.set(k,p);});
  });
-}
-
-function loadReloadStockCache(){
- reloadStockProducts=[];
- reloadStockByKey=new Map();
- try{
-  const raw=localStorage.getItem("FIXZY_STOK_MEMBER_SPREADSHEET_V1");
-  const data=JSON.parse(raw||"{}");
-  const list=Array.isArray(data.products)?data.products:[];
-  reloadStockProducts=list;
-  list.forEach(p=>{
-   const keys=[
-    p.id,p.produkId,p.kode,p.kodeProduk,p.sku,
-    p.nama,p.namaProduk,p.kodeBarang,p.namaBarang
-   ].map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
-   keys.forEach(k=>{if(!reloadStockByKey.has(k))reloadStockByKey.set(k,p)});
-  });
- }catch(e){
-  console.warn("Cache Reload Stok tidak terbaca:",e.message);
- }
-}
-
-function reloadStockForItem(x){
- const keys=[
-  x.produkId,x.id,x.kode,x.kodeProduk,x.sku,
-  x.nama,x.namaProduk,x.kodeBarang,x.namaBarang
- ].map(v=>String(v??"").trim().toLowerCase()).filter(Boolean);
-
- for(const k of keys){
-  const p=reloadStockByKey.get(k);
-  if(p)return p;
- }
- return null;
-}
-
-function normalPriceFromReloadStock(p){
- if(!p)return 0;
- // Reload Stok Spreadsheet menyimpan kolom harga normal pada field `harga`.
- // Field lain dipakai hanya untuk kompatibilitas cache lama.
- for(const k of ["harga","hargaDasar","hargaJual","hargaTempo","hargaNormal","hargaStok"]){
-  const n=Number(p[k]);
-  if(Number.isFinite(n)&&n>0)return n;
- }
- return 0;
 }
 
 function findStockForItem(x){
@@ -724,8 +662,6 @@ async function bacaSesiIndex(){
 
     $("email").textContent=profile.email||s.email||"-";
 
-    // Harga normal dari Reload Stok Spreadsheet menjadi acuan utama.
-    loadReloadStockCache();
     await loadStock();
     await loadOrders();
 
