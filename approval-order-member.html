@@ -3,523 +3,1003 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FIXZY | Approval Order Member</title>
+<title>FIXZY | Approval Order Owner - Rapi</title>
 <style>
-*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--g:#16a34a;--r:#dc2626}
+*{box-sizing:border-box}:root{--b:#0b0f14;--y:#ffc107;--bg:#eef2f6;--green:#16a34a;--red:#dc2626}
 html,body{margin:0;padding:0;overflow-x:hidden}body{background:var(--bg);color:#111827;font-family:Arial,sans-serif}
-header{position:fixed;top:0;left:0;right:0;z-index:99;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107;display:flex;align-items:center}
-.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}
-.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
-.btn{border:2px solid #111827;border-radius:9px;padding:10px 14px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:#fff;color:#111827}
-main{max-width:1100px;margin:auto;padding:88px 12px 24px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
-.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
-.title{font-size:18px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}
-.employee-menu{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch}
-.employee-btn{flex:0 0 auto;border:2px solid #111827;border-radius:12px;padding:11px 18px;background:#fff;color:#111827;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 #111827;font-size:16px}
-.employee-btn.active{background:#ffc107}.employee-btn small{display:block;font-size:9px;color:#64748b;margin-top:3px}.employee-btn.active small{color:#111827}
-.order{border:2px solid #111827;border-radius:12px;margin-bottom:14px;overflow:hidden;background:#fff}.order-head{padding:13px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-size:20px;font-weight:900;line-height:1.1}.badge.rejected{background:#fee2e2;border-color:#ef4444;color:#991b1b}.badge.approved{background:#dcfce7;border-color:#22c55e;color:#166534}.badge{display:inline-block;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.order-body{padding:14px}.meta{font-size:13px;line-height:1.65}.item{border:2px solid #111827;border-radius:10px;padding:12px;margin-top:10px}.item-name{font-size:18px;font-weight:900}.item-meta{font-size:13px;color:#64748b;margin-top:4px}.summary{margin-top:12px;border:2px solid #111827;border-radius:10px;padding:11px;background:#fffbeb;font-size:14px;line-height:1.8}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.history-return{background:#ffc107;color:#111827}.history-delete{background:#fee2e2;color:#991b1b;border-color:#991b1b}.empty{text-align:center;padding:28px;color:#64748b;font-size:13px}
-.statusline{font-size:12px;font-weight:900;color:#15803d}.count{font-size:12px;color:#64748b;margin-top:7px}
-body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body.dark .item,body.dark .employee-btn{background:#111827;color:#e5e7eb;border-color:#475569;box-shadow:none}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark .summary{background:#1c1917;border-color:#475569}body.dark .employee-btn.active{background:#ffc107;color:#111827}
-@media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.order-head{flex-direction:column}.actions .btn{flex:1;min-width:120px}.order-title{font-size:18px}}
+header{position:fixed;top:0;left:0;right:0;z-index:9999;height:74px;background:#0b0f14;color:#fff;border-bottom:3px solid #ffc107;display:flex;align-items:center}
+.head{width:100%;max-width:1100px;margin:auto;padding:0 12px;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;object-fit:contain;background:#000;padding:4px}
+.hi{min-width:0;flex:1}.hi h1{margin:0;font-size:18px;font-weight:900}.email{font-size:11px;color:#9ca3af;font-weight:700}
+.acts{display:flex;gap:8px}.btn{border:2px solid #111827;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 #111827}.refresh{height:42px;background:transparent;color:#fff;border-color:#334155;box-shadow:none}.dark{height:42px;width:44px;background:#1f2937;color:#facc15;border-color:#334155;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:88px 12px 24px}.card{background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;margin-bottom:14px;box-shadow:4px 4px 0 #111827}
+.title{font-size:16px;font-weight:900;border-bottom:2px solid #111827;padding-bottom:9px;margin-bottom:12px}.notice{font-size:11px;font-weight:800;color:#64748b;margin-bottom:10px}.ok{color:#15803d}.err{color:#dc2626}
+.filters{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px}label{display:block;font-size:11px;font-weight:900;color:#4b5563;margin-bottom:5px}
+input,select{width:100%;padding:10px;border:2px solid #111827;border-radius:8px;background:#fff;color:#111827;font:inherit;box-shadow:2px 2px 0 #111827}
+.order{border:2px solid #111827;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}.order-head{padding:12px;background:#f8fafc;border-bottom:2px solid #111827;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-weight:900}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#fef3c7;border:1px solid #f59e0b}.badge.approved{background:#dcfce7;border-color:#22c55e;color:#166534}.badge.rejected{background:#fee2e2;border-color:#ef4444;color:#991b1b}.badge.revision{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.order-body{padding:12px}.meta{font-size:12px;line-height:1.7}.meta b{color:#111827}.items{margin-top:10px;border:2px solid #111827;border-radius:9px;overflow:hidden}.item{padding:10px;border-bottom:1px solid #e5e7eb}.item:last-child{border-bottom:0}.item-top{display:flex;justify-content:space-between;gap:8px}.item-name{font-weight:900}.stockline{font-size:11px;color:#64748b;margin-top:3px}.stock-ok{color:#15803d;font-weight:900}.stock-no{color:#dc2626;font-weight:900}
+.item-grid{display:grid;grid-template-columns:minmax(0,1.5fr) 100px 120px;gap:8px;align-items:end;margin-top:8px}.item-grid input,.item-grid select{box-shadow:none}.product-select{min-width:0}.product-search{margin-bottom:6px!important;box-shadow:none!important}.qty-label{font-size:10px;color:#64748b;font-weight:800;margin-bottom:4px}
+.order-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.order-edit-grid input{box-shadow:none}
+.summary{margin-top:10px;border:2px solid #111827;border-radius:9px;padding:10px;background:#fffbeb;font-size:12px;line-height:1.8}.summary b{font-size:13px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.primary{background:#111827;color:#fff}.approve{background:#16a34a;color:#fff}.reject{background:#fee2e2;color:#991b1b}.wa{background:#22c55e;color:#fff}.secondary{background:#e5e7eb}
+.add-product{background:#ffc107;color:#111827}.revision{background:#f59e0b;color:#111827}
+.history-card{border:2px solid #166534;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#f0fdf4}
+.history-head{padding:12px;background:#dcfce7;border-bottom:2px solid #166534;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.history-body{padding:12px}.history-item{padding:8px 0;border-bottom:1px solid #bbf7d0;font-size:12px}.history-item:last-child{border-bottom:0}
+.revert-info{background:#fff7ed;border:2px solid #f97316;border-radius:9px;padding:10px;font-size:11px;font-weight:800;margin-top:10px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:10000;display:none;align-items:center;justify-content:center;padding:14px}.modal-backdrop.show{display:flex}.modal{width:min(560px,100%);background:#fff;border:2px solid #111827;border-radius:12px;padding:15px;box-shadow:5px 5px 0 #111827}.modal-title{font-size:16px;font-weight:900;margin-bottom:12px}.modal-grid{display:grid;grid-template-columns:1fr 110px;gap:10px}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.modal-actions .btn{min-width:110px}.add-results{display:none;max-height:230px;overflow:auto;border:2px solid #111827;border-radius:8px;margin-top:6px;background:#fff}.add-results.show{display:block}.add-result{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #e5e7eb;padding:10px;cursor:pointer}.add-result:last-child{border-bottom:0}.add-result .pname{font-weight:900}.add-result .meta{font-size:11px;color:#64748b;margin-top:3px}.empty{text-align:center;padding:28px;color:#64748b;font-size:12px}
+.search-hint{margin-top:8px;padding:9px 10px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc;font-size:11px;color:#64748b;font-weight:800}
+.search-result-count{display:none;margin-top:9px;padding:9px 10px;border-radius:8px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:11px;font-weight:900}.employee-search-wrap{position:relative}.employee-results{display:none;position:absolute;left:0;right:0;top:100%;z-index:10000;background:#fff;border:2px solid #111827;border-radius:8px;box-shadow:3px 3px 0 #111827;max-height:240px;overflow:auto;margin-top:5px}.employee-results.show{display:block}.employee-result{padding:10px;border-bottom:1px solid #e5e7eb;cursor:pointer;font-size:12px;font-weight:800}.employee-result:hover{background:#f3f4f6}.employee-result small{display:block;color:#64748b;font-size:10px;margin-top:3px}.employee-empty{padding:10px;color:#64748b;font-size:11px;font-weight:800}body.dark .employee-results{background:#0f172a;border-color:#475569}body.dark .employee-result{border-color:#334155}body.dark .employee-result:hover{background:#1e293b}
+body.dark{background:#0b1220;color:#e5e7eb}body.dark .card,body.dark .order,body.dark .item{background:#111827;color:#e5e7eb;border-color:#475569}body.dark .order-head{background:#0f172a;border-color:#475569}body.dark .title{border-color:#475569}body.dark label{color:#9ca3af}body.dark input,body.dark select{background:#0f172a;color:#fff;border-color:#475569}body.dark .summary{background:#1c1917;border-color:#475569}body.dark .meta b{color:#fff}body.dark .stockline{color:#94a3b8}body.dark .history-card{background:#0f2417;border-color:#166534}body.dark .history-head{background:#12351f;border-color:#166534}body.dark .history-item{border-color:#166534}body.dark .revert-info{background:#27170a;border-color:#c2410c}body.dark .search-hint{background:#0f172a;border-color:#475569}
+@media(max-width:800px){.filters{grid-template-columns:1fr}.item-grid{grid-template-columns:1fr 100px}.item-grid>div:first-child{grid-column:1/-1}.order-edit-grid{grid-template-columns:1fr}}
+@media(max-width:650px){header{height:68px}.head h1{font-size:16px}main{padding-top:80px}.refresh{padding:8px}.order-head{flex-direction:column}.actions .btn{flex:1;min-width:120px}}
+
+.employee-menu-wrap{grid-column:1/-1}
+.employee-menu{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+.employee-btn{flex:0 0 auto;border:2px solid #111827;border-radius:9px;padding:10px 14px;background:#fff;color:#111827;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 #111827}
+.employee-btn.active{background:#ffc107}
+body.dark .employee-btn{background:#0f172a;color:#fff;border-color:#475569;box-shadow:none}
+body.dark .employee-btn.active{background:#ffc107;color:#111827}
 </style>
 </head>
 <body>
 <header><div class="head">
 <img class="logo" src="logo.png" alt="FIXZY">
-<div class="hi"><h1>Approval Order Member</h1><span id="email" class="email">-</span></div>
-<button id="refresh" class="btn refresh">↻ Refresh</button>
+<div class="hi"><h1>Approval Order Owner</h1><span id="email" class="email">-</span></div>
+<div class="acts"><button class="btn refresh" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark">🌙</button></div>
 </div></header>
+
+<div id="addProductModal" class="modal-backdrop"><div class="modal">
+<div class="modal-title">➕ Tambah Produk ke Pesanan</div>
+<div class="notice">Ketik minimal 2 karakter. Hasil diambil dari semua Spreadsheet supplier.</div>
+<label>CARI PRODUK</label>
+<input id="addProductSearch" class="product-search" type="search" autocomplete="off" placeholder="Samsung / Vivo / A15 / kode...">
+<div id="addProductResults" class="add-results"></div>
+<div id="addProductInfo" class="stockline" style="margin-top:8px"></div>
+<div class="modal-grid" style="margin-top:10px"><div><label>QTY</label><input id="addProductQty" type="number" min="1" value="1"></div><div><label>HARGA/PCS</label><input id="addProductPrice" type="number" min="0" value="0"></div></div>
+<div class="modal-actions"><button class="btn secondary" type="button" onclick="closeAddProduct()">Batal</button><button class="btn add-product" type="button" onclick="saveAddedProduct()">💾 Tambahkan</button></div>
+</div></div>
+
 <main>
 <div id="notice" class="notice">Memulihkan akun yang sudah login di FIXZY...</div>
 
-<div class="card">
- <div class="title">👨‍🔧 Pilih Employee / Karyawan</div>
- <div class="notice">Daftar employee dibaca langsung dari <b>users</b> milik Owner yang sedang login.</div>
- <div id="employees" class="employee-menu"></div>
- <div id="employeeStatus" class="count">Memuat employee...</div>
+<div class="card"><div class="title">🔎 Cari Order Berdasarkan Nama Karyawan</div>
+<div class="filters">
+<div class="employee-search-wrap"><label>CARI BERDASARKAN KARYAWAN / EMPLOYEE</label>
+<div class="employee-search-wrap">
+  <label>CARI KARYAWAN / EMPLOYEE</label>
+  <select id="search">
+    <option value="">Pilih karyawan...</option>
+  </select>
+  <div class="employee-help">Nama karyawan dan kode dimuat otomatis dari data Firebase Owner yang sedang login.</div>
+</div>
+</div>
+<div><label>STATUS</label><div style="font-size:11px;font-weight:900;color:#15803d;padding:11px 0">Menunggu Approval</div></div>
+<div><label>HASIL PENCARIAN</label><div id="resultStatus" style="font-size:11px;color:#64748b;line-height:1.6;padding-top:7px">Belum memilih karyawan.</div></div>
+</div>
+<div class="search-hint">Pilih nama karyawan terlebih dahulu. Order, riwayat approval, dan request cicilan tidak ditampilkan sebelum nama dipilih.</div>
+<div id="searchCount" class="search-result-count"></div>
 </div>
 
-<div class="card">
- <div class="title">📋 Order Menunggu Approval</div>
- <div class="statusline">MENUNGGU APPROVAL</div>
- <div id="orderCount" class="count">Pilih employee untuk menampilkan order.</div>
+<div class="card" id="cicilanCard" style="display:none">
+ <div class="title">💳 Approval Cicilan / Transfer Member</div>
+ <div class="notice">Request cicilan yang dikirim dari halaman <b>Cicilan Tagihan</b> akan muncul di sini. Tagihan baru berubah setelah Owner menyetujui.</div>
+ <div id="cicilanList"></div>
 </div>
+
 <div id="list"></div>
-<div class="card" id="historyCard" style="display:none">
- <div class="title">📚 Riwayat Order Member</div>
- <div class="notice">Riwayat berisi order yang sudah <b>APPROVED</b> atau <b>DITOLAK</b>. Setiap order bisa dikembalikan ke <b>MENUNGGU APPROVAL</b> untuk revisi, atau dihapus.</div>
- <div id="historyList"></div>
+
+<div class="card" id="approvedHistoryCard" style="display:none">
+ <div class="title">📚 Riwayat Order Telah Di-Approve</div>
+ <div class="notice">Order yang sudah disetujui tetap tersimpan di sini. Jika ada kesalahan harga, quantity, tempo atau jatuh tempo, kembalikan untuk revisi.</div>
+ <div id="approvedHistory"></div>
 </div>
 </main>
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,updateDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import{getFirestore,collection,query,where,getDocs,getDoc,doc,runTransaction,serverTimestamp,addDoc,increment,deleteDoc,updateDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyC_PcarMTT5Un7qfSLzf92o5OGn5rginsI",authDomain:"fixzy-update.firebaseapp.com",projectId:"fixzy-update",storageBucket:"fixzy-update.firebasestorage.app",messagingSenderId:"995892519622",appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
-let uid="",ownerUid="",profile={},employees=[],selected=null,orders=[],historyOrders=[],ready=false;
+let uid="",ownerUid="",profile={},role="",rows=[],approvedRows=[],ready=false,stockCatalog=[],sheetLinks=[],sheetCache=null,cicilanRequests=[],employees=[],selectedEmployeeState=null,loginHandledUid="";
 
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
-function msg(t,c=""){ $("notice").textContent=t; $("notice").className="notice "+c; }
-function normStatus(x){return String(x??"").trim().toLowerCase().replace(/\s+/g,"_")}
-function employeeUid(x){
- const k=x?.karyawan,e=x?.employee;
- if(k&&typeof k==="object")return String(k.uid??k.userUid??k.userId??k.id??"").trim();
- if(e&&typeof e==="object")return String(e.uid??e.userUid??e.userId??e.id??"").trim();
- return String(x?.approvalEmployeeUid??x?.karyawanUid??x?.employeeUid??x?.employeeId??x?.userUid??"").trim();
+const $=id=>document.getElementById(id),rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID"),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const waNum=v=>{let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;else if(!s.startsWith("62"))s="62"+s;return s};
+const today=()=>new Date().toISOString().slice(0,10);
+function msg(t,c=""){$("notice").textContent=t;$("notice").className="notice "+c}
+function getOwner(d){let r=String(d.role||"").toLowerCase();if(r==="owner"||r==="superadmin")return uid;return String(d.ownerUid||d.ownerId||"").trim()||uid}
+
+function employeeName(r){
+ const k=r?.karyawan;
+ if(k&&typeof k==="object") return String(k.nama??k.name??"").trim();
+ if(typeof k==="string") return k.trim();
+ const e=r?.employee;
+ if(e&&typeof e==="object") return String(e.nama??e.name??"").trim();
+ return String(r?.karyawanNama??r?.namaKaryawan??r?.employeeName??r?.employeeNama??"").trim();
 }
-function employeeName(x){
- const k=x?.karyawan,e=x?.employee;
- if(k&&typeof k==="object")return String(k.nama??k.namaKaryawan??k.name??"").trim();
- if(typeof k==="string")return k.trim();
- if(e&&typeof e==="object")return String(e.nama??e.namaKaryawan??e.name??"").trim();
- if(typeof e==="string")return e.trim();
- return String(x?.approvalEmployeeName??x?.karyawanNama??x?.namaKaryawan??x?.employeeName??x?.employeeNama??"").trim();
+function employeeUid(r){
+ const k=r?.karyawan;
+ if(k&&typeof k==="object") return String(k.uid??k.userUid??k.id??"").trim();
+ const e=r?.employee;
+ if(e&&typeof e==="object") return String(e.uid??e.userUid??e.id??"").trim();
+ return String(r?.karyawanUid??r?.employeeUid??r?.employeeId??"").trim();
 }
+
+
+function num(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function firstPositive(...vals){for(const v of vals){const n=Number(v);if(Number.isFinite(n)&&n>0)return n}return 0}
 function member(x){
  const m=x?.member||x?.pelanggan||{};
  return {
-   nama:String(m.nama??m.name??x?.memberNama??x?.namaMember??x?.pelangganNama??"Member").trim(),
-   kode:String(m.kode??m.memberId??x?.memberId??"").trim(),
-   wa:String(m.wa??m.noWa??m.nomorWa??x?.memberWa??"").trim()
+  uid:String(m.uid??m.userId??x?.memberUid??x?.memberId??"").trim(),
+  nama:String(m.nama??m.name??x?.memberNama??x?.namaMember??x?.pelangganNama??"Member").trim(),
+  kode:String(m.kode??m.memberId??x?.memberId??"").trim(),
+  wa:String(m.wa??m.noWa??m.nomorWa??x?.memberWa??"").trim(),
+  tabunganPerPcs:firstPositive(m.tabunganPerPcs,m.tabunganMember,m.tabunganMemberPerPcs,x?.tabunganPerPcs,x?.tabunganMember),
+  kasBulanan:firstPositive(m.kasBulanan,m.uangKasBulanan,x?.kasBulanan,x?.uangKasBulanan)
  };
 }
-function itemsOf(x){
- const a=Array.isArray(x?.items)?x.items:Array.isArray(x?.produkList)?x.produkList:[];
- return a.map(i=>{
-   const qty=Math.max(0,Number(i.qty??i.jumlah??i.quantity??1)||0);
-   const harga=Number(i.harga??i.hargaJual??i.price??0)||0;
-   // Rincian harga: Nilai Barang murni + Tabungan Member + UP Pengelola.
-   const up=Number(i.upPengelolaPerPcs??i.upPengelola??x?.upPengelolaPerPcs??x?.upPengelola??0)||0;
-   const tab=Number(i.tabunganPerPcs??i.tabungan??x?.tabunganPerPcs??x?.tabungan??0)||0;
-   let hargaDasar=Number(i.hargaDasar??i.hargaAwal??x?.hargaDasar??x?.hargaAwal??0)||0;
-   if(hargaDasar<=0 && harga>0) hargaDasar=Math.max(0,harga-tab-up);
-   const diskon=Math.max(0,Number(i.diskon??i.discount??0)||0);
-   const nilaiBarang=Math.max(0,hargaDasar*qty-diskon);
-   const totalTabungan=tab*qty;
-   const totalUP=up*qty;
-   const total=Number(i.total??i.jumlahHarga??(harga*qty-diskon))||0;
-   return {
-     ...i,
-     nama:String(i.nama??i.namaProduk??i.name??"-"),
-     kode:String(i.kode??i.kodeProduk??""),
-     qty,harga,total,
-     hargaAwal:hargaDasar,
-     hargaDasar,
-     diskon,
-     nilaiBarang,
-     tabunganPerPcs:tab,
-     totalTabungan,
-     tabungan:tab,
-     upPengelolaPerPcs:up,
-     totalUP,
-     upPengelola:up
-   };
- });
+function status(x){return String(x?.status??x?.approvalStatus??"menunggu_approval").trim().toLowerCase()}
+function isCash(x){
+ return String(x?.jenisHarga??"").toLowerCase()==="cash" ||
+        String(x?.tipeTransaksi??"").toLowerCase()==="member_cash" ||
+        String(x?.tipeOrder??"").toLowerCase()==="member_cash";
 }
-function rincianOrder(d,its){
- const nilaiBarang=its.reduce((a,i)=>{
-   const q=Number(i.qty)||0, h=Number(i.hargaAwal)||0, disk=Number(i.diskon)||0;
-   if(h>0)return a+Math.max(0,h*q-disk);
-   const harga=Number(i.harga)||0, up=Number(i.upPengelolaPerPcs)||0, tab=Number(i.tabunganPerPcs)||0;
-   return a+Math.max(0,harga*q-up*q-tab*q-disk);
- },0);
- const upPengelola=its.reduce((a,i)=>a+(Number(i.upPengelolaPerPcs)||0)*(Number(i.qty)||0),0);
- const tabunganMember=its.reduce((a,i)=>a+(Number(i.tabunganPerPcs)||0)*(Number(i.qty)||0),0);
- const kasBulanan=Number(d.kasBulanan??d.uangKasBulanan??d.kasBulananMember??d.uangKas??0)||0;
- return {nilaiBarang,upPengelola,tabunganMember,kasBulanan};
-}
-function orderEmployeeMatches(o){
- if(!selected)return false;
- const eid=employeeUid(o).toLowerCase(), en=employeeName(o).toLowerCase();
- const aUid=String(o?.approvalEmployeeUid??o?.employeeUid??o?.karyawanUid??o?.employeeId??o?.karyawanId??o?.employee?.uid??o?.karyawan?.uid??"").trim().toLowerCase();
- const aName=String(o?.approvalEmployeeName??o?.employeeName??o?.karyawanNama??o?.namaKaryawan??o?.employee?.nama??o?.employee?.namaKaryawan??o?.karyawan?.nama??o?.karyawan?.namaKaryawan??"").trim().toLowerCase();
- const su=selected.uid.toLowerCase(), sn=selected.nama.toLowerCase();
- return (eid && eid===su) || (aUid && aUid===su) || (!eid && !aUid && en===sn) || (!eid && !aUid && !en && aName===sn) || (aName===sn);
-}
+function stockName(p){return String(p?.nama??p?.namaProduk??p?.name??"-").trim()}
+function stockCode(p){return String(p?.kode??p?.kodeProduk??p?.code??"").trim()}
+function stockModal(p){return Number(p?.modalSatuan??p?.modal??p?.hargaModal??0)||0}
 
-/* INI BAGIAN KUNCI:
-   Profil Owner dibaca langsung users/{auth.uid}.
-   Employee juga dibaca langsung dari collection users dengan ownerUid Owner.
-   Tidak memakai localStorage, tidak memakai collection karyawan, dan tidak
-   membuat employee dari data order. */
-async function loadEmployees(){
- employees=[];
- const map=new Map();
- try{
-   const snap=await getDocs(query(collection(db,"users"),where("ownerUid","==",ownerUid)));
-   snap.forEach(d=>{
-     const x=d.data()||{},role=String(x.role??"").trim().toLowerCase();
-     if(!["employee","karyawan","pegawai","teknisi"].includes(role))return;
-     const nama=String(x.namaKaryawan??x.nama??x.displayName??x.name??x.email??"").trim();
-     if(!nama)return;
-     const eid=String(x.uid??d.id).trim();
-     map.set(eid,{uid:eid,nama,kode:String(x.kodeKaryawan??x.kode??x.employeeCode??"").trim(),email:String(x.email??"").trim()});
-   });
- }catch(e){console.error("load users ownerUid",e);throw Error("Gagal membaca users employee: "+(e?.message||e));}
- employees=[...map.values()].sort((a,b)=>a.nama.localeCompare(b.nama,"id",{sensitivity:"base"}));
- renderEmployees();
-}
-function renderEmployees(){
- const box=$("employees");
- if(!employees.length){box.innerHTML='<div class="empty">Employee milik Owner tidak ditemukan.</div>';$("employeeStatus").textContent="0 employee";return;}
- box.innerHTML=employees.map((e,i)=>`<button class="employee-btn ${selected&&selected.uid===e.uid?"active":""}" data-eid="${esc(e.uid)}">${esc(e.nama)}${e.kode?`<small>${esc(e.kode)}</small>`:""}</button>`).join("");
- box.querySelectorAll(".employee-btn").forEach(b=>b.onclick=async()=>{
-   selected=employees.find(e=>e.uid===b.dataset.eid)||null;
-   renderEmployees();renderOrders();await loadHistory();
+function itemsOf(x){
+ const a=Array.isArray(x?.items)?x.items:(Array.isArray(x?.produkList)?x.produkList:[]);
+ return a.map(i=>{
+  const qty=Math.max(0,Number(i?.qty??i?.jumlah??i?.quantity??1)||0);
+  const harga=Number(i?.harga??i?.hargaJual??i?.price??0)||0;
+  const up=Number(i?.upPengelolaPerPcs??i?.upPengelola??x?.upPengelolaPerPcs??x?.upPengelola??0)||0;
+  const tab=Number(i?.tabunganPerPcs??i?.tabungan??x?.tabunganPerPcs??x?.tabunganMember??0)||0;
+  const base=Number(i?.hargaDasar??i?.hargaAwal??0)||0;
+  const diskon=Math.max(0,Number(i?.diskon??i?.discount??0)||0);
+  const total=Number(i?.total??i?.jumlahHarga??(harga*qty-diskon))||0;
+  return {
+   ...i,
+   nama:stockName(i),kode:stockCode(i),qty,harga,
+   hargaDasar:base,hargaAwal:base,diskon,total,
+   upPengelolaPerPcs:up,upPengelola:up,
+   tabunganPerPcs:tab,tabungan:tab,
+   modalSatuan:stockModal(i),
+   approvedQty:Number(i?.approvedQty??qty)||0,
+   stokTersedia:Number(i?.stokTersedia??i?.stock??i?.stok??0)||0
+  };
  });
- $("employeeStatus").textContent=`${employees.length} employee tersedia`;
 }
+function normalizeItems(x){return itemsOf(x)}
+
+function deriveBreakdown(d, sourceItems, memberDoc={}){
+ const cash=isCash(d);
+ const memberData=member(d);
+ const memberTab=firstPositive(
+  d?.tabunganPerPcs,d?.tabunganMember,d?.tabunganMemberPerPcs,
+  memberData.tabunganPerPcs,memberDoc?.tabunganPerPcs,memberDoc?.tabunganMember,memberDoc?.tabunganMemberPerPcs
+ );
+ const ownerUp=firstPositive(
+  d?.upPengelolaPerPcs,d?.upPengelola,
+  profile?.upPengelolaPerPcs,profile?.upPengelola,profile?.up,memberDoc?.upPengelolaPerPcs
+ );
+ const kas=firstPositive(
+  d?.kasBulanan,d?.uangKasBulanan,d?.kasBulananMember,d?.uangKas,
+  memberData.kasBulanan,memberDoc?.kasBulanan,memberDoc?.uangKasBulanan,profile?.kasBulananDefault,profile?.kasBulanan,profile?.uangKasBulanan
+ );
+
+ const items=sourceItems.map(raw=>{
+  const qty=Math.max(0,Number(raw?.approvedQty??raw?.qty??raw?.jumlah??1)||0);
+  const diskon=Math.max(0,Number(raw?.diskon??raw?.discount??0)||0);
+  const tab=firstPositive(raw?.tabunganPerPcs,raw?.tabungan,memberTab);
+  const up=firstPositive(raw?.upPengelolaPerPcs,raw?.upPengelola,ownerUp);
+
+  let base=firstPositive(raw?.hargaDasar,raw?.hargaAwal);
+  if(!base){
+   base=cash
+    ? firstPositive(raw?.hargaCash,raw?.modalSatuan,raw?.modal)
+    : firstPositive(raw?.hargaTempo,raw?.hargaJual);
+  }
+
+  const finalPrice=Number(raw?.harga??raw?.hargaJual??0)||0;
+  // If the stored price is the combined member price and no clean base exists,
+  // split it mathematically so Base + Tabungan + UP = Harga Member.
+  if(!base && finalPrice>0) base=Math.max(0,finalPrice-tab-up);
+
+  const hargaMember=Math.max(0,finalPrice||base+tab+up);
+  // Discount belongs to the pure goods value, keeping the three components
+  // independently readable and preserving:
+  // nilai barang + tabungan + UP = total item after discount.
+  const nilaiBarang=Math.max(0,base*qty-diskon);
+  const totalTabungan=tab*qty;
+  const totalUP=up*qty;
+  const total=Math.max(0,hargaMember*qty-diskon);
+
+  return {
+   ...raw,
+   produkId:raw?.produkId??raw?.id??"",
+   nama:stockName(raw),kode:stockCode(raw),qty,approvedQty:qty,
+   hargaDasar:base,hargaAwal:base,nilaiBarang,
+   tabunganPerPcs:tab,totalTabunganMember:totalTabungan,totalTabungan:totalTabungan,
+   tambahanTabungan:totalTabungan,
+   upPengelolaPerPcs:up,totalUPPengelola:totalUP,totalUpPengelola:totalUP,
+   tambahanUpPengelola:totalUP,
+   hargaMemberPerPcs:hargaMember,harga:hargaMember,
+   diskon,total,totalTagihanItem:total,
+   modalSatuan:stockModal(raw)
+  };
+ });
+
+ const totalNilaiBarang=items.reduce((a,x)=>a+Number(x.nilaiBarang||0),0);
+ const totalTabunganMember=items.reduce((a,x)=>a+Number(x.totalTabunganMember||0),0);
+ const totalUPPengelola=items.reduce((a,x)=>a+Number(x.totalUPPengelola||0),0);
+ return {items,totalNilaiBarang,totalTabunganMember,totalUPPengelola,kasBulanan:kas,
+         tabunganPerPcs:memberTab,upPengelolaPerPcs:ownerUp};
+}
+function rincianOrder(d,its){return deriveBreakdown(d,its,{} )}
+
+function finalProductPrice(r,p,old={}){
+ const cash=isCash(r);
+ const tab=firstPositive(old?.tabunganPerPcs,old?.tabungan,r?.tabunganPerPcs,r?.tabunganMember);
+ const up=firstPositive(old?.upPengelolaPerPcs,old?.upPengelola,r?.upPengelolaPerPcs,r?.upPengelola,profile?.upPengelolaPerPcs,profile?.upPengelola,profile?.up);
+ const base=firstPositive(
+  p?.hargaDasar,p?.hargaAwal,
+  cash?p?.hargaCash:p?.hargaTempo,
+  cash?p?.modal:p?.jual,
+  old?.hargaDasar,old?.hargaAwal
+ );
+ return {base,tab,up,final:Math.max(0,base+tab+up)};
+}
+function recalcOrder(id){return id}
+function checkStock(id){return id}
+function getSpreadsheetLinks(){
+ const raw=profile?.spreadsheetLinks??profile?.sheetLinks??profile?.linksSpreadsheet??profile?.urlSpreadsheet??[];
+ if(Array.isArray(raw))return raw.map(x=>typeof x==="string"?x:(x?.url??x?.link??"")).filter(Boolean);
+ if(typeof raw==="string")return raw.split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+ return [];
+}
+async function readSheet(){return []}
+
 async function loadOrders(){
- orders=[];
+ rows=[];
+ if(!ownerUid)return;
  const map=new Map();
  for(const field of ["ownerUid","ownerId"]){
-   try{
-     const snap=await getDocs(query(collection(db,"penjualan"),where(field,"==",ownerUid)));
-     snap.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
-   }catch(e){console.warn("penjualan "+field,e?.message||e)}
+  try{
+   const snap=await getDocs(query(collection(db,"penjualan"),where(field,"==",ownerUid)));
+   snap.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    if(["menunggu_approval","pending","menunggu_approval_member"].includes(status(x)))map.set(d.id,x);
+   });
+  }catch(e){console.warn("Load penjualan "+field,e?.message||e)}
  }
- orders=[...map.values()].filter(o=>{
-   const s=normStatus(o.status||o.approvalStatus);
-   return ["menunggu_approval","pending","menunggu_approval_member"].includes(s) ||
-          String(o.status||"").toLowerCase()==="menunggu approval";
- }).sort((a,b)=>{
-   const av=a.createdAt?.toMillis?a.createdAt.toMillis():new Date(a.createdAt||a.tanggal||0).getTime();
-   const bv=b.createdAt?.toMillis?b.createdAt.toMillis():new Date(b.createdAt||b.tanggal||0).getTime();
-   return bv-av;
+ rows=[...map.values()].sort((a,b)=>{
+  const av=a.createdAt?.toMillis?a.createdAt.toMillis():new Date(a.createdAt||a.tanggal||0).getTime();
+  const bv=b.createdAt?.toMillis?b.createdAt.toMillis():new Date(b.createdAt||b.tanggal||0).getTime();
+  return bv-av;
  });
- renderOrders();
+ render();
 }
 async function loadHistory(){
- historyOrders=[];
- if(!ownerUid||!selected){renderHistory();return;}
+ approvedRows=[];
  const map=new Map();
- // RIWAYAT UTAMA = collection order_member. Penjualan hanya dipakai
- // sebagai fallback identitas employee untuk data lama yang belum memiliki
- // approvalEmployeeUid/approvalEmployeeName di order_member.
  for(const field of ["ownerUid","ownerId"]){
-   try{
-     const snap=await getDocs(query(collection(db,"order_member"),where(field,"==",ownerUid)));
-     snap.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
-   }catch(e){console.warn("riwayat order_member "+field,e?.message||e)}
+  try{
+   const snap=await getDocs(query(collection(db,"order_member"),where(field,"==",ownerUid)));
+   snap.forEach(d=>map.set(d.id,{id:d.id,...d.data()}));
+  }catch(e){console.warn("Load order_member "+field,e?.message||e)}
  }
- let list=[...map.values()].filter(o=>{
-   if(o.hiddenFromApprovalHistory===true)return false;
-   const st=normStatus(o.approvalStatus||o.status||"");
-   return ["approved","rejected","ditolak","order_member","tagihan","lunas"].includes(st);
- });
- // Untuk dokumen lama, ambil employee hanya sebagai pencocokan. Isi riwayat
- // tetap sepenuhnya berasal dari order_member.
- const needFallback=list.filter(o=>!employeeUid(o)&&!employeeName(o)&&o.sourcePenjualanId);
- if(needFallback.length){
-   const sourceMap=new Map();
-   for(const o of needFallback){
-     try{
-       const ps=await getDoc(doc(db,"penjualan",String(o.sourcePenjualanId)));
-       if(ps.exists())sourceMap.set(o.sourcePenjualanId,ps.data()||{});
-     }catch(e){console.warn("fallback employee source penjualan",o.sourcePenjualanId,e?.message||e)}
-   }
-   list=list.map(o=>sourceMap.has(o.sourcePenjualanId)?{...o,__sourceEmployee:sourceMap.get(o.sourcePenjualanId)}:o);
- }
- historyOrders=list.filter(o=>{
-   if(orderEmployeeMatches(o))return true;
-   return o.__sourceEmployee ? orderEmployeeMatches({...o,...o.__sourceEmployee}) : false;
- }).sort((a,b)=>{
-   const av=a.approvedAt?.toMillis?a.approvedAt.toMillis():new Date(a.approvedAt||a.rejectedAt||a.updatedAt||a.createdAt||0).getTime();
-   const bv=b.approvedAt?.toMillis?b.approvedAt.toMillis():new Date(b.approvedAt||b.rejectedAt||b.updatedAt||b.createdAt||0).getTime();
-   return bv-av;
- });
- renderHistory();
-}
-function renderHistory(){
- const card=$("historyCard"),box=$("historyList");
- if(!card||!box)return;
- if(!selected){card.style.display="none";box.innerHTML="";return;}
- card.style.display="block";
- if(!historyOrders.length){box.innerHTML=`<div class="empty">Belum ada riwayat order yang sudah <b>APPROVE</b> atau <b>DITOLAK</b> untuk employee <b>${esc(selected.nama)}</b>.</div>`;return;}
- // Kelompokkan berdasarkan MEMBER, bukan digabung menjadi satu riwayat umum.
- const groups=new Map();
- historyOrders.forEach(o=>{
-   const m=member(o),key=(m.kode||m.nama||"member").toLowerCase();
-   if(!groups.has(key))groups.set(key,{member:m,orders:[]});
-   groups.get(key).orders.push(o);
- });
- box.innerHTML=[...groups.values()].map(g=>{
-   const totalTagihan=g.orders.reduce((a,o)=>a+(Number(o.sisa??o.sisaBayar??o.piutang??o.totalTagihanMember??0)||0),0);
-   return `<div class="history-group">
-    <div class="history-head">
-      <div><b>👤 ${esc(g.member.nama)}</b>${g.member.kode?` <small>• ${esc(g.member.kode)}</small>`:""}<div class="meta">${g.member.wa?`WA: ${esc(g.member.wa)}`:""}</div></div>
-      <span class="badge approved">${g.orders.length} ORDER</span>
-    </div>
-    <div class="history-body">
-      ${g.orders.map(o=>{
-        const items=itemsOf(o),total=Number(o.total??o.subtotal??0)||0,dp=Number(o.dp??o.uangMuka??0)||0,sisa=Number(o.sisa??o.sisaBayar??o.piutang??0)||0;
-        const due=o.jatuhTempo||o.tanggalJatuhTempo||"-",tempo=Number(o.tempoHari??0)||0;
-        const st=normStatus(o.status||o.approvalStatus||"");
-        const rejected=["ditolak","rejected","declined"].includes(st);
-        const label=rejected?"DITOLAK":"APPROVED";
-        return `<div class="history-row">
-          <div><b>${esc(o.nomorNota||o.id)}</b> <span class="badge ${rejected?"rejected":"approved"}">${label}</span></div>
-          <div class="meta">${items.length?items.map(x=>`• ${esc(x.nama)} × ${x.qty} = <b>${rp(x.total)}</b>`).join("<br>"):"Tidak ada rincian produk"}</div>
-          <div class="summary">💰 Total: <b>${rp(total)}</b>${rejected?`<br>❌ Alasan: <b>${esc(o.alasanApproval||o.alasanPenolakan||o.reason||"Tidak dicantumkan")}</b>`:`<br>${String(o.jenisHarga||o.tipeOrder||"").toLowerCase().includes("cash")?"💵 CASH / LUNAS":`💵 DP: <b>${rp(dp)}</b><br>📌 Sisa: <b>${rp(sisa)}</b><br>📅 Tempo: <b>${tempo} hari</b> • Jatuh tempo: <b>${esc(due)}</b>`}`}</div>
-          <div class="actions">
-            <button class="btn history-return" onclick="returnHistoryToPending('${esc(o.id)}')">↩️ KEMBALIKAN KE APPROVAL</button>
-            <button class="btn history-delete" onclick="deleteHistoryOrder('${esc(o.id)}')">🗑️ HAPUS</button>
-          </div>
-        </div>`;
-      }).join("")}
-      <div class="member-total">📌 Total sisa tagihan member dari riwayat: <b>${rp(totalTagihan)}</b></div>
-    </div>
-   </div>`;
- }).join("");
-}
+ approvedRows=[...map.values()].filter(x=>!x.hiddenFromApprovalHistory);
 
-function renderOrders(){
- if(!selected){
-   $("orderCount").textContent="Pilih employee untuk menampilkan order.";
-   $("list").innerHTML='<div class="card empty">👆 Pilih nama employee terlebih dahulu.</div>';
-   renderHistory();
-   return;
+ // Repair only the separated accounting fields. Existing payment, status,
+ // tempo and due-date fields are intentionally left untouched.
+ for(const o of approvedRows){
+  try{
+   const sourceId=String(o.sourcePenjualanId||"").trim();
+   let source=o;
+   if(sourceId){
+    const ps=await getDoc(doc(db,"penjualan",sourceId));
+    if(ps.exists())source=ps.data()||o;
+   }
+   const memberUid=String(o.memberUid||o.memberId||o.member?.uid||o.member?.userId||source.memberUid||source.memberId||"").trim();
+   let memberDoc={};
+   if(memberUid){
+    const ms=await getDoc(doc(db,"users",memberUid));
+    if(ms.exists())memberDoc=ms.data()||{};
+   }
+   const rawItems=Array.isArray(o.items)&&o.items.length?o.items:(Array.isArray(source.items)?source.items:[]);
+   const b=deriveBreakdown({...source,...o},itemsOf({...source,items:rawItems}),memberDoc);
+   const patch={
+    totalNilaiBarang:b.totalNilaiBarang,
+    totalUPPengelola:b.totalUPPengelola,
+    totalUpPengelola:b.totalUPPengelola,
+    totalTabunganMember:b.totalTabunganMember,
+    totalTabungan:b.totalTabunganMember,
+    totalTabunganOrder:b.totalTabunganMember,
+    totalUpPengelolaOrder:b.totalUPPengelola,
+    tabunganPerPcs:b.tabunganPerPcs,
+    tabunganMember:b.tabunganPerPcs,
+    upPengelolaPerPcs:b.upPengelolaPerPcs,
+    kasBulanan:Number(o.kasBulanan??0)||b.kasBulanan,
+    uangKasBulanan:Number(o.uangKasBulanan??0)||b.kasBulanan,
+    items:b.items,
+    updatedAt:serverTimestamp()
+   };
+   const changed =
+    Number(o.totalNilaiBarang||0)!==b.totalNilaiBarang ||
+    Number(o.totalUPPengelola||0)!==b.totalUPPengelola ||
+    Number(o.totalTabunganMember||0)!==b.totalTabunganMember ||
+    Number(o.kasBulanan||0)!==Number(patch.kasBulanan||0) ||
+    JSON.stringify(o.items||[])!==JSON.stringify(b.items||[]);
+   if(changed)await updateDoc(doc(db,"order_member",o.id),patch);
+   Object.assign(o,patch);
+  }catch(e){console.warn("Repair breakdown "+o.id,e?.message||e)}
  }
- const list=orders.filter(orderEmployeeMatches);
- $("orderCount").textContent=`${list.length} order menunggu approval • Employee: ${selected.nama}`;
- $("list").innerHTML=list.length?list.map(renderOrder).join(""):`<div class="card empty">Tidak ada order menunggu approval untuk ${esc(selected.nama)}.</div>`;
+ renderApprovedHistory();
 }
+async function load(){await loadOrders();await loadHistory()}
+async function sendApprovedHistoryWA(id){const r=approvedRows.find(x=>x.id===id);if(r)sendWAData(r,"approved")}
+
 function renderOrder(o){
- const m=member(o),items=itemsOf(o);
- const total=Number(o.total??o.subtotal??items.reduce((a,x)=>a+x.total,0))||0;
- const qty=items.reduce((a,x)=>a+x.qty,0);
- const dp=Number(o.dp??o.uangMuka??0)||0;
- const due=o.jatuhTempo||o.tanggalJatuhTempo||"-";
- const tempo=Number(o.tempoHari??0)||0;
+ const m=member(o),items=itemsOf(o),total=Number(o.total??o.subtotal??items.reduce((a,x)=>a+x.total,0))||0;
+ const dp=Number(o.dp??o.uangMuka??0)||0,tempo=Number(o.tempoHari??0)||0,due=o.jatuhTempo||o.tanggalJatuhTempo||"-";
  return `<div class="order" data-id="${esc(o.id)}">
-  <div class="order-head">
-   <div><div class="order-title">${esc(o.nomorNota||o.nomorOrder||o.id)}</div>
-   <div class="meta">Employee: <b>${esc(selected.nama)}</b></div></div>
-   <span class="badge">MENUNGGU APPROVAL</span>
-  </div>
+  <div class="order-head"><div><div class="order-title">${esc(o.nomorNota||o.id)}</div>
+   <div class="meta">Employee: <b>${esc(selectedEmployee()?.nama||employeeName(o)||"-")}</b> • Member: <b>${esc(m.nama)}</b></div></div>
+   <span class="badge">MENUNGGU APPROVAL</span></div>
   <div class="order-body">
-   <div class="meta"><b>👤 Member:</b> ${esc(m.nama)}${m.kode?` • ${esc(m.kode)}`:""}<br>
-   <b>🆔 Order ID:</b> ${esc(o.id)}</div>
-   <div>${items.map((x,i)=>`<div class="item"><div class="item-name">${i+1}. ${esc(x.nama)}</div><div class="item-meta">Kode: ${esc(x.kode||"-")} • Qty: <b>${x.qty} pcs</b> • ${rp(x.harga)}/pcs</div></div>`).join("")}</div>
-   <div class="summary">📦 Total Produk: <b>${qty} pcs</b><br>💰 Total Order: <b>${rp(total)}</b><br>${o.jenisHarga==="cash"?"💵 CASH / TUNAI":`💵 DP: <b>${rp(dp)}</b><br>📅 Jatuh Tempo: <b>${esc(due)}</b>${tempo?`<br>📅 Tempo: <b>${tempo} hari</b>`:""}`}</div>
+   <div class="meta"><b>Order ID:</b> ${esc(o.id)}${m.kode?` • Kode Member: ${esc(m.kode)}`:""}</div>
+   <div class="items">${items.map((x,i)=>{
+    const qty=Number(x.qty)||0,stock=Number(x.stokTersedia||x.stock||0)||0;
+    const price=Number(x.harga)||0;
+    return `<div class="item" data-index="${i}" data-selected-product="${esc(x.produkId||"")}">
+      <div class="item-top"><div><div class="item-name">${i+1}. ${esc(x.nama)}</div>
+       <div class="stockline">Kode: ${esc(x.kode||"-")} • Harga dasar: ${rp(Number(x.hargaDasar||0))} • Tabungan: ${rp(Number(x.tabunganPerPcs||0))}/pcs • Pengelola: ${rp(Number(x.upPengelolaPerPcs||0))}/pcs</div></div>
+       <div class="stockline">${stock?`Stok: ${stock} pcs`:""}</div></div>
+      <div class="item-grid">
+       <div><input class="product-search" type="search" value="${esc(x.nama)}" placeholder="Cari pengganti..."><div class="product-results add-results"></div></div>
+       <div><div class="qty-label">QTY APPROVE</div><input class="approved" type="number" min="0" max="${Math.max(qty,stock)}" value="${qty}"></div>
+       <div><div class="qty-label">HARGA/PCS</div><input class="price" type="number" min="0" value="${price}"></div>
+      </div>
+      <div class="replacement-info stockline" style="margin-top:6px">Harga dasar + Tabungan + Pengelola = harga member</div>
+     </div>`;
+   }).join("")}</div>
+   <div class="order-edit-grid">
+    <div><label>TEMPO (HARI)</label><input class="tempo-edit" type="number" min="0" value="${tempo}"></div>
+    <div><label>JATUH TEMPO</label><input class="due-edit" type="date" value="${esc(due==="-"?"":due)}"></div>
+   </div>
+   <div class="summary">📦 Produk: <b>${items.reduce((a,x)=>a+(Number(x.qty)||0),0)} pcs</b><br>💰 Total: <b>${rp(total)}</b><br>💵 DP: <b>${rp(dp)}</b><br>📅 Jatuh tempo: <b>${esc(due)}</b></div>
    <div class="actions">
     <button class="btn approve" onclick="approveOrder('${esc(o.id)}')">✅ APPROVE</button>
     <button class="btn reject" onclick="rejectOrder('${esc(o.id)}')">❌ TOLAK</button>
     <button class="btn wa" onclick="sendWA('${esc(o.id)}')">📲 WA</button>
+    <button class="btn add-product" onclick="openAddProduct('${esc(o.id)}')">➕ PRODUK</button>
    </div>
   </div>
  </div>`;
 }
-window.approveOrder=async id=>{
- const local=orders.find(x=>x.id===id);if(!local)return;
- if(!confirm(`Approve order ${local.nomorNota||id}?`))return;
- try{
-   msg("Memproses approval...","ok");
-   const ref=doc(db,"penjualan",id);
-   const result=await runTransaction(db,async tx=>{
-     const snap=await tx.get(ref);if(!snap.exists())throw Error("Order tidak ditemukan.");
-     const d=snap.data()||{};
-     if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
-     if(!["menunggu_approval","pending"].includes(normStatus(d.status||d.approvalStatus)))throw Error("Order sudah diproses.");
-     const its=itemsOf(d),total=Number(d.total??d.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
-     const rincian=rincianOrder(d,its);
-     const omRef=String(d.orderMemberId||"").trim()?doc(db,"order_member",String(d.orderMemberId)):doc(collection(db,"order_member"));
-     const order={
-       ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
-       nomorNota:d.nomorNota||id,tipeOrder:String(d.jenisHarga||"").toLowerCase()==="cash"?"member_cash":"member_tempo",
-       status:"order_member",approvalStatus:"approved",revisionRequired:false,
-       approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",
-       employeeUid:selected?.uid||"",employeeName:selected?.nama||"",
-       member:d.member||d.pelanggan||{},
-       items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
-       totalNilaiBarang:rincian.nilaiBarang,
-       totalUPPengelola:rincian.upPengelola,
-       totalUpPengelola:rincian.upPengelola,
-       totalTabunganMember:rincian.tabunganMember,
-       totalTabungan:rincian.tabunganMember,
-       kasBulanan:rincian.kasBulanan,
-       uangKasBulanan:rincian.kasBulanan,
-       dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
-       sisa:Math.max(0,total-Number(d.dp??d.uangMuka??0)),piutang:Math.max(0,total-Number(d.dp??d.uangMuka??0)),
-       tempoHari:Number(d.tempoHari??0)||0,jatuhTempo:d.jatuhTempo||d.tanggalJatuhTempo||"",
-       approvedAt:serverTimestamp(),updatedAt:serverTimestamp()
-     };
-     tx.set(omRef,order,{merge:true});
-     tx.update(ref,{status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,approvedItems:its,approvedTotal:total,orderMemberId:omRef.id,approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",updatedAt:serverTimestamp()});
-     return omRef.id;
+
+async function loadEmployees(){
+ const map=new Map();
+
+ // ACUAN: pola loadKaryawan dari halaman Penjualan FIXZY.
+ // Sumber karyawan: collection karyawan milik Owner + users milik Owner.
+ const kQueries=[
+  query(collection(db,"karyawan"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"karyawan"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of kQueries){
+  try{
+   const snap=await getDocs(q);
+   snap.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    const nama=String(x.nama??x.namaKaryawan??x.displayName??x.name??x.email??"").trim();
+    if(!nama)return;
+    map.set(d.id,{uid:d.id,nama,kode:String(x.kode??x.kodeKaryawan??x.employeeCode??"").trim(),email:String(x.email??"").trim(),wa:String(x.wa??x.noWa??x.nomorWa??"").trim()});
    });
-   msg("Order berhasil di-approve dan masuk order_member.","ok");
-   await loadOrders();await loadHistory();
- }catch(e){console.error(e);msg("Gagal approval: "+(e?.message||e),"err")}
-};
-window.rejectOrder=async id=>{
- const r=orders.find(x=>x.id===id);if(!r)return;
- const alasan=prompt("Alasan penolakan:","Produk/harga perlu direvisi");if(alasan===null)return;
- try{
-   const ref=doc(db,"penjualan",id);
-   await runTransaction(db,async tx=>{
-     const s=await tx.get(ref);if(!s.exists())throw Error("Order tidak ditemukan.");
-     const d=s.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order bukan milik Owner ini.");
-     const its=itemsOf(d),total=Number(d.total??d.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
-     const rincian=rincianOrder(d,its);
-     const existingId=String(d.orderMemberId||"").trim();
-     const omRef=existingId?doc(db,"order_member",existingId):doc(collection(db,"order_member"));
-     const order={
-       ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
-       nomorNota:d.nomorNota||id,tipeOrder:String(d.jenisHarga||"").toLowerCase()==="cash"?"member_cash":"member_tempo",
-       status:"rejected",approvalStatus:"rejected",revisionRequired:false,
-       approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",
-       employeeUid:selected?.uid||"",employeeName:selected?.nama||"",
-       member:d.member||d.pelanggan||{},items:its,subtotal:total,total,totalBayar:total,totalTagihanMember:total,
-       totalNilaiBarang:rincian.nilaiBarang,
-       totalUPPengelola:rincian.upPengelola,
-       totalUpPengelola:rincian.upPengelola,
-       totalTabunganMember:rincian.tabunganMember,
-       totalTabungan:rincian.tabunganMember,
-       kasBulanan:rincian.kasBulanan,
-       uangKasBulanan:rincian.kasBulanan,
-       dp:Number(d.dp??d.uangMuka??0)||0,uangMuka:Number(d.dp??d.uangMuka??0)||0,
-       sisa:Math.max(0,total-Number(d.dp??d.uangMuka??0)),piutang:Math.max(0,total-Number(d.dp??d.uangMuka??0)),
-       tempoHari:Number(d.tempoHari??0)||0,jatuhTempo:d.jatuhTempo||d.tanggalJatuhTempo||"",
-       alasanApproval:alasan,alasanPenolakan:alasan,rejectedAt:serverTimestamp(),rejectedBy:uid,
-       updatedAt:serverTimestamp(),hiddenFromApprovalHistory:false
-     };
-     tx.set(omRef,order,{merge:true});
-     tx.update(ref,{status:"ditolak",approvalStatus:"ditolak",alasanApproval:alasan,approvedBy:uid,orderMemberId:omRef.id,approvalEmployeeUid:selected?.uid||"",approvalEmployeeName:selected?.nama||"",updatedAt:serverTimestamp()});
+  }catch(e){ console.warn("Query karyawan:",e.message); }
+ }
+
+ const uQueries=[
+  query(collection(db,"users"),where("ownerUid","==",ownerUid)),
+  query(collection(db,"users"),where("ownerId","==",ownerUid))
+ ];
+ for(const q of uQueries){
+  try{
+   const snap=await getDocs(q);
+   snap.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    const r=String(x.role??"").trim().toLowerCase();
+    if(!["karyawan","employee","pegawai","teknisi"].includes(r))return;
+    const nama=String(x.nama??x.namaKaryawan??x.displayName??x.name??x.email??"").trim();
+    if(!nama)return;
+    map.set(d.id,{uid:d.id,nama,kode:String(x.kode??x.kodeKaryawan??x.employeeCode??x.kodeEmployee??"").trim(),email:String(x.email??"").trim(),wa:String(x.wa??x.noWa??x.nomorWa??"").trim()});
    });
-   msg("Order ditolak dan disimpan ke riwayat order_member.","ok");await loadOrders();await loadHistory();
- }catch(e){console.error(e);msg("Gagal menolak: "+(e?.message||e),"err")}
-};
-async function reloadAfterHistoryChange(message){
- try{
-   await loadOrders();
-   await loadHistory();
-   msg(message,"ok");
- }catch(e){
-   console.error(e);
-   msg("Data berhasil diubah, tetapi gagal memuat ulang: "+(e?.message||e),"err");
+  }catch(e){ console.warn("Query users karyawan:",e.message); }
+ }
+
+ // Fallback hanya untuk order Owner yang memang sudah menyimpan identitas karyawan.
+ [...rows,...approvedRows].forEach(r=>{
+  const nama=employeeName(r);
+  if(!nama)return;
+  const eid=employeeUid(r);
+  const kode=String(r.karyawan?.kode??r.employee?.kode??r.karyawanKode??r.employeeCode??"").trim();
+  const key=eid||("name:"+nama.toLowerCase());
+  if(!map.has(key))map.set(key,{uid:eid,nama,kode});
+ });
+
+ // Hilangkan duplikat nama, seperti pola halaman Penjualan.
+ const seen=new Set();
+ employees=[];
+ for(const e of map.values()){
+  const key=String(e.nama||"").toLowerCase().trim();
+  if(!key||seen.has(key))continue;
+  seen.add(key);
+  employees.push(e);
+ }
+ employees.sort((a,b)=>a.nama.localeCompare(b.nama,"id",{sensitivity:"base"}));
+
+ const select=$("search");
+ if(!select)return;
+ select.innerHTML='<option value="">Pilih karyawan...</option>';
+ employees.forEach(e=>{
+  const opt=document.createElement("option");
+  opt.value=e.uid||("name:"+e.nama.toLowerCase());
+  opt.dataset.name=e.nama;
+  opt.dataset.kode=e.kode||"";
+  opt.textContent=e.kode?`${e.nama} — ${e.kode}`:e.nama;
+  select.appendChild(opt);
+ });
+
+ if(!employees.length){
+  select.innerHTML='<option value="">Karyawan belum ditemukan</option>';
  }
 }
 
-window.returnHistoryToPending=async id=>{
- const r=historyOrders.find(x=>x.id===id);if(!r)return;
- const st=normStatus(r.approvalStatus||r.status||"");
- const label=["rejected","ditolak"].includes(st)?"DITOLAK":"APPROVED";
- if(!confirm(`Kembalikan order ${r.nomorNota||id} (${label}) ke MENUNGGU APPROVAL untuk revisi?`))return;
+function selectedEmployee(){
+ const select=$("search"),opt=select?.selectedOptions?.[0];
+ if(!opt||!opt.value)return null;
+ return {uid:String(opt.value).trim(),nama:String(opt.dataset.name||"").trim(),kode:String(opt.dataset.kode||"").trim()};
+}
+
+function render(){
+ const sel=selectedEmployee();
+ if(!sel){
+   $("list").innerHTML='<div class="card empty">Pilih karyawan / employee terlebih dahulu untuk menampilkan order.</div>';
+   return;
+ }
+ const wantedUid=sel.uid.toLowerCase(), wantedName=sel.nama.toLowerCase(), wantedKode=sel.kode.toLowerCase();
+ const list=rows.filter(r=>{
+   if(status(r)!=="menunggu_approval")return false;
+   const uidEmp=employeeUid(r).toLowerCase();
+   const nameEmp=employeeName(r).toLowerCase();
+   const kodeEmp=String(r.karyawan?.kode??r.employee?.kode??r.karyawanKode??r.employeeCode??"").trim().toLowerCase();
+   return (uidEmp&&uidEmp===wantedUid)||(!uidEmp&&nameEmp===wantedName)||(!uidEmp&&wantedKode&&kodeEmp===wantedKode);
+ });
+ $("list").innerHTML=list.length?list.map(r=>renderOrder(r)).join(""):'<div class="card empty">Tidak ada order yang menunggu approval untuk karyawan ini.</div>';
+}
+
+function renderApprovedHistory(){
+ const box=$("approvedHistory");
+ if(!box)return;
+
+ const sel=selectedEmployee();
+ if(!sel){
+  box.innerHTML="";
+  $("approvedHistoryCard").style.display="none";
+  return;
+ }
+
+ const list=approvedRows.filter(r=>{
+  const eid=employeeUid(r).toLowerCase();
+  const ename=employeeName(r).toLowerCase();
+  const ekode=String(
+    r.karyawan?.kode??
+    r.employee?.kode??
+    r.karyawanKode??
+    r.employeeCode??
+    ""
+  ).trim().toLowerCase();
+
+  return (eid && eid===sel.uid.toLowerCase())
+      || (!eid && ename===sel.nama.toLowerCase())
+      || (!eid && sel.kode && ekode===sel.kode.toLowerCase());
+ });
+
+ $("approvedHistoryCard").style.display="block";
+ box.innerHTML=list.length
+  ?list.map(renderApprovedHistoryOrder).join("")
+  :`<div class="empty">Tidak ada riwayat approved untuk karyawan "${esc(sel.nama)}".</div>`;
+}
+
+function renderApprovedHistoryOrder(r){
+ const m=member(r),items=Array.isArray(r.approvedItems)?r.approvedItems:normalizeItems(r);
+ const total=Number(r.approvedTotal??r.total??0)||0,dp=Number(r.approvedDp??r.dp??r.uangMuka??0)||0,sisa=Number(r.approvedSisa??r.sisa??0)||0,tempo=Number(r.tempoHari||0)||0,due=r.jatuhTempo||r.tanggalJatuhTempo||"-",emp=employeeName(r)||"-";
+ return `<div class="history-card">
+ <div class="history-head"><div><div class="order-title">${esc(r.nomorNota||r.id)}</div><div style="font-size:11px;color:#64748b;margin-top:4px">👨‍🔧 Karyawan: <b>${esc(emp)}</b> • ${esc(m.nama||"-")} • ${esc(r.orderMemberId||"-")}</div></div><span class="badge approved">APPROVED</span></div>
+ <div class="history-body">
+ <div class="meta"><b>Member:</b> ${esc(m.nama||"-")}<br><b>Kode:</b> ${esc(m.kode||"-")}<br><b>WA:</b> ${esc(m.wa||"-")}<br><b>Order Member ID:</b> ${esc(r.orderMemberId||"-")}</div>
+ <div class="items">${items.map((x,i)=>{const qty=Number(x.approvedQty??x.qty??x.jumlah??0)||0,harga=Number(x.harga??x.hargaJual??0)||0,jumlah=Number(x.total??harga*qty)||0;return `<div class="history-item"><b>${i+1}. ${esc(x.nama||x.namaProduk||"-")}</b><br>Kode: ${esc(x.kode||x.kodeProduk||"-")} • Qty: <b>${qty} pcs</b><br>Harga: ${rp(harga)}/pcs • Jumlah: <b>${rp(jumlah)}</b></div>`}).join("")}</div>
+ <div class="summary">💰 Total: <b>${rp(total)}</b><br>${isCash(r)?"💵 CASH / TUNAI — LUNAS":`💵 DP: <b>${rp(dp)}</b><br>📌 Sisa: <b>${rp(sisa)}</b><br>📅 Tempo: <b>${tempo} hari</b><br>📅 Jatuh tempo: <b>${esc(due)}</b>`}</div>
+ <div class="revert-info">⚠️ Jika terdapat kesalahan harga, quantity, tempo atau jatuh tempo, kembalikan order ini untuk revisi.</div>
+ <div class="actions"><button class="btn revision" onclick="returnOrderForRevision('${esc(r.id)}')">↩️ Kembalikan untuk Revisi</button><button class="btn wa" onclick="sendApprovedHistoryWA('${esc(r.id)}')">📲 Kirim WA</button></div>
+ </div></div>`;
+}
+
+/* Semua fungsi approval/cicilan/produk/WA dari halaman acuan dipertahankan.
+   Bagian berikut memakai implementasi asli yang dikirim user. */
+
+window.returnOrderForRevision=async id=>{
+ const r=approvedRows.find(x=>x.id===id);if(!r)return msg("Order approved tidak ditemukan.","err");
+ if(!r.orderMemberId)return msg("Order ini tidak memiliki orderMemberId. Tidak dapat direvisi otomatis.","err");
+ if(!confirm(`Kembalikan order ${r.nomorNota||id} untuk revisi?\n\nOrder Member lama tidak dihapus.`))return;
  try{
-   msg("Mengembalikan order ke approval...","ok");
-   const ref=doc(db,"penjualan",String(r.sourcePenjualanId||""));
-   const omRef=doc(db,"order_member",r.id);
-   await runTransaction(db,async tx=>{
-     const os=await tx.get(omRef);if(!os.exists())throw Error("Data order_member tidak ditemukan.");
-     const o=os.data()||{};if(String(o.ownerUid||o.ownerId||"")!==ownerUid)throw Error("Order Member bukan milik Owner ini.");
-     const current=normStatus(o.approvalStatus||o.status||"");
-     if(!["approved","rejected","ditolak","order_member","tagihan","lunas"].includes(current))throw Error("Order sudah bukan riwayat APPROVED/DITOLAK.");
-     tx.update(omRef,{status:"revisi",approvalStatus:"revisi",revisionRequired:true,revisionReturnedAt:serverTimestamp(),revisionReturnedBy:uid,hiddenFromApprovalHistory:false,updatedAt:serverTimestamp()});
-     if(r.sourcePenjualanId){
-       const ps=await tx.get(ref);if(!ps.exists())throw Error("Data penjualan sumber tidak ditemukan.");
-       const p=ps.data()||{};if(String(p.ownerUid||p.ownerId||"")!==ownerUid)throw Error("Data penjualan bukan milik Owner ini.");
-       tx.update(ref,{status:"menunggu_approval",approvalStatus:"menunggu_approval",revisionRequired:true,revisionReturnedAt:serverTimestamp(),revisionReturnedBy:uid,updatedAt:serverTimestamp()});
-     }
-   });
-   await reloadAfterHistoryChange(`Order ${r.nomorNota||id} dikembalikan ke MENUNGGU APPROVAL.`);
+  msg("Mengembalikan order untuk revisi...");
+  const ref=doc(db,"penjualan",id),orderRef=doc(db,"order_member",String(r.orderMemberId)),saldoRef=doc(db,"saldo_owner",ownerUid);
+  await runTransaction(db,async tx=>{
+   const ps=await tx.get(ref),os=await tx.get(orderRef),ss=await tx.get(saldoRef);
+   if(!ps.exists())throw Error("Data penjualan tidak ditemukan.");if(!os.exists())throw Error("Data order_member lama tidak ditemukan.");
+   const p=ps.data()||{},o=os.data()||{};if(String(p.ownerUid||p.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik Owner ini.");if(String(o.ownerUid||o.ownerId||"")!==ownerUid)throw Error("Order Member bukan milik Owner ini.");if(String(p.status||"").toLowerCase()!=="approved")throw Error("Order sudah bukan status approved.");
+   const revisionItems=Array.isArray(p.approvedItems)?p.approvedItems:(Array.isArray(p.items)?p.items:[]),oldUP=Number(o.totalUPPengelola||0)||0,oldKas=Number(o.kasBulanan||0)||0,saldoPatch={updatedAt:serverTimestamp()};
+   if(oldUP||oldKas){if(!ss.exists())throw Error("saldo_owner tidak ditemukan. Pembalikan saldo dibatalkan.");if(oldUP)saldoPatch.saldoPengelola=increment(-oldUP);if(oldKas)saldoPatch.saldoKas=increment(-oldKas)}
+   tx.update(ref,{status:"menunggu_approval",approvalStatus:"menunggu_approval",items:revisionItems,revisionRequired:true,revisionAt:serverTimestamp(),revisionBy:uid,revisionFromOrderMemberId:String(r.orderMemberId),updatedAt:serverTimestamp()});
+   tx.update(orderRef,{status:"revisi",revisionRequired:true,revisionAt:serverTimestamp(),revisionBy:uid,revisionSourcePenjualanId:id,revisionPreviousTotalUPPengelola:oldUP,revisionPreviousKasBulanan:oldKas,kasApprovalCycle:Math.max(1,Number(o.kasApprovalCycle??0)||0),totalUPPengelola:0,totalTabunganMember:0,kasBulanan:0,updatedAt:serverTimestamp()});
+   if(Object.keys(saldoPatch).length>1)tx.set(saldoRef,saldoPatch,{merge:true});
+  });
+  msg("Order dikembalikan ke Menunggu Approval untuk direvisi.","ok");await load();
  }catch(e){console.error(e);msg("Gagal mengembalikan order: "+(e?.message||e),"err")}
 };
-window.deleteHistoryOrder=async id=>{
- const r=historyOrders.find(x=>x.id===id);if(!r)return;
- const st=normStatus(r.approvalStatus||r.status||"");
- const label=["rejected","ditolak"].includes(st)?"DITOLAK":"APPROVED";
- if(!confirm(`Sembunyikan riwayat order ${r.nomorNota||id} (${label})?\n\nData asli order_member tetap tersimpan.`))return;
+window.sendApprovedHistoryWA=id=>{const r=approvedRows.find(x=>x.id===id);if(!r)return;sendWAData(r,"approved")};
+
+window.approveOrder=async id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const card=document.querySelector(`[data-id="${CSS.escape(id)}"]`);if(!card)return;
+ const original=normalizeItems(r);
+ const approved=original.map((x,i)=>{
+  const el=card.querySelectorAll(".item")[i];if(!el)return null;
+  const selectedId=el.dataset.selectedProduct||x.produkId;
+  const p=stockCatalog.find(z=>String(z.id)===String(selectedId))||
+          stockCatalog.find(z=>String(z.kode||z.kodeProduk)===String(x.kode))||x;
+  const q=Math.max(0,Number(el.querySelector(".approved")?.value)||0);
+  const harga=Math.max(0,Number(el.querySelector(".price")?.value)||0);
+  return {...x,...p,produkId:p.produkId||p.id||x.produkId,nama:stockName(p)||x.nama,kode:stockCode(p)||x.kode,
+          harga:harga||Number(x.harga)||0,modalSatuan:stockModal(p)||Number(x.modalSatuan)||0,approvedQty:q};
+ }).filter(x=>x&&x.approvedQty>0);
+ if(!approved.length)return msg("Minimal satu produk harus disetujui.","err");
+
+ const tempoEdit=card.querySelector(".tempo-edit"),dueEdit=card.querySelector(".due-edit");
+ const revisedTempo=Math.max(0,Number(tempoEdit?.value??r.tempoHari??0)||0);
+ const revisedDue=dueEdit?.value||r.jatuhTempo||r.tanggalJatuhTempo||"";
+ const ref=doc(db,"penjualan",id);
+
  try{
-   msg("Menghapus dari tampilan riwayat...","ok");
-   const ref=doc(db,"order_member",id);
-   await runTransaction(db,async tx=>{
-     const snap=await tx.get(ref);if(!snap.exists())throw Error("Data order_member tidak ditemukan.");
-     const d=snap.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Order Member bukan milik Owner ini.");
-     const current=normStatus(d.approvalStatus||d.status||"");
-     if(!["approved","rejected","ditolak","order_member","tagihan","lunas"].includes(current))throw Error("Order sudah bukan status riwayat.");
-     tx.update(ref,{hiddenFromApprovalHistory:true,historyDeletedAt:serverTimestamp(),historyDeletedBy:uid,updatedAt:serverTimestamp()});
+  msg("Memeriksa stok dan memproses approval...");
+  const result=await runTransaction(db,async tx=>{
+   const fresh=await tx.get(ref);
+   if(!fresh.exists())throw Error("Pesanan tidak ditemukan.");
+   const freshData=fresh.data()||{};
+   if(String(freshData.ownerUid||freshData.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");
+   if(status(freshData)!=="menunggu_approval")throw Error("Pesanan sudah diproses.");
+
+   const existingOrderId=String(freshData.orderMemberId||"").trim();
+   const orderRef=existingOrderId?doc(db,"order_member",existingOrderId):doc(collection(db,"order_member"));
+   const existingSnap=existingOrderId?await tx.get(orderRef):null;
+   const oldOrder=existingSnap?.exists()?existingSnap.data()||{}:null;
+   if(existingOrderId&&!oldOrder)throw Error("Order Member lama tidak ditemukan. Approval ulang dibatalkan.");
+
+   // Baca profil Member SEBELUM write agar tarif Tabungan/Kas lama yang
+   // hilang dari dokumen penjualan tetap dapat dipulihkan.
+   const memberUid=String(freshData.memberUid||freshData.memberId||freshData.member?.uid||freshData.member?.userId||freshData.pelanggan?.uid||"").trim();
+   let memberDoc={};
+   if(memberUid){
+    const ms=await tx.get(doc(db,"users",memberUid));
+    if(ms.exists())memberDoc=ms.data()||{};
+   }
+
+   const cash=isCash(freshData);
+   const sourceForBreakdown={...freshData,...r};
+   const rawForCalc=approved.map(x=>({...x}));
+   const derived=deriveBreakdown(sourceForBreakdown,rawForCalc,memberDoc);
+
+   // Jika harga approval diedit, hitung ulang nilai barang dari harga final
+   // supaya: Nilai Barang + Tabungan + UP = Total item sebelum diskon.
+   const itemsFinal=approved.map((x,idx)=>{
+    const bx=derived.items[idx]||{};
+    const qty=Math.max(0,Number(x.approvedQty)||0);
+    const tab=Number(bx.tabunganPerPcs)||0;
+    const up=Number(bx.upPengelolaPerPcs)||0;
+    const finalPrice=Math.max(0,Number(x.harga)||0);
+    const baseFromStored=Number(bx.hargaDasar)||0;
+    const base=Math.max(0,finalPrice-up-tab||baseFromStored);
+    const diskon=Math.min(Math.max(0,Number(x.diskon)||0),finalPrice*qty);
+    return {
+     ...x,
+     produkId:x.produkId,nama:x.nama,kode:x.kode,qty,approvedQty:qty,
+     hargaDasar:base,hargaAwal:base,nilaiBarang:Math.max(0,base*qty-diskon),
+     tabunganPerPcs:tab,totalTabunganMember:tab*qty,totalTabungan:tab*qty,tambahanTabungan:tab*qty,
+     upPengelolaPerPcs:up,totalUPPengelola:up*qty,totalUpPengelola:up*qty,tambahanUpPengelola:up*qty,
+     hargaMemberPerPcs:finalPrice,harga:finalPrice,
+     hargaTempo:Number(x.hargaTempo??0)||0,hargaCash:Number(x.hargaCash??0)||0,hargaJual:finalPrice,
+     diskon,totalTagihanItem:Math.max(0,finalPrice*qty-diskon),total:Math.max(0,finalPrice*qty-diskon),
+     modalSatuan:stockModal(x)
+    };
    });
-   await reloadAfterHistoryChange(`Riwayat order ${r.nomorNota||id} berhasil disembunyikan.`);
- }catch(e){console.error(e);msg("Gagal menghapus riwayat: "+(e?.message||e),"err")}
+
+   const total=itemsFinal.reduce((a,x)=>a+x.total,0);
+   const totalNilaiBarang=itemsFinal.reduce((a,x)=>a+x.nilaiBarang,0);
+   const totalUP=itemsFinal.reduce((a,x)=>a+x.totalUPPengelola,0);
+   const totalTabungan=itemsFinal.reduce((a,x)=>a+x.totalTabunganMember,0);
+   const memberData=freshData.member||freshData.pelanggan||{};
+   const tabunganPerPcs=firstPositive(
+     freshData.tabunganPerPcs,freshData.tabunganMember,memberData.tabunganPerPcs,memberDoc.tabunganPerPcs,memberDoc.tabunganMember
+   );
+   const upPengelolaPerPcs=firstPositive(
+     freshData.upPengelolaPerPcs,freshData.upPengelola,profile?.upPengelolaPerPcs,profile?.upPengelola,profile?.up
+   );
+   const kasNominal=firstPositive(
+     freshData.kasBulanan,freshData.uangKasBulanan,memberData.kasBulanan,memberDoc.kasBulanan,memberDoc.uangKasBulanan,profile?.kasBulananDefault,profile?.kasBulanan,profile?.uangKasBulanan
+   );
+
+   const dp=cash?total:Math.min(Number(freshData.dp||freshData.uangMuka||0),total);
+   const sisa=cash?0:Math.max(0,total-dp);
+   const wasRevision=Boolean(oldOrder?.revisionRequired)||String(oldOrder?.status||"")==="revisi";
+   const existingCycle=Math.max(0,Number(oldOrder?.kasApprovalCycle??0)||0);
+   const kasCycle=existingOrderId&&wasRevision?existingCycle+1:existingCycle;
+   const bulan=String(freshData.tanggal||"").slice(0,7);
+   const kasRef=(kasNominal&&bulan&&memberUid)?doc(db,"saldo_owner_kas_bulanan",ownerUid+"_"+memberUid+"_"+bulan+"_"+String(kasCycle)):null;
+   const kasSnap=kasRef?await tx.get(kasRef):null;
+   const shouldPostKas=Boolean(kasRef&&kasSnap&&!kasSnap.exists());
+
+   const saldoRef=doc(db,"saldo_owner",ownerUid);
+   const oldPostedUP=wasRevision?0:(Number(oldOrder?.totalUPPengelola||0)||0);
+   const deltaUP=totalUP-oldPostedUP;
+   const saldoPatch={updatedAt:serverTimestamp()};
+   if(deltaUP)saldoPatch.saldoPengelola=increment(deltaUP);
+   if(shouldPostKas)saldoPatch.saldoKas=increment(kasNominal);
+
+   const order={
+    ownerUid,uid:ownerUid,createdBy:uid,sourcePenjualanId:id,
+    nomorNota:freshData.nomorNota||id,
+    tipeOrder:cash?"member_cash":"member_tempo",
+    jenisHarga:cash?"cash":"tempo",
+    status:"order_member",approvalStatus:"approved",revisionRequired:false,
+    approvalEmployeeUid:selectedEmployee()?.uid||"",approvalEmployeeName:selectedEmployee()?.nama||"",
+    employeeUid:selectedEmployee()?.uid||"",employeeName:selectedEmployee()?.nama||"",
+    member:{...memberData,uid:memberUid||memberData.uid||"",userId:memberUid||memberData.userId||""},
+    items:itemsFinal,
+    subtotal:total,diskon:itemsFinal.reduce((a,x)=>a+x.diskon,0),total,totalBayar:total,totalTagihanMember:total,
+    totalNilaiBarang,
+    totalUPPengelola:totalUP,totalUpPengelola:totalUP,totalUpPengelolaOrder:totalUP,
+    totalTabunganMember:totalTabungan,totalTabungan:totalTabungan,totalTabunganOrder:totalTabungan,
+    tabunganPerPcs,tabunganMember:tabunganPerPcs,
+    upPengelolaPerPcs,
+    kasBulanan:shouldPostKas?kasNominal:0,
+    uangKasBulanan:shouldPostKas?kasNominal:0,
+    kasApprovalCycle:kasCycle,
+    dp:cash?total:dp,uangMuka:cash?total:dp,
+    sisa:cash?0:sisa,sisaBayar:cash?0:sisa,piutang:cash?0:sisa,
+    pendapatan:cash?total:dp,
+    tempoHari:cash?0:revisedTempo,
+    jatuhTempo:cash?"":revisedDue,
+    tanggal:freshData.tanggal||"",
+    tanggalJatuhTempo:cash?"":revisedDue,
+    approvedAt:serverTimestamp(),updatedAt:serverTimestamp(),stokDikurangi:true
+   };
+
+   if(existingOrderId)tx.update(orderRef,order);else tx.set(orderRef,order);
+   if(shouldPostKas)tx.set(kasRef,{ownerUid,memberUid,bulan,nominal:kasNominal,sumber:"approval-order-member",orderMemberId:orderRef.id,sourcePenjualanId:id,createdAt:serverTimestamp()});
+   if(Object.keys(saldoPatch).length>1)tx.set(saldoRef,saldoPatch,{merge:true});
+
+   tx.update(ref,{
+    status:"approved",approvalStatus:"approved",approvedAt:serverTimestamp(),approvedBy:uid,
+    approvedItems:itemsFinal,items:itemsFinal,approvedTotal:total,approvedDp:dp,approvedSisa:sisa,approvedPiutang:sisa,
+    orderMemberId:orderRef.id,revisionRequired:false,revisionApprovedAt:serverTimestamp(),revisionApprovedBy:uid,
+    updatedAt:serverTimestamp()
+   });
+   return{orderId:orderRef.id,order};
+  });
+
+  msg(result.orderId===r.orderMemberId?"Approval ulang berhasil. Rincian order_member diperbarui.":"Order berhasil di-approve dan masuk Data Order Member.","ok");
+  await load();
+  sendWAData(result.order,"approved");
+ }catch(e){console.error(e);msg("Gagal approval: "+(e?.message||e),"err")}
 };
 
-function waNum(v){let s=String(v||"").replace(/\D/g,"");if(s.startsWith("0"))s="62"+s.slice(1);else if(s.startsWith("8"))s="62"+s;return s}
-window.sendWA=id=>{
- const r=orders.find(x=>x.id===id);if(!r)return;
- const m=member(r),its=itemsOf(r);
- let t=`Halo Kak ${m.nama||""} 👋\n\n📋 *ORDER MEMBER*\n🧾 No: *${r.nomorNota||id}*\n👨‍🔧 Employee: *${employeeName(r)||selected?.nama||"-"}*\n\n`;
- its.forEach((x,i)=>{
-   const hargaDasar=Number(x.hargaDasar??x.hargaAwal??0)||0;
-   const tab=Number(x.tabunganPerPcs||0)||0;
-   const up=Number(x.upPengelolaPerPcs||0)||0;
-   const disk=Math.max(0,Number(x.diskon||0)||0);
-   const hargaMember=Number(x.harga||0)||0;
-   const nilaiBarang=Math.max(0,Number(x.nilaiBarang??(hargaDasar*x.qty-disk))||0);
-   const totalTab=Number(x.totalTabungan??(tab*x.qty))||0;
-   const totalUp=Number(x.totalUP??(up*x.qty))||0;
-   const jumlah=Number(x.total??(hargaMember*x.qty-disk))||0;
-   t+=`${i+1}. *${x.nama}*\n`;
-   t+=`Kode: ${x.kode||"-"} • Qty: *${x.qty} pcs*\n`;
-   t+=`💵 Harga barang: ${rp(hargaDasar)}/pcs\n`;
-   t+=`📦 Nilai barang: ${rp(nilaiBarang)}\n`;
-   t+=`🏦 Tabungan Member: ${rp(tab)}/pcs × ${x.qty} = ${rp(totalTab)}\n`;
-   t+=`👤 UP Pengelola: ${rp(up)}/pcs × ${x.qty} = ${rp(totalUp)}\n`;
-   if(disk>0)t+=`🏷️ Diskon: ${rp(disk)}\n`;
-   t+=`💰 Harga Member: ${rp(hargaMember)}/pcs\n`;
-   t+=`➡️ Jumlah: *${rp(jumlah)}*\n\n`;
+function renderCicilanRequests(){
+ const card=$("cicilanCard"),box=$("cicilanList");
+ if(!card||!box)return;
+ const sel=selectedEmployee();
+ if(!sel){card.style.display="none";box.innerHTML="";return;}
+ const wantedUid=String(sel.uid||"").toLowerCase(),wantedName=String(sel.nama||"").toLowerCase(),wantedKode=String(sel.kode||"").toLowerCase();
+ const list=cicilanRequests.filter(r=>{
+  if(String(r.status||"pending").toLowerCase()!=="pending")return false;
+  const eid=employeeUid(r).toLowerCase(),ename=employeeName(r).toLowerCase();
+  const ekode=String(r.karyawan?.kode??r.employee?.kode??r.karyawanKode??r.employeeCode??"").trim().toLowerCase();
+  return (eid&&eid===wantedUid)||(!eid&&ename===wantedName)||(!eid&&wantedKode&&ekode===wantedKode)||
+         (String(r.employeeUid||r.karyawanUid||"").toLowerCase()===wantedUid&&wantedUid);
  });
- const total=Number(r.total??r.subtotal??its.reduce((a,x)=>a+x.total,0))||0;
- const dp=Number(r.dp??r.uangMuka??0)||0;
- const dibayar=Number(r.totalDibayar??r.dibayar??r.paid??dp)||0;
- const sisa=Math.max(0,Number(r.sisa??r.sisaBayar??r.piutang??(total-dibayar))||0);
- const kas=Number(r.kasBulanan??r.uangKasBulanan??r.kasBulananMember??0)||0;
- const due=r.jatuhTempo||r.tanggalJatuhTempo||"-";
- const isCash=String(r.jenisHarga||r.tipeOrder||"").toLowerCase().includes("cash");
- const totalNilaiBarang=its.reduce((a,x)=>a+(Number(x.nilaiBarang)||0),0);
- const totalTabungan=its.reduce((a,x)=>a+(Number(x.totalTabungan)||0),0);
- const totalUP=its.reduce((a,x)=>a+(Number(x.totalUP)||0),0);
- t+=`📊 *RINCIAN TOTAL*\n`;
- t+=`📦 Nilai Barang: ${rp(totalNilaiBarang)}\n`;
- t+=`🏦 Tabungan Member: ${rp(totalTabungan)}\n`;
- t+=`👤 UP Pengelola: ${rp(totalUP)}\n`;
- if(kas>0)t+=`💼 Kas Bulanan: ${rp(kas)}\n`;
- t+=`💰 Total Order: *${rp(total)}*\n`;
- if(kas>0)t+=`🧾 Total + Kas: *${rp(total+kas)}*\n`;
- t+=`💵 DP: ${rp(dp)}\n`;
- t+=`💳 Total dibayar: ${rp(dibayar)}\n`;
- if(isCash){
-   t+=`✅ *STATUS: LUNAS*\n📌 Sisa: *Rp 0*`;
- }else{
-   t+=`📌 *Sisa Tagihan: ${rp(sisa)}*\n📅 Jatuh tempo: *${due}*`;
+ if(!list.length){card.style.display="none";box.innerHTML="";return;}
+ card.style.display="block";
+ box.innerHTML=list.map(r=>{
+  const m=r.member||{},nominal=num(r.nominal),sebelum=num(r.tagihanSebelum);
+  const jenis=(String(r.modePembayaran||"").toLowerCase()==="lunas"||String(r.jenisPembayaran||"").toLowerCase()==="pelunasan")?"PELUNASAN":"CICILAN";
+  const tanggal=r.requestedAt?.toDate?r.requestedAt.toDate().toLocaleString("id-ID"):String(r.requestedAt||"");
+  return `<div class="order" data-cicilan-id="${esc(r.id)}">
+   <div class="order-head"><div><div class="order-title">${esc(r.nomorNota||r.orderMemberId||r.id)}</div>
+    <div class="meta">👤 Member: <b>${esc(m.nama||r.memberNama||"-")}</b> • ${esc(jenis)}</div></div><span class="badge">MENUNGGU APPROVAL</span></div>
+   <div class="order-body">
+    <div class="meta"><b>Request ID:</b> ${esc(r.id)}<br><b>Nominal pembayaran:</b> ${rp(nominal)}<br><b>Tagihan sebelum:</b> ${rp(sebelum)}${tanggal?`<br><b>Dikirim:</b> ${esc(tanggal)}`:""}</div>
+    <div class="summary">💳 Pembayaran: <b>${rp(nominal)}</b><br>📌 Tagihan setelah approval: <b>${rp(Math.max(0,sebelum-nominal))}</b></div>
+    <div class="actions"><button class="btn approve" onclick="approveCicilan('${esc(r.id)}')">✅ APPROVE PEMBAYARAN</button><button class="btn reject" onclick="rejectCicilan('${esc(r.id)}')">❌ TOLAK</button></div>
+   </div>
+  </div>`;
+ }).join("");
+}
+
+async function loadCicilanRequests(){
+ cicilanRequests=[];
+ if(!ownerUid)return;
+ const map=new Map();
+ for(const field of ["ownerUid","ownerId"]){
+  try{
+   const snap=await getDocs(query(collection(db,"tabungan_member"),where(field,"==",ownerUid)));
+   snap.forEach(d=>{
+    const x={id:d.id,...d.data()},jenis=String(x.jenis??x.tipe??"").trim().toLowerCase(),own=String(x.ownerUid||x.ownerId||"").trim();
+    if(jenis==="cicilan_tagihan"&&own===ownerUid)map.set(d.id,x);
+   });
+  }catch(e){console.warn("Load cicilan requests "+field,e?.message||e)}
  }
- t+=`\n\nPesanan yang sudah disetujui akan diproses di *Data Order Member*.\n\nTerima kasih 🙏\n*Teknisi Ponse Maja*`;
- const n=waNum(m.wa);
- if(n)window.open(`https://wa.me/${n}?text=${encodeURIComponent(t)}`,"_blank");
- else msg("Nomor WhatsApp member tidak tersedia.","err");
-};
-$("refresh").onclick=async()=>{if(!ready)return;msg("Memuat ulang...");try{await loadEmployees();await loadOrders();msg("Data berhasil diperbarui.","ok")}catch(e){msg(e.message,"err")}};
-onAuthStateChanged(auth,async u=>{
- if(!u){msg("Belum login. Buka dari sesi login FIXZY.","err");return}
+ const all=[...map.values()];
+ for(const r of all){
+  try{
+   const omid=String(r.orderMemberId||"").trim();
+   if(!omid)continue;
+   const s=await getDoc(doc(db,"order_member",omid));
+   if(s.exists()){
+    const o=s.data()||{};
+    r.karyawanUid=r.karyawanUid||r.employeeUid||o.employeeUid||o.approvalEmployeeUid||"";
+    r.karyawanNama=r.karyawanNama||r.employeeName||o.employeeName||o.approvalEmployeeName||"";
+    r.karyawan=r.karyawan||o.karyawan||null;
+    r.employee=r.employee||o.employee||null;
+   }
+  }catch(e){console.warn("Load employee cicilan "+r.id,e?.message||e)}
+ }
+ cicilanRequests=all.sort((a,b)=>{
+  const av=a.requestedAt?.toMillis?a.requestedAt.toMillis():new Date(a.requestedAt||a.createdAt||0).getTime();
+  const bv=b.requestedAt?.toMillis?b.requestedAt.toMillis():new Date(b.requestedAt||b.createdAt||0).getTime();
+  return bv-av;
+ });
+ renderCicilanRequests();
+}
+
+window.approveCicilan=async requestId=>{
+ const req=cicilanRequests.find(x=>x.id===requestId);
+ if(!req)return msg("Request cicilan tidak ditemukan.","err");
+ const nominal=Math.floor(num(req.nominal));
+ if(nominal<=0)return msg("Nominal pembayaran tidak valid.","err");
+ if(!confirm(`Setujui pembayaran ${rp(nominal)} untuk nota ${req.nomorNota||req.orderMemberId||requestId}?`))return;
  try{
-   uid=u.uid;$("email").textContent=u.email||"-";
-   const s=await getDoc(doc(db,"users",uid));
-   if(!s.exists())throw Error("Profil akun tidak ditemukan di users/{uid}.");
-   profile=s.data()||{};
-   const role=String(profile.role||"").trim().toLowerCase();
-   if(role!=="owner")throw Error("Akun yang sedang login bukan Owner.");
-   ownerUid=uid;
-   ready=true;
-   await loadEmployees();
-   await loadOrders();
-   msg(`Owner aktif • ${employees.length} employee dimuat dari users.`,"ok");
- }catch(e){console.error(e);msg("Gagal memuat: "+(e?.message||e),"err")}
+  msg("Memproses approval pembayaran...");
+  const reqRef=doc(db,"tabungan_member",requestId),orderId=String(req.orderMemberId||"").trim();
+  if(!orderId)throw Error("Request tidak memiliki orderMemberId.");
+  const orderRef=doc(db,"order_member",orderId);
+  await runTransaction(db,async tx=>{
+   const rs=await tx.get(reqRef);
+   if(!rs.exists())throw Error("Request cicilan tidak ditemukan di Firebase.");
+   const q=rs.data()||{};
+   if(String(q.ownerUid||q.ownerId||"")!==ownerUid)throw Error("Request bukan milik Owner ini.");
+   if(String(q.status||"pending").toLowerCase()!=="pending")throw Error("Request cicilan sudah diproses.");
+   const os=await tx.get(orderRef);
+   if(!os.exists())throw Error("Order Member tidak ditemukan di Firebase.");
+   const o=os.data()||{};
+   if(String(o.ownerUid||o.ownerId||"")!==ownerUid)throw Error("Order Member bukan milik akun ini.");
+   const total=Math.max(0,num(o.totalBayar??o.total)),current=Math.max(0,num(o.totalDibayar??o.pembayaran??o.dp)),sisa=Math.max(0,total-current);
+   if(sisa<=0)throw Error("Tagihan order ini sudah lunas.");
+   if(nominal>sisa)throw Error(`Pembayaran melebihi sisa tagihan ${rp(sisa)}.`);
+   const baru=current+nominal,baruSisa=Math.max(0,total-baru),st=baruSisa===0?"lunas":"tagihan";
+   const patch={status:st,totalDibayar:baru,sisaBayar:baruSisa,sisa:baruSisa,pembayaranTerakhir:nominal,pembayaranTerakhirAt:serverTimestamp(),updatedAt:serverTimestamp()};
+   if(st==="lunas")patch.sebelumLunas={status:String(o.status||"tagihan"),totalDibayar:current,sisaBayar:sisa,sisa:sisa};
+   tx.update(orderRef,patch);
+   tx.update(reqRef,{status:"approved",approvedAt:serverTimestamp(),approvedBy:uid,tagihanSebelum:sisa,tagihanSesudah:baruSisa,updatedAt:serverTimestamp()});
+  });
+  msg("Pembayaran berhasil di-approve. Sisa tagihan diperbarui.","ok");
+  await loadCicilanRequests();
+ }catch(e){console.error(e);msg("Gagal approval pembayaran: "+(e?.message||e),"err")}
+};
+
+window.rejectCicilan=async requestId=>{
+ const req=cicilanRequests.find(x=>x.id===requestId);if(!req)return;const alasan=prompt("Alasan penolakan transfer/cicilan:","Bukti transfer belum sesuai");if(alasan===null)return;
+ try{const ref=doc(db,"tabungan_member",requestId);await runTransaction(db,async tx=>{const ss=await tx.get(ref);if(!ss.exists())throw Error("Request tidak ditemukan.");const d=ss.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Request bukan milik Owner ini.");if(String(d.status||"pending").toLowerCase()!=="pending")throw Error("Request sudah diproses.");tx.update(ref,{status:"rejected",approvedBy:uid,alasanApproval:alasan})});msg("Request cicilan ditolak. Tagihan tidak berubah.","ok");await loadCicilanRequests()}catch(e){console.error(e);msg("Gagal menolak cicilan: "+(e?.message||e),"err")}
+};
+
+function searchReplacementProducts(input){
+ const item=input.closest(".item");if(!item)return;const id=item.dataset.order,r=rows.find(x=>x.id===id),box=item.querySelector(".product-results");if(!r||!box)return;
+ const q=String(input.value||"").trim().toLowerCase();if(q.length<2){box.classList.remove("show");box.innerHTML="";return}
+ const list=(sheetCache||stockCatalog||[]).filter(p=>String(p.ownerUid||p.ownerId||"")===ownerUid),hits=list.filter(p=>[p.nama,p.kode,p.supplier].join(" ").toLowerCase().includes(q));
+ if(!hits.length){box.innerHTML='<div class="add-result" style="color:#64748b">Produk tidak ditemukan.</div>';box.classList.add("show");return}
+ box.innerHTML=hits.slice(0,100).map((p,i)=>`<button type="button" class="add-result" data-replacement-result="${i}"><div class="pname">${esc(p.nama)}</div><div class="meta">${esc(p.kode||"-")} • Supplier: <b>${esc(p.supplier||"-")}</b> • Stok: ${Number(p.stock??p.stok??0)||0} pcs<br>Tunai: <b>${rp(p.modal)}</b> • Tempo: <b>${rp(p.jual)}</b></div></button>`).join("");
+ box.classList.add("show");box.querySelectorAll("[data-replacement-result]").forEach(b=>b.onclick=()=>applyReplacementProduct(item,hits[Number(b.dataset.replacementResult)]));
+}
+async function applyReplacementProduct(item,p){
+ const id=item?.dataset.order,index=Number(item?.dataset.index);if(!item||!id||!Number.isInteger(index)||!p)return;const r=rows.find(x=>x.id===id),old=normalizeItems(r)[index];if(!r||!old)return;
+ const price=finalProductPrice(r,p,old),stock=Number(p.stock??p.stok??0)||0,qtyInput=item.querySelector(".approved"),qty=Math.max(0,Math.min(Number(old.qty)||1,Number(qtyInput?.value)||Number(old.qty)||1));if(qty>stock)return msg(`Stok ${stock} pcs, tidak cukup untuk produk pengganti ${stockName(p)}.`,"err");
+ try{msg("Menyimpan produk pengganti...");const ref=doc(db,"penjualan",id);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw Error("Pesanan tidak ditemukan.");const d=snap.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");if(String(d.status||"menunggu_approval")!=="menunggu_approval")throw Error("Pesanan sudah tidak menunggu approval.");const sourceItems=Array.isArray(d.items)?d.items:(Array.isArray(d.produkList)?d.produkList:[]);if(!sourceItems[index])throw Error("Item pesanan tidak ditemukan.");const sourceOld=sourceItems[index],sourcePrice=finalProductPrice(d,p,sourceOld),q=Number(sourceOld.qty||old.qty||1);sourceItems[index]={...sourceOld,approvalItemId:sourceOld.approvalItemId||`REP-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,penggantiApproval:true,produkId:p.id,nama:stockName(p),namaProduk:stockName(p),kode:stockCode(p),kodeProduk:stockCode(p),supplier:p.supplier||"",qty:q,jumlah:q,harga:sourcePrice.final,hargaJual:sourcePrice.final,hargaDasar:sourcePrice.base,hargaTempo:Number(p.hargaTempo??p.jual??0)||0,hargaCash:Number(p.hargaCash??p.modal??0)||0,tabunganPerPcs:sourcePrice.tab,upPengelolaPerPcs:sourcePrice.up,tambahanTabungan:sourcePrice.tab*q,tambahanUpPengelola:sourcePrice.up*q,modalSatuan:Number(p.modal)||0,diskon:Number(sourceOld.diskon??0)||0,approvedQty:qty,stokTersedia:stock,sourceIndex:p.sourceIndex,sourceSpreadsheet:p.sourceSpreadsheet};tx.update(ref,{items:sourceItems,status:"menunggu_approval",approvalStatus:"menunggu_approval",updatedAt:serverTimestamp()})});item.dataset.selectedProduct=String(p.id||"");item.querySelector(".product-search").value=stockName(p);item.querySelector(".product-results").classList.remove("show");item.querySelector(".product-results").innerHTML="";item.querySelector(".price").value=price.final;qtyInput.max=Math.max(0,Number(old.qty)||0);if(Number(qtyInput.value)>stock)qtyInput.value=stock;item.querySelector(".item-name").textContent=stockName(p);item.querySelector(".replacement-info").innerHTML=`Harga dasar: ${rp(price.base)} + Tabungan: ${rp(price.tab)} /pcs + Pengelola: ${rp(price.up)} /pcs = <b>${rp(price.final)}/pcs</b> • <span class="stock-ok">Tersimpan</span>`;const local=rows.find(x=>x.id===id);if(local){const arr=Array.isArray(local.items)?local.items:[];if(arr[index])Object.assign(arr[index],{...old,...p,produkId:p.id,nama:stockName(p),namaProduk:stockName(p),kode:stockCode(p),kodeProduk:stockCode(p),supplier:p.supplier||"",harga:price.final,hargaJual:price.final,hargaDasar:price.base,hargaTempo:Number(p.hargaTempo??p.jual??0)||0,hargaCash:Number(p.hargaCash??p.modal??0)||0,tabunganPerPcs:price.tab,upPengelolaPerPcs:price.up,modalSatuan:Number(p.modal)||0,approvedQty:qty,stokTersedia:stock})}recalcOrder(id);checkStock(id);msg("Produk pengganti berhasil disimpan ke pesanan.","ok")
+ }catch(e){console.error(e);msg("Gagal menyimpan produk pengganti: "+(e.message||e),"err")}
+}
+
+let addProductOrderId="",addProductResultsed=null;
+function searchAddProducts(){
+ const q=String($("addProductSearch").value||"").trim().toLowerCase(),box=$("addProductResults");addProductResultsed=null;$("addProductInfo").textContent="";$("addProductPrice").value=0;if(q.length<2){box.classList.remove("show");box.innerHTML="";return}
+ const hits=(sheetCache||stockCatalog).filter(p=>[p.nama,p.kode,p.supplier].join(" ").toLowerCase().includes(q));if(!hits.length){box.innerHTML='<div class="add-result" style="color:#64748b">Produk tidak ditemukan.</div>';box.classList.add("show");return}
+ box.innerHTML=hits.slice(0,100).map((p,i)=>`<button type="button" class="add-result" data-add-result="${i}"><div class="pname">${esc(p.nama)}</div><div class="meta">${esc(p.kode||"-")} • Supplier: <b>${esc(p.supplier||"-")}</b> • Stok: ${Number(p.stock??p.stok??0)||0} pcs<br>Tunai: <b>${rp(p.modal)}</b> • Tempo: <b>${rp(p.jual)}</b></div></button>`).join("");box.classList.add("show");
+ box.querySelectorAll("[data-add-result]").forEach(b=>b.onclick=()=>{addProductResultsed=hits[Number(b.dataset.addResult)];box.classList.remove("show");const p=addProductResultsed,r=rows.find(x=>x.id===addProductOrderId),cash=isCash(r),st=Number(p.stock??p.stok??0)||0,tab=Number(r?.tabunganPerPcs??r?.tabunganMember??r?.tabunganMemberPerPcs??0)||0,up=Number(r?.upPengelolaPerPcs??r?.upPengelola??0)||0,hargaDasar=cash?(Number(p.modal)||0):(Number(p.jual)||0);$("addProductPrice").value=hargaDasar+tab+up;$("addProductQty").max=st;$("addProductInfo").innerHTML=`Dipilih: <b>${esc(p.nama)}</b> • ${esc(p.kode||"-")} • Supplier: <b>${esc(p.supplier||"-")}</b> • Stok: <b>${st}</b> pcs<br>Harga dasar: ${rp(hargaDasar)} + Tabungan: ${rp(tab)} /pcs + Pengelola: ${rp(up)} /pcs`});
+}
+window.openAddProduct=async id=>{addProductOrderId=id;addProductResultsed=null;$("addProductSearch").value="";$("addProductQty").value=1;$("addProductPrice").value=0;$("addProductResults").innerHTML="";$("addProductResults").classList.remove("show");$("addProductInfo").textContent="";if(!sheetCache){try{const links=await getSpreadsheetLinks(),all=[];sheetLinks=links;for(let i=0;i<links.length;i++)try{all.push(...await readSheet(links[i],i+1))}catch(e){console.warn(e)}sheetCache=all;stockCatalog=all}catch(e){msg("Gagal memuat Spreadsheet: "+e.message,"err")}}$("addProductModal").classList.add("show");setTimeout(()=>$("addProductSearch").focus(),50)};
+window.closeAddProduct=()=>{addProductOrderId="";addProductResultsed=null;$("addProductModal").classList.remove("show")};
+window.saveAddedProduct=async()=>{
+ const id=addProductOrderId,p=addProductResultsed,qty=Math.max(0,Number($("addProductQty").value)||0),harga=Math.max(0,Number($("addProductPrice").value)||0);if(!id)return msg("Pesanan tidak ditemukan.","err");if(!p)return msg("Cari dan pilih produk terlebih dahulu.","err");if(qty<1)return msg("QTY minimal 1.","err");const stock=Number(p.stock??p.stok??0)||0;if(qty>stock)return msg(`Stok ${stock} pcs, tidak cukup untuk qty ${qty}.`,"err");
+ try{msg("Menyimpan produk tambahan...");const ref=doc(db,"penjualan",id);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw Error("Pesanan tidak ditemukan.");const d=snap.data()||{};if(String(d.ownerUid||d.ownerId||"")!==ownerUid)throw Error("Pesanan bukan milik akun ini.");if(String(d.status||"menunggu_approval")!=="menunggu_approval")throw Error("Pesanan sudah tidak menunggu approval.");const items=Array.isArray(d.items)?d.items:(Array.isArray(d.produkList)?d.produkList:[]),cash=isCash(d),tab=Number(d.tabunganPerPcs??d.tabunganMember??d.tabunganMemberPerPcs??0)||0,up=Number(d.upPengelolaPerPcs??d.upPengelola??0)||0,hargaDasar=cash?(Number(p.modal)||0):(Number(p.jual)||0),hargaFinal=hargaDasar+tab+up,item={approvalItemId:`ADD-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,tambahanApproval:true,produkId:p.id,nama:stockName(p),kode:stockCode(p),namaProduk:stockName(p),kodeProduk:stockCode(p),supplier:p.supplier||"",qty,jumlah:qty,harga:hargaFinal,hargaJual:hargaFinal,hargaDasar,hargaTempo:Number(p.hargaTempo??p.jual??0)||0,hargaCash:Number(p.hargaCash??p.modal??0)||0,tabunganPerPcs:tab,upPengelolaPerPcs:up,tambahanTabungan:tab*qty,tambahanUpPengelola:up*qty,modalSatuan:Number(p.modal)||0,diskon:0,approvedQty:qty,stokTersedia:stock,sourceIndex:p.sourceIndex,sourceSpreadsheet:p.sourceSpreadsheet};tx.update(ref,{items:[...items,item],status:"menunggu_approval",approvalStatus:"menunggu_approval",updatedAt:serverTimestamp()})});closeAddProduct();await load();msg("Produk baru berhasil ditambahkan. Stok belum dikurangi.","ok")}catch(e){console.error(e);msg("Gagal menambah produk: "+(e.message||e),"err")}
+};
+
+function waBreakdown(r,items){
+ const list=(Array.isArray(items)?items:[]).map(x=>{
+  const qty=Math.max(0,num(x?.qty??x?.approvedQty??x?.jumlah??1));
+  const tab=firstPositive(x?.tabunganPerPcs,x?.tabungan,r?.tabunganPerPcs,r?.tabunganMember);
+  const up=firstPositive(x?.upPengelolaPerPcs,x?.upPengelola,r?.upPengelolaPerPcs,r?.upPengelola);
+  let base=firstPositive(x?.hargaDasar,x?.hargaAwal);
+  const harga=Number(x?.harga??x?.hargaJual??0)||0;
+  if(!base && harga>0)base=Math.max(0,harga-tab-up);
+  const diskon=Math.min(Math.max(0,num(x?.diskon??x?.discount)),Math.max(0,base*qty));
+  const nilai=Math.max(0,base*qty-diskon);
+  const tabTotal=tab*qty;
+  const upTotal=up*qty;
+  const itemTotal=nilai+tabTotal+upTotal;
+  return {...x,qty,base,tab,up,diskon,nilai,tabTotal,upTotal,itemTotal};
+ });
+ const nilaiBarang=list.reduce((a,x)=>a+x.nilai,0);
+ const tabungan=list.reduce((a,x)=>a+x.tabTotal,0);
+ const pengelola=list.reduce((a,x)=>a+x.upTotal,0);
+ const kas=firstPositive(r?.kasBulanan,r?.uangKasBulanan,r?.kasBulananMember,r?.uangKas);
+ // Total yang ditampilkan = nilai barang + tabungan + UP + kas.
+ // Total produk tetap berasal dari tiga komponen harga produk.
+ const totalProduk=nilaiBarang+tabungan+pengelola;
+ const total=totalProduk+kas;
+ const dp=Math.max(0,num(r?.dp??r?.uangMuka));
+ const cash=isCash(r);
+ const pembayaran=Math.max(0,num(r?.totalDibayar??r?.pembayaran));
+ const bayar=cash?total:Math.max(dp,pembayaran);
+ const sisa=cash?0:Math.max(0,total-bayar);
+ return {list,nilaiBarang,tabungan,pengelola,kas,totalProduk,total,dp,pembayaran,bayar,sisa,cash};
+}
+
+function buildMessage(r,items,statusText){
+ const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id;
+ const b=waBreakdown(r,items);
+ let text=`Halo Kak ${m.nama||""}\n\n`;
+ if(statusText==="approved"){
+  text+=`Pesanan member *${nota}* sudah kami cek dan disetujui.\n\n*RINCIAN PESANAN*\n`;
+  b.list.forEach((x,i)=>{
+   text+=`${i+1}. *${x.nama}*\n`;
+   text+=`Kode: ${x.kode||"-"}\n`;
+   text+=`Qty: *${x.qty} pcs*\n`;
+   text+=`Harga awal: ${rp(x.base)}/pcs\n`;
+   text+=`Nilai barang: ${rp(x.nilai)}\n`;
+   text+=`Tabungan Member: ${rp(x.tab)}/pcs × ${x.qty} = ${rp(x.tabTotal)}\n`;
+   text+=`UP Pengelola: ${rp(x.up)}/pcs × ${x.qty} = ${rp(x.upTotal)}\n`;
+   if(x.diskon>0)text+=`Diskon: -${rp(x.diskon)}\n`;
+   text+=`Total produk: *${rp(x.itemTotal)}*\n\n`;
+  });
+  text+=`*RINCIAN TOTAL*\n`;
+  text+=`Harga awal/nilai barang: *${rp(b.nilaiBarang)}*\n`;
+  text+=`Tabungan Member: *${rp(b.tabungan)}*\n`;
+  text+=`UP Pengelola: *${rp(b.pengelola)}*\n`;
+  text+=`Kas Bulanan: *${rp(b.kas)}*\n`;
+  text+=`TOTAL: *${rp(b.total)}*\n`;
+  if(b.cash){
+   text+=`Pembayaran: *${rp(b.total)}*\nSisa Tagihan: *Rp 0*\n`;
+  }else{
+   text+=`Pembayaran/DP: *${rp(b.bayar)}*\nSisa Tagihan: *${rp(b.sisa)}*\nJatuh tempo: *${r.jatuhTempo||r.tanggalJatuhTempo||"-"}*\n`;
+  }
+  text+=`\nPesanan yang sudah disetujui akan diproses di *Data Order Member*.\n\nTerima kasih.\n*${nama}*`;
+ }else{
+  text+=`Pesanan member *${nota}* sudah kami cek.\n\n*DI BATALKAN*\nAlasan pembatalan: ${r.alasanApproval||""}\n\nSilakan isi kembali keranjang order untuk pilihan produk pengganti.\n\nTerima kasih.\n*${nama}*`;
+ }
+ return text;
+}
+function sendWAData(r,statusText){
+ const m=member(r),url=`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(buildMessage(r,r.items||[],statusText))}`;
+ window.open(url,"_blank");
+}
+window.sendWA=id=>{
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ const st=status(r);
+ if(st==="menunggu_approval"){
+  const m=member(r),nama=profile.namaKonter||profile.namaToko||"FIXZY",nota=r.nomorNota||r.id,items=normalizeItems(r),b=waBreakdown(r,items);
+  let text=`Halo Kak ${m.nama||""}\n\n*KONFIRMASI PESANAN*\nNo. Nota: *${nota}*\nMember: *${m.nama||"-"}*\n\n*RINCIAN ORDERAN*\n`;
+  b.list.forEach((x,i)=>{
+   text+=`${i+1}. *${x.nama}*\n`;
+   text+=`Kode: ${x.kode||"-"}\n`;
+   text+=`Qty: *${x.qty} pcs*\n`;
+   text+=`Harga awal: ${rp(x.base)}/pcs\n`;
+   text+=`Nilai barang: ${rp(x.nilai)}\n`;
+   text+=`Tabungan Member: ${rp(x.tab)}/pcs × ${x.qty} = ${rp(x.tabTotal)}\n`;
+   text+=`UP Pengelola: ${rp(x.up)}/pcs × ${x.qty} = ${rp(x.upTotal)}\n`;
+   if(x.diskon>0)text+=`Diskon: -${rp(x.diskon)}\n`;
+   text+=`Total produk: *${rp(x.itemTotal)}*\n\n`;
+  });
+  text+=`*RINCIAN TOTAL*\n`;
+  text+=`Jumlah produk: *${b.list.reduce((a,x)=>a+x.qty,0)} pcs*\n`;
+  text+=`Harga awal/nilai barang: *${rp(b.nilaiBarang)}*\n`;
+  text+=`Tabungan Member: *${rp(b.tabungan)}*\n`;
+  text+=`UP Pengelola: *${rp(b.pengelola)}*\n`;
+  text+=`Kas Bulanan: *${rp(b.kas)}*\n`;
+  text+=`TOTAL PESANAN: *${rp(b.total)}*\n\n`;
+  text+=`Mohon cek kembali produk, kode, jumlah, harga awal, tabungan, pengelola, kas dan total pesanan.\n\nSetelah sesuai, pesanan akan kami approval dan diteruskan ke pemasok.\n\nTerima kasih.\n*${nama}*`;
+  window.open(`https://wa.me/${waNum(m.wa)}?text=${encodeURIComponent(text)}`,"_blank");
+  return;
+ }
+ sendWAData(r,st==="approved"?"approved":"rejected");
+};
+
+$("search").addEventListener("change",()=>{render();renderApprovedHistory();renderCicilanRequests();});
+$("list").addEventListener("input",e=>{const order=e.target.closest(".order");if(!order)return;if(e.target.classList.contains("product-search"))searchReplacementProducts(e.target);if(e.target.classList.contains("approved")||e.target.classList.contains("price")||e.target.classList.contains("tempo-edit")||e.target.classList.contains("due-edit"))recalcOrder(order.dataset.id)});
+$("addProductSearch").addEventListener("input",()=>{clearTimeout(window._addSearchTimer);window._addSearchTimer=setTimeout(searchAddProducts,250)});
+$("dark").onclick=()=>{document.body.classList.toggle("dark");$("dark").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+
+async function handleLoggedInUser(u){
+ if(!u){msg("Sesi login FIXZY tidak ditemukan. Kembali ke index/login terlebih dahulu.","err");return}
+ try{
+  uid=u.uid;
+  if(loginHandledUid===uid && ready)return;
+  loginHandledUid=uid;
+  $("email").textContent=u.email||"-";
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists())throw Error("Profil akun tidak ditemukan di users/{uid}.");
+  profile=s.data()||{};
+  role=String(profile.role||"").trim().toLowerCase();
+  if(role!=="owner"){
+   ready=false;
+   msg("Akses ditolak. Halaman Approval hanya untuk akun Owner.","err");
+   $("list").innerHTML='<div class="card empty">Akun ini bukan Owner. Gunakan akun Owner untuk Approval.</div>';
+   return;
+  }
+  ownerUid=getOwner(profile);
+  if(!ownerUid)throw Error("Owner UID tidak ditemukan.");
+  ready=true;
+  await load();
+  await loadEmployees();
+  await loadCicilanRequests();
+  $("list").innerHTML='<div class="card empty">🔎 Pilih nama karyawan terlebih dahulu untuk menampilkan order.</div>';
+  $("approvedHistoryCard").style.display="none";
+  $("cicilanCard").style.display="none";
+  msg("Akun Owner aktif dari sesi login FIXZY • pencarian karyawan menggunakan data Firebase.","ok");
+ }catch(e){
+  console.error(e);
+  msg("Gagal membaca sesi akun: "+(e?.message||e),"err");
+ }
+}
+
+/* Pastikan session Firebase yang dibuat di index.html dipakai kembali.
+   Tidak ada login kedua dan tidak memakai localStorage/sessionStorage sebagai
+   pengganti Firebase Auth. */
+onAuthStateChanged(auth,async u=>{
+ if(!u){msg("Belum login.","err");return}
+ try{
+  uid=u.uid;const s=await getDoc(doc(db,"users",uid));if(!s.exists())throw Error("Profil akun tidak ditemukan.");
+  profile=s.data()||{};role=String(profile.role||"").toLowerCase();
+  if(role!=="owner"){ready=false;$("email").textContent=u.email||"-";msg("Akses ditolak. Halaman Approval hanya untuk akun Owner.","err");$("list").innerHTML='<div class="card empty">Akun ini bukan Owner. Gunakan akun Owner untuk Approval.</div>';return}
+  ownerUid=getOwner(profile);$("email").textContent=u.email||"-";ready=true;
+  await load();
+  await loadEmployees();
+  await loadCicilanRequests();
+  $("list").innerHTML='<div class="card empty">🔎 Pilih nama karyawan terlebih dahulu untuk menampilkan order.</div>';
+  $("approvedHistoryCard").style.display="none";
+  $("cicilanCard").style.display="none";
+  msg("Akun Owner aktif • karyawan dimuat otomatis dari Firebase.","ok")
+ }catch(e){console.error(e);msg(e.message,"err")}
 });
 </script>
 </body>
