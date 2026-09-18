@@ -529,7 +529,7 @@ function renderRekap(){
  const panelMap=new Map();
 
  viewRows.forEach(v=>{
-   if(v.calc.cash)return;
+   if(v.calc.cash || !v.due)return;
 
    const due=v.due;
    const key=due
