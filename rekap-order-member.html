@@ -420,14 +420,12 @@ function renderRekap(){
 
  // =========================================================
  // PANEL JATUH TEMPO
- // Kunci grup = TANGGAL JATUH TEMPO SAJA.
- // Semua order yang jatuh pada tanggal yang sama digabung,
- // walaupun TEMPO HARI berbeda.
- //
- // Tabungan, UP, dan Kas tetap dihitung dari masing-masing order,
- // kemudian baru dijumlahkan ke tanggal jatuh tempo tersebut.
+ // Setiap nominal berasal dari ORDER yang mempunyai tanggal jatuh tempo
+ // tersebut. Tidak memakai total global dan tidak mengambil nominal dari
+ // tempo/jatuh tempo lain.
  // =========================================================
  const panelMap=new Map();
+
  viewRows.forEach(v=>{
    if(v.calc.cash || v.sisa<=0)return;
 
@@ -452,14 +450,27 @@ function renderRekap(){
    }
 
    const g=panelMap.get(key);
-   g.nilai+=num(v.calc.nilaiBarang);
-   g.up+=num(v.calc.up);
-   g.tab+=num(v.calc.tabungan);
-   g.kas+=num(v.kasRow);
-   g.tambahan+=num(v.calc.up)+num(v.calc.tabungan)+num(v.kasRow);
-   g.tagihan+=num(v.sisa);
+
+   // PENTING:
+   // Semua komponen diambil dari order ini saja.
+   // Tidak memakai totalTabungan/totalUP global.
+   g.nilai += num(v.calc.nilaiBarang);
+   g.up    += num(v.calc.up);
+   g.tab   += num(v.calc.tabungan);
+   g.kas   += num(v.kasRow);
+
+   const tambahanOrder =
+      num(v.calc.up) +
+      num(v.calc.tabungan) +
+      num(v.kasRow);
+
+   g.tambahan += tambahanOrder;
+
+   // Tagihan panel = nilai barang + tambahan order - pembayaran order.
+   g.tagihan += num(v.sisa);
+
    g.orders++;
-   g.pcs+=v.qty;
+   g.pcs += v.qty;
 
    const tempoHari=Math.max(0,Number(v.r.tempoHari||0)||0);
    if(tempoHari)g.tempos.add(tempoHari);
