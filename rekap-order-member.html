@@ -180,12 +180,22 @@ function basePriceOfItem(x,r={}){
  const cash=isCashOrder(r);
  const up=Number(x.upPengelolaPerPcs??x.upPengelola??r.upPengelolaPerPcs??r.upPengelola??0)||0;
  const tab=Number(x.tabunganPerPcs??x.tabungan??r.tabunganPerPcs??r.tabungan??0)||0;
+
+ // NILAI BARANG = harga murni, tanpa Tabungan dan UP.
  const direct=Number(x.hargaDasar);
  if(Number.isFinite(direct)&&direct>0)return direct;
+
+ // Untuk order TEMPO, hargaTempo/hargaJual pada data ini adalah
+ // harga yang sudah mengandung Tabungan + UP.
  const specific=Number(cash?(x.hargaCash??x.modalSatuan):(x.hargaTempo??x.hargaJual));
- if(Number.isFinite(specific)&&specific>0)return specific;
+ if(Number.isFinite(specific)&&specific>0){
+   return cash ? specific : Math.max(0,specific-up-tab);
+ }
+
+ // Fallback untuk field harga yang juga mungkin sudah berupa harga gabungan.
  const composed=Number(x.harga);
  if(Number.isFinite(composed)&&composed>0)return Math.max(0,composed-up-tab);
+
  return 0;
 }
 
