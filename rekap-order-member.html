@@ -618,8 +618,13 @@ function renderRekap(){
  const panelMap=new Map();
  viewRows.forEach(v=>{
    const due=v.due;
-   const key=due ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}` : "tanpa-tanggal";
-   if(!panelMap.has(key)) panelMap.set(key,{due,nilai:0,up:0,tab:0,kas:0,payment:0,tagihanAwal:0,sisa:0,orders:0,pcs:0,tempos:new Set()});
+   // Order LUNAS/pembayaran yang tidak membawa field jatuhTempo tetap
+   // dimasukkan ke kelompok jatuh tempo 17 Oktober 2026. Order tersebut
+   // adalah bagian dari tagihan 17 Oktober, bukan kelompok jatuh tempo baru.
+   const paidOrLunas = num(v.calc.paid)>0 || v.sisa<=0;
+   const fallbackDue = (!due && paidOrLunas) ? new Date(2026,9,17) : due;
+   const key=fallbackDue ? `${fallbackDue.getFullYear()}-${String(fallbackDue.getMonth()+1).padStart(2,"0")}-${String(fallbackDue.getDate()).padStart(2,"0")}` : "tanpa-tanggal";
+   if(!panelMap.has(key)) panelMap.set(key,{due:fallbackDue,nilai:0,up:0,tab:0,kas:0,payment:0,tagihanAwal:0,sisa:0,orders:0,pcs:0,tempos:new Set()});
    const g=panelMap.get(key);
    g.nilai += num(v.calc.nilaiBarang);
    g.up += num(v.calc.up);
