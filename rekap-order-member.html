@@ -64,7 +64,6 @@ table{width:100%;border-collapse:collapse;min-width:0}
   th,td{padding:8px 7px;font-size:10px}
   th{font-size:9px}
   .rekap-rincian{grid-template-columns:1fr 1fr}
-  .rekap-item:last-child{grid-column:1/-1}
   .rekap-item .value{font-size:12px}
 }
 th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:11px}
@@ -125,6 +124,10 @@ body.dark td{border-color:#334155}
       <span class="label">KAS</span>
       <span class="value" id="totalKas">Rp 0</span>
     </div>
+    <div class="rekap-item">
+      <span class="label">PEMBAYARAN</span>
+      <span class="value" id="totalPembayaran">Rp 0</span>
+    </div>
     <div class="rekap-item tagihan">
       <span class="label">TAGIHAN</span>
       <span class="value" id="sisaTotal">Rp 0</span>
@@ -139,6 +142,7 @@ body.dark td{border-color:#334155}
 </div>
 <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Nota</th><th>Member</th><th>Jenis</th><th>Status</th><th>Jatuh Tempo</th><th class="num">Qty Order</th><th class="num">Nilai Barang</th><th class="num">UP Pengelola</th><th class="num">Tabungan Member</th><th class="num">Kas Bulanan</th><th class="num">Pembayaran</th><th class="num">Sisa Tagihan</th></tr></thead><tbody id="orderTable"><tr><td colspan="12" class="empty">Memuat...</td></tr></tbody></table></div></div></main><script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,collection,query,where,getDocs,getDoc,doc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const cfg={
@@ -149,7 +153,7 @@ const cfg={
  messagingSenderId:"995892519622",
  appId:"1:995892519622:web:fa41047944d8e5b35d6dc7"
 };
-const app=initializeApp(cfg),db=getFirestore(app);
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+(Number(n)||0).toLocaleString("id-ID");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -487,13 +491,14 @@ function renderRekap(){
    return {r,calc,due,kasKey,qty,kasRow,totalAwal,sisa};
  });
 
- let qty=0,nilai=0,up=0,tabungan=0,kas=0,sisaTotal=0;
+ let qty=0,nilai=0,up=0,tabungan=0,kas=0,pembayaran=0,sisaTotal=0;
  const rows=viewRows.map(v=>{
    qty+=v.qty;
    nilai+=v.calc.nilaiBarang;
    up+=v.calc.up;
    tabungan+=v.calc.tabungan;
    kas+=v.kasRow;
+   pembayaran+=v.calc.paid;
    sisaTotal+=v.sisa;
 
    const m=v.r.member||v.r.pelanggan||{};
@@ -586,6 +591,7 @@ function renderRekap(){
  $("totalPengelola").textContent=rp(up);
  $("totalTabungan").textContent=rp(tabungan);
  $("totalKas").textContent=rp(kas);
+ $("totalPembayaran").textContent=rp(pembayaran);
  $("sisaTotal").textContent=rp(sisaTotal);
 
  $("orderTable").innerHTML=rows||'<tr><td colspan="11" class="empty">Belum ada order member pada periode ini.</td></tr>';
@@ -636,34 +642,26 @@ $("dark").onclick=()=>{
 
 async function bacaSesiIndex(){
   try{
-    // REKAP TIDAK LOGIN DAN TIDAK MENGUBAH SESI.
-    // Hanya membaca fixzySession yang SUDAH dibuat oleh INDEX.
-    const parentWin = window.parent && window.parent !== window
-      ? window.parent : window;
-    const s = parentWin.fixzySession;
+    const s=window.parent===window ? window.fixzySession : window.parent.fixzySession;
 
     if(!s){
-      notice("Menunggu data Owner/Karyawan dari INDEX...");
+      notice("Menunggu data Owner/Karyawan dari INDEX...","err");
       return false;
     }
 
     uid=String(s.uid||"").trim();
-    profile=(s.profile && typeof s.profile==="object") ? s.profile : {};
+    profile=s.profile||{};
     const role=String(s.role||profile.role||"").trim().toLowerCase();
 
-    if(!uid){
-      notice("UID dari INDEX belum tersedia.");
-      return false;
-    }
+    if(!uid)return false;
 
-    // Owner/Karyawan mengambil ownerUid dari sesi INDEX.
-    // Tidak meminta login ulang dan tidak membuat sesi baru.
-    ownerUid=String(
-      s.ownerUid ||
-      profile.ownerUid ||
-      profile.ownerId ||
-      (role==="owner" ? uid : "")
-    ).trim();
+    if(role==="owner"){
+      ownerUid=String(s.ownerUid||uid).trim();
+    }else if(["employee","karyawan","kasir","kurir","reseller"].includes(role)){
+      ownerUid=String(s.ownerUid||profile.ownerUid||profile.ownerId||"").trim();
+    }else{
+      ownerUid=String(s.ownerUid||profile.ownerUid||profile.ownerId||"").trim();
+    }
 
     if(!ownerUid){
       notice("Owner UID dari INDEX tidak ditemukan.","err");
@@ -678,7 +676,7 @@ async function bacaSesiIndex(){
     ready=true;
     renderAll();
     notice(
-      `Data dari INDEX • ${role.toUpperCase()} • ${orders.length} order member.`,
+      `Akun aktif dari INDEX • ${role.toUpperCase()} • ${orders.length} order member.`,
       "ok"
     );
     return true;
@@ -690,15 +688,17 @@ async function bacaSesiIndex(){
 }
 
 // INDEX adalah satu-satunya halaman untuk login.
-// Rekap HANYA membaca fixzySession milik INDEX.
-// Halaman ini tidak melakukan login/logout dan tidak membuat sesi baru.
+// Rekap hanya membaca fixzySession milik INDEX.
+// Auth Firebase tetap diinisialisasi agar query Firestore memakai akun
+// Firebase yang sedang login, tetapi halaman ini tidak meminta login.
 let percobaan=0;
 const tungguIndex=setInterval(async()=>{
   percobaan++;
-  const ok=await bacaSesiIndex();
-  if(ok || percobaan>=40) clearInterval(tungguIndex);
-},500);
-
-// Satu pembacaan awal. Tidak ada login/session Firebase di sini.
+  if(await bacaSesiIndex()){
+    clearInterval(tungguIndex);
+  }else if(percobaan>=20){
+    clearInterval(tungguIndex);
+  }
+},300);
 bacaSesiIndex();
 </script></body></html>
