@@ -104,7 +104,7 @@ body.dark td{border-color:#334155}
 <header><div class="head"><img class="logo" src="logo.png" alt="FIXZY"><div class="hi"><h1>Rekap Order Member</h1><span id="email" class="email">-</span></div><div class="acts"><button class="btn refresh" type="button" onclick="location.reload()">↻ Refresh</button><button id="dark" class="btn dark" type="button">🌙</button></div></div></header>
 <main><div id="notice" class="notice">Menunggu akun...</div>
 
-<div class="card"><div class="title">REKAPAN ORDERAN</div><div class="filters"><div><label>PERIODE</label><select id="periode"><option value="all">Semua Data</option><option value="month">Bulan Ini</option><option value="year">Tahun Ini</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
+<div class="card"><div class="title">REKAPAN ORDERAN</div><div class="filters"><div><label>JATUH TEMPO</label><select id="periode"><option value="all">Semua Jatuh Tempo</option></select></div><div><label>PENCARIAN MEMBER / NOTA</label><input id="search" placeholder="Nama member / nomor nota..."></div><div class="actions"><button class="btn secondary" type="button" onclick="location.reload()">↻ Muat Ulang</button></div></div></div>
 
 <div class="card"><div class="title">DAFTAR ORDER SEMUA MEMBER</div>
 <div class="money-total">
@@ -420,18 +420,47 @@ function dueDate(r){
 }
 
 function inPeriod(r){
- const p=$("periode").value;if(p==="all")return true;
- const raw=r.approvedAt||r.createdAt||r.tanggal||"";let d=null;
- if(typeof raw==="object"&&raw?.seconds)d=new Date(raw.seconds*1000);
- else if(String(raw).match(/^\d{4}-\d{2}-\d{2}$/))d=new Date(String(raw)+"T00:00:00");
- else if(raw)d=new Date(raw);
- if(!d||isNaN(d.getTime()))return true;
- const now=new Date();
- if(p==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
- if(p==="year")return d.getFullYear()===now.getFullYear();
- return true;
+ const selected=$("periode").value;
+ if(selected==="all")return true;
+
+ const d=dueDate(r);
+ if(!d)return false;
+
+ const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+ return key===selected;
 }
 
+function populateJatuhTempoFilter(){
+ const select=$("periode");
+ const current=select.value;
+
+ const dates=[...new Set(
+   orders.map(r=>{
+     const d=dueDate(r);
+     if(!d)return "";
+     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+   }).filter(Boolean)
+ )].sort();
+
+ select.innerHTML='<option value="all">Semua Jatuh Tempo</option>';
+
+ dates.forEach(key=>{
+   const [y,m,d]=key.split("-").map(Number);
+   const label=new Date(y,m-1,d).toLocaleDateString("id-ID",{
+     day:"2-digit",month:"long",year:"numeric"
+   });
+   const opt=document.createElement("option");
+   opt.value=key;
+   opt.textContent=`Jatuh Tempo ${label}`;
+   select.appendChild(opt);
+ });
+
+ if(current==="all" || dates.includes(current)){
+   select.value=current;
+ }else{
+   select.value="all";
+ }
+}
 async function loadStock(){
  const map=new Map();
  const qs=[
@@ -738,6 +767,7 @@ async function bacaSesiIndex(){
 
     await loadStock();
     await loadOrders();
+    populateJatuhTempoFilter();
 
     ready=true;
     renderAll();
