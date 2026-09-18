@@ -337,7 +337,6 @@ function calculateOrder(r){
 }
 
 function dueDate(r){
- if(isCashOrder(r))return null;
  const raw=r.jatuhTempo||r.tanggalJatuhTempo||r.dueDate||"";
  if(!raw)return null;
  if(typeof raw==="object"&&raw?.seconds)return new Date(raw.seconds*1000);
@@ -529,7 +528,7 @@ function renderRekap(){
  const panelMap=new Map();
 
  viewRows.forEach(v=>{
-   if(v.calc.cash || !v.due)return;
+   if(!v.due)return;
 
    const due=v.due;
    const key=due
