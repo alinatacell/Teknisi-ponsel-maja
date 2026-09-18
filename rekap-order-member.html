@@ -374,10 +374,12 @@ function renderRekap(){
 
  // Pisahkan sisa tagihan berdasarkan tanggal jatuh tempo.
  const jatuhTempoMap=new Map();
+ const kasJtShown=new Set();
  data.forEach(r=>{
    const calc=calculateOrder(r);
    const kasKey=kasMemberMonthKey(r);
-   const kasRow=!kasSudahDitampilkan.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
+   const kasRow=!kasJtShown.has(kasKey)?kasBulananMap.get(kasKey)||calc.kas:0;
+   kasJtShown.add(kasKey);
    const totalTagihanAwal=calc.nilaiBarang+calc.up+calc.tabungan+kasRow;
    const sisa=calc.cash?0:Math.max(0,totalTagihanAwal-calc.paid);
    if(sisa<=0)return;
